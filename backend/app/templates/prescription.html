@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; font-size: 13px; color: #1a1a1a; background: white; }
+
+    .page { width: 210mm; min-height: 297mm; padding: 20mm 18mm; }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a56db; padding-bottom: 14px; margin-bottom: 16px; }
+    .hospital-name { font-size: 22px; font-weight: 700; color: #1a56db; }
+    .hospital-sub { font-size: 11px; color: #555; margin-top: 3px; }
+    .doctor-block { text-align: right; }
+    .doctor-name { font-size: 15px; font-weight: 600; }
+    .doctor-qual { font-size: 11px; color: #555; }
+    .reg-no { font-size: 11px; color: #777; }
+
+    /* Patient info box */
+    .patient-info { background: #f0f7ff; border: 1px solid #c3d9f8; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; display: flex; gap: 30px; flex-wrap: wrap; }
+    .info-item label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-item span { display: block; font-weight: 600; font-size: 13px; margin-top: 2px; }
+
+    /* Rx symbol */
+    .rx-header { font-size: 28px; color: #1a56db; font-weight: 700; margin-bottom: 10px; }
+
+    /* Medicines table */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    thead th { background: #1a56db; color: white; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; }
+    tbody tr:nth-child(even) { background: #f8f9fc; }
+    tbody td { padding: 9px 10px; font-size: 12px; border-bottom: 1px solid #e8eaf0; vertical-align: top; }
+    .med-name { font-weight: 600; color: #1a1a1a; }
+    .med-instructions { font-size: 11px; color: #666; margin-top: 3px; }
+
+    /* Frequency badge */
+    .freq-badge { background: #e0eaff; color: #1a56db; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+    /* Follow up */
+    .followup-box { border: 1px dashed #1a56db; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; }
+    .followup-box span { color: #1a56db; font-weight: 600; }
+
+    /* Signature */
+    .signature-area { display: flex; justify-content: flex-end; margin-top: 30px; }
+    .sig-box { text-align: center; }
+    .sig-line { border-top: 1px solid #333; width: 180px; margin-bottom: 6px; }
+    .sig-label { font-size: 11px; color: #555; }
+    .sig-name { font-weight: 600; font-size: 13px; }
+
+    /* Footer */
+    .footer { border-top: 1px solid #e0e0e0; margin-top: 20px; padding-top: 10px; font-size: 10px; color: #999; text-align: center; }
+
+    /* Watermark */
+    .watermark { position: fixed; bottom: 40mm; left: 50%; transform: translateX(-50%) rotate(-30deg); font-size: 60px; color: rgba(26, 86, 219, 0.04); font-weight: 900; white-space: nowrap; pointer-events: none; }
+  </style>
+</head>
+<body>
+<div class="watermark">MEDI7 — {{ hospital_name }}</div>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="hospital-name">{{ hospital_name }}</div>
+      <div class="hospital-sub">Multispecialty Hospital • Digital Health Records</div>
+    </div>
+    <div class="doctor-block">
+      <div class="doctor-name">Dr. {{ doctor.full_name }}</div>
+      <div class="doctor-qual">{{ doctor.department or 'General Medicine' }}</div>
+      <div class="reg-no">Reg No: {{ doctor.get('reg_no', 'MH-12345') }}</div>
+    </div>
+  </div>
+
+  <!-- Patient Info -->
+  <div class="patient-info">
+    <div class="info-item">
+      <label>Patient Name</label>
+      <span>{{ patient.full_name }}</span>
+    </div>
+    <div class="info-item">
+      <label>Patient ID</label>
+      <span>{{ patient.patient_id }}</span>
+    </div>
+    <div class="info-item">
+      <label>Age / Gender</label>
+      <span>{{ patient.age }}Y / {{ patient.gender | capitalize }}</span>
+    </div>
+    <div class="info-item">
+      <label>Date</label>
+      <span>{{ generated_at }}</span>
+    </div>
+    {% if patient.known_allergies %}
+    <div class="info-item">
+      <label>⚠️ Allergies</label>
+      <span style="color: #dc2626;">{{ patient.known_allergies }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Rx -->
+  <div class="rx-header">℞</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Medicine</th>
+        <th>Dosage</th>
+        <th>Frequency</th>
+        <th>Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for med in prescription.medicines %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+          <div class="med-name">{{ med.medicine_name }}</div>
+          {% if med.instructions %}
+          <div class="med-instructions">{{ med.instructions }}</div>
+          {% endif %}
+        </td>
+        <td>{{ med.dosage }}</td>
+        <td><span class="freq-badge">{{ med.frequency }}</span></td>
+        <td>{{ med.duration_days }} days</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if visit.follow_up_date %}
+  <div class="followup-box">
+    🗓️ Follow-up Date: <span>{{ visit.follow_up_date }}</span>
+  </div>
+  {% endif %}
+
+  {% if visit.diagnosis %}
+  <p style="margin-bottom: 16px; font-size: 12px; color: #444;">
+    <strong>Diagnosis:</strong> {{ visit.diagnosis }}
+  </p>
+  {% endif %}
+
+  <!-- Signature -->
+  <div class="signature-area">
+    <div class="sig-box">
+      <div class="sig-line"></div>
+      <div class="sig-name">Dr. {{ doctor.full_name }}</div>
+      <div class="sig-label">{{ doctor.department or 'General Medicine' }}</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Generated by MEDI7 Digital Health System · {{ hospital_name }} · Prescription ID: {{ prescription.prescription_id }}
+    <br>This is a computer-generated prescription. Valid only with doctor's signature.
+  </div>
+
+</div>
+</body>
+</html>
