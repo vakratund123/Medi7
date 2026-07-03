@@ -56,7 +56,15 @@ async def upload_scan(
 
     scan.file_url = file_url
     scan.radiologist_remarks = remarks
-    scan.uploaded_by = uploaded_by or None
+    
+    if uploaded_by:
+        try:
+            scan.uploaded_by = uuid.UUID(uploaded_by)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid uploaded_by ID format")
+    else:
+        scan.uploaded_by = None
+
     scan.status = "completed"
     await db.commit()
     await db.refresh(scan)

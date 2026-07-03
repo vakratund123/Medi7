@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import uuid
+import datetime
 
 from app.database import get_db
 from app.models.pharmacy import PharmacyDispensing, Inventory
@@ -9,6 +10,7 @@ from app.models.prescription import Prescription
 from app.models.staff import Staff
 from app.schemas.pharmacy import DispenseCreate, DispenseOut, InventoryCreate, InventoryUpdate, InventoryOut
 from app.middleware.auth_middleware import require_pharmacist, require_any
+from app.services.storage_service import save_file
 
 router = APIRouter(prefix="/api/pharmacy", tags=["Pharmacy"])
 
@@ -19,9 +21,20 @@ async def get_active_prescription(
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(require_pharmacist),
 ):
+    # Normalize patient ID (e.g. support lowercase, partial IDs, only sequence number)
+    normalized_id = patient_id.strip().upper()
+    if normalized_id.isdigit():
+        normalized_id = f"SAI-{datetime.date.today().year}-{normalized_id.zfill(5)}"
+    elif "-" in normalized_id:
+        parts = normalized_id.split("-")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            normalized_id = f"SAI-{parts[0]}-{parts[1].zfill(5)}"
+        elif len(parts) == 3 and parts[0] == "SAI":
+            normalized_id = f"SAI-{parts[1]}-{parts[2].zfill(5)}"
+
     result = await db.execute(
         select(Prescription)
-        .where(Prescription.patient_id == patient_id)
+        .where(Prescription.patient_id.ilike(normalized_id))
         .order_by(Prescription.created_at.desc())
         .limit(1)
     )
@@ -112,3 +125,30 @@ async def update_inventory_item(
     await db.commit()
     await db.refresh(item)
     return item
+
+
+@router.post("/upload-invoice/")
+async def upload_pharmacy_invoice(
+    patient_id: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_pharmacist),
+):
+    """Upload a pharmacy invoice/bill PDF for a patient."""
+    file_bytes = await file.read()
+    file_url = await save_file(file_bytes, file.filename, "pharmacy_invoices")
+    return {"url": file_url, "filename": file.filename, "patient_id": patient_id}
+
+
+@router.post("/upload-report/")
+async def upload_pharmacy_report(
+    patient_id: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_pharmacist),
+):
+    """Upload a pharmacy report PDF for a patient."""
+    file_bytes = await file.read()
+    file_url = await save_file(file_bytes, file.filename, "pharmacy_reports")
+    return {"url": file_url, "filename": file.filename, "patient_id": patient_id}
+

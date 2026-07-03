@@ -41,9 +41,14 @@ export default function RadioDashboard() {
         { headers: { 'Content-Type': 'multipart/form-data' } }
       )
       toast.success('Scan uploaded successfully')
+      if (fileRefs.current[order.scan_id]) {
+        fileRefs.current[order.scan_id].value = ''
+      }
       fetchOrders()
-    } catch {
-      toast.error('Upload failed')
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Upload failed'
+      toast.error(typeof msg === 'string' ? msg : 'Upload failed — check console')
+      console.error('Radiology upload error:', err?.response?.data || err)
     } finally {
       setUploading(u => ({ ...u, [order.scan_id]: false }))
     }

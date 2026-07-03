@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import api from '../../api/client'
-import { ArrowLeft, AlertTriangle, Stethoscope, FlaskConical, Scan, FileText, Pill, Loader2, ChevronDown, ChevronUp, Bot } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Stethoscope, FlaskConical, Scan, FileText, Pill, Loader2, ChevronDown, ChevronUp, Bot, ExternalLink } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -146,6 +146,22 @@ export default function PatientHistory() {
             <div className="space-y-3">
               {lab_reports.map(r => (
                 <div key={r.report_id} className="p-3 bg-slate-50 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {r.report_type && <span className="badge badge-blue">{r.report_type}</span>}
+                      {r.created_at && <span className="text-xs text-slate-400">{format(new Date(r.created_at), 'dd MMM yyyy')}</span>}
+                    </div>
+                    {r.file_url && (
+                      <a
+                        href={r.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium hover:bg-primary-100 transition-colors"
+                      >
+                        <ExternalLink size={11} /> View Report
+                      </a>
+                    )}
+                  </div>
                   {r.ai_summary && <p className="text-sm text-slate-700 mb-2">{r.ai_summary}</p>}
                   {Object.keys(r.abnormal_flags || {}).length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -166,7 +182,22 @@ export default function PatientHistory() {
             <div className="space-y-2">
               {scans.map(s => (
                 <div key={s.scan_id} className="p-3 bg-slate-50 rounded-xl text-sm">
-                  <div className="font-medium">{s.scan_type}</div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{s.scan_type}</span>
+                      {s.created_at && <span className="text-xs text-slate-400">{format(new Date(s.created_at), 'dd MMM yyyy')}</span>}
+                    </div>
+                    {s.file_url && (
+                      <a
+                        href={s.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium hover:bg-primary-100 transition-colors"
+                      >
+                        <ExternalLink size={11} /> View Scan
+                      </a>
+                    )}
+                  </div>
                   {s.radiologist_remarks && <p className="text-slate-600 mt-1">{s.radiologist_remarks}</p>}
                 </div>
               ))}

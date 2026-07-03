@@ -94,13 +94,28 @@ async def search_patients(
     return result.scalars().all()
 
 
+def _normalize_patient_id(patient_id: str) -> str:
+    import datetime
+    normalized_id = patient_id.strip().upper()
+    if normalized_id.isdigit():
+        normalized_id = f"SAI-{datetime.date.today().year}-{normalized_id.zfill(5)}"
+    elif "-" in normalized_id:
+        parts = normalized_id.split("-")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            normalized_id = f"SAI-{parts[0]}-{parts[1].zfill(5)}"
+        elif len(parts) == 3 and parts[0] == "SAI":
+            normalized_id = f"SAI-{parts[1]}-{parts[2].zfill(5)}"
+    return normalized_id
+
+
 @router.get("/{patient_id}", response_model=PatientOut)
 async def get_patient(
     patient_id: str,
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(require_any),
 ):
-    result = await db.execute(select(Patient).where(Patient.patient_id == patient_id))
+    normalized_id = _normalize_patient_id(patient_id)
+    result = await db.execute(select(Patient).where(Patient.patient_id.ilike(normalized_id)))
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -114,7 +129,8 @@ async def get_patient_history(
     _: Staff = Depends(require_doctor),
 ):
     # Patient
-    result = await db.execute(select(Patient).where(Patient.patient_id == patient_id))
+    normalized_id = _normalize_patient_id(patient_id)
+    result = await db.execute(select(Patient).where(Patient.patient_id.ilike(normalized_id)))
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -162,8 +178,8 @@ async def get_patient_history(
         "visits": [{"visit_id": str(v.visit_id), "visit_date": str(v.visit_date), "diagnosis": v.diagnosis, "notes": v.notes} for v in visits],
         "prescriptions": [{"prescription_id": str(p.prescription_id), "medicines": p.medicines, "created_at": str(p.created_at)} for p in prescriptions],
         "lab_orders": [{"order_id": str(o.order_id), "tests": o.tests, "status": o.status} for o in lab_orders],
-        "lab_reports": [{"report_id": str(r.report_id), "ai_summary": r.ai_summary, "abnormal_flags": r.abnormal_flags} for r in lab_reports],
-        "scans": [{"scan_id": str(s.scan_id), "scan_type": s.scan_type, "radiologist_remarks": s.radiologist_remarks} for s in scans],
+        "lab_reports": [{"report_id": str(r.report_id), "report_type": r.report_type, "file_url": r.file_url, "ai_summary": r.ai_summary, "abnormal_flags": r.abnormal_flags, "created_at": str(r.created_at)} for r in lab_reports],
+        "scans": [{"scan_id": str(s.scan_id), "scan_type": s.scan_type, "file_url": s.file_url, "radiologist_remarks": s.radiologist_remarks, "created_at": str(s.created_at)} for s in scans],
     }
 
     ai_summary = await generate_patient_summary(history)

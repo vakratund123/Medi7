@@ -50,9 +50,15 @@ export default function LabDashboard() {
         { headers: { 'Content-Type': 'multipart/form-data' } }
       )
       toast.success('Report uploaded! AI analysis started.')
+      // Reset the file input
+      if (fileRefs.current[order.order_id]) {
+        fileRefs.current[order.order_id].value = ''
+      }
       fetchOrders()
-    } catch {
-      toast.error('Upload failed')
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Upload failed'
+      toast.error(typeof msg === 'string' ? msg : 'Upload failed — check console')
+      console.error('Lab upload error:', err?.response?.data || err)
     } finally {
       setUploading(u => ({ ...u, [order.order_id]: false }))
     }
