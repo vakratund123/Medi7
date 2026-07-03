@@ -1,0 +1,94 @@
+services:
+  # ─── FastAPI Backend ─────────────────────────────────
+  - type: web
+    name: medi7-backend
+    env: python
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medi7-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: pserv
+          name: medi7-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: pserv
+          name: medi7-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: pserv
+          name: medi7-redis
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  # ─── React Frontend ──────────────────────────────────
+  - type: web
+    name: medi7-frontend
+    env: node
+    buildCommand: |
+      cd frontend
+      npm install
+      npm run build
+    startCommand: |
+      cd frontend
+      npm run preview -- --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: medi7-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # ─── Celery Worker ───────────────────────────────────
+  - type: worker
+    name: medi7-celery
+    env: python
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      celery -A app.celery_worker worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: medi7-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: pserv
+          name: medi7-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: pserv
+          name: medi7-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: pserv
+          name: medi7-redis
+          property: connectionString
+
+databases:
+  - name: medi7-db
+    databaseName: medi7db
+    user: medi7
+    plan: free
+
+  - type: pserv
+    name: medi7-redis
+    env: docker
+    repo: https://github.com/render-examples/redis.git
+    plan: free
