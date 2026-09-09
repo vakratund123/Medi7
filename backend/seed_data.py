@@ -21,47 +21,67 @@ from app.models.pharmacy import Inventory
 
 settings = get_settings()
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
-AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+from app.database import engine, AsyncSessionLocal
 
 STAFF_SEED = [
+    # 5 Standard IDs for Sai Multispecialty Hospital
+    {"full_name": "Dr. Rahul Desai", "mobile": "919632219690", "role": "manager",
+     "department": "Administration", "login_email": "manager@saihospital.in", "password": "Admin@123"},
+    {"full_name": "Dr. Priya Sharma", "mobile": "9876543221", "role": "doctor",
+     "department": "General Medicine", "login_email": "doctor@saihospital.in", "password": "Doctor@123"},
+    {"full_name": "Sunita Patil", "mobile": "9876543223", "role": "receptionist",
+     "department": "Front Desk", "login_email": "reception@saihospital.in", "password": "Recept@123"},
+    {"full_name": "Ravi Shinde", "mobile": "9876543224", "role": "lab_technician",
+     "department": "Laboratory", "login_email": "laboratory@saihospital.in", "password": "Lab@1234"},
+    {"full_name": "Meena Joshi", "mobile": "9876543215", "role": "pharmacist",
+     "department": "Pharmacy", "login_email": "pharmacy@saihospital.in", "password": "Pharm@123"},
+
+    # Alias / Secondary accounts for backwards compatibility
     {"full_name": "Dr. Rahul Desai", "mobile": "9876543210", "role": "owner",
      "department": "Administration", "login_email": "owner@saihospital.in", "password": "Admin@123"},
     {"full_name": "Dr. Priya Sharma", "mobile": "9876543211", "role": "doctor",
      "department": "General Medicine", "login_email": "dr.priya@saihospital.in", "password": "Doctor@123"},
-    {"full_name": "Dr. Arjun Kulkarni", "mobile": "9876543212", "role": "doctor",
-     "department": "Cardiology", "login_email": "dr.arjun@saihospital.in", "password": "Doctor@123"},
     {"full_name": "Sunita Patil", "mobile": "9876543213", "role": "receptionist",
      "department": "Front Desk", "login_email": "receptionist@saihospital.in", "password": "Recept@123"},
     {"full_name": "Ravi Shinde", "mobile": "9876543214", "role": "lab_technician",
      "department": "Laboratory", "login_email": "lab@saihospital.in", "password": "Lab@1234"},
-    {"full_name": "Meena Joshi", "mobile": "9876543215", "role": "pharmacist",
-     "department": "Pharmacy", "login_email": "pharmacy@saihospital.in", "password": "Pharm@123"},
+    {"full_name": "Dr. Arjun Kulkarni", "mobile": "9876543212", "role": "doctor",
+     "department": "Cardiology", "login_email": "dr.arjun@saihospital.in", "password": "Doctor@123"},
     {"full_name": "Dr. Kavita Rao", "mobile": "9876543216", "role": "radiologist",
      "department": "Radiology", "login_email": "radiology@saihospital.in", "password": "Radio@123"},
 ]
 
 PATIENTS_SEED = [
     {"full_name": "Ramesh Patil", "mobile_number": "8800001111", "age": 47, "gender": "male",
-     "blood_group": "B+", "chronic_conditions": "Hypertension, Type 2 Diabetes", "language_preference": "marathi"},
+     "blood_group": "B+", "chronic_conditions": "Hypertension, Type 2 Diabetes", "language_preference": "marathi",
+     "referred_by": "Dr. Kulkarni (Sangli)"},
     {"full_name": "Sushma Deshpande", "mobile_number": "8800002222", "age": 35, "gender": "female",
-     "blood_group": "A+", "language_preference": "marathi"},
+     "blood_group": "A+", "language_preference": "marathi",
+     "referred_by": "Dr. A. Patil (Kolhapur)"},
     {"full_name": "Vikram Naik", "mobile_number": "8800003333", "age": 62, "gender": "male",
-     "blood_group": "O+", "chronic_conditions": "COPD", "language_preference": "kannada"},
+     "blood_group": "O+", "chronic_conditions": "COPD", "language_preference": "kannada",
+     "referred_by": "Dr. Kulkarni (Sangli)"},
     {"full_name": "Geeta Kumar", "mobile_number": "8800004444", "age": 28, "gender": "female",
-     "language_preference": "english"},
+     "language_preference": "english",
+     "referred_by": "Self / Walk-in"},
     {"full_name": "Santosh Iyer", "mobile_number": "8800005555", "age": 55, "gender": "male",
-     "blood_group": "AB+", "known_allergies": "Penicillin", "language_preference": "english"},
+     "blood_group": "AB+", "known_allergies": "Penicillin", "language_preference": "english",
+     "referred_by": "Dr. S. Joshi (Miraj)"},
     {"full_name": "Anita More", "mobile_number": "8800006666", "age": 42, "gender": "female",
-     "language_preference": "hindi"},
+     "language_preference": "hindi",
+     "referred_by": "Dr. A. Patil (Kolhapur)"},
     {"full_name": "Deepak Wagh", "mobile_number": "8800007777", "age": 33, "gender": "male",
-     "language_preference": "marathi"},
+     "language_preference": "marathi",
+     "referred_by": "Dr. V. Shinde (Karad)"},
     {"full_name": "Priyanka Bhatt", "mobile_number": "8800008888", "age": 25, "gender": "female",
-     "language_preference": "hindi"},
+     "language_preference": "hindi",
+     "referred_by": "Dr. Kulkarni (Sangli)"},
     {"full_name": "Mohan Reddy", "mobile_number": "8800009999", "age": 70, "gender": "male",
-     "blood_group": "A-", "chronic_conditions": "CKD Stage 3", "language_preference": "kannada"},
+     "blood_group": "A-", "chronic_conditions": "CKD Stage 3", "language_preference": "kannada",
+     "referred_by": "Dr. S. Joshi (Miraj)"},
     {"full_name": "Lakshmi Nair", "mobile_number": "8800000000", "age": 38, "gender": "female",
-     "language_preference": "english"},
+     "language_preference": "english",
+     "referred_by": "Self / Walk-in"},
 ]
 
 INVENTORY_SEED = [
@@ -91,7 +111,9 @@ async def seed():
         staff_objects = []
         for s in STAFF_SEED:
             existing = await db.execute(
-                __import__("sqlalchemy", fromlist=["select"]).select(Staff).where(Staff.login_email == s["login_email"])
+                __import__("sqlalchemy", fromlist=["select"]).select(Staff).where(
+                    (Staff.login_email == s["login_email"]) | (Staff.mobile == s["mobile"])
+                )
             )
             if existing.scalar_one_or_none():
                 print(f"    [Skip] {s['login_email']} already exists")
@@ -105,9 +127,10 @@ async def seed():
                 password_hash=bcrypt.hashpw(s["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
             )
             db.add(staff_obj)
+            await db.commit()
             staff_objects.append(staff_obj)
-        await db.commit()
-        print(f"  [OK] {len(staff_objects)} staff accounts created")
+            print(f"    [OK] {s['full_name']} ({s['role']}) -> {s['login_email']}")
+        print(f"  [OK] {len(staff_objects)} new staff accounts created")
 
         # Patients
         print("  -> Creating patients...")
@@ -167,14 +190,48 @@ async def seed():
 
 
 
-        print("\nSeed complete!")
-        print("\nLogin Credentials:")
-        print("  Owner:        owner@saihospital.in / Admin@123")
-        print("  Doctor:       dr.priya@saihospital.in / Doctor@123")
+        # Seed sample visits with referrals if visits table is empty
+        print("  -> Checking sample visits...")
+        from sqlalchemy import select
+        v_check = await db.execute(select(Visit).limit(1))
+        if not v_check.scalar_one_or_none():
+            doc_res = await db.execute(select(Staff).where(Staff.role == "doctor").limit(1))
+            doc = doc_res.scalar_one_or_none()
+            doc_id = doc.staff_id if doc else None
+
+            all_patients_res = await db.execute(select(Patient).limit(10))
+            all_pts = all_patients_res.scalars().all()
+
+            for pt in all_pts:
+                v = Visit(
+                    patient_id=pt.patient_id,
+                    doctor_id=doc_id,
+                    visit_date=datetime.date.today(),
+                    visit_type="OPD",
+                    status="completed" if pt.patient_id.endswith("1") else "waiting",
+                    chief_complaint=f"Follow-up for {pt.chronic_conditions}" if pt.chronic_conditions else "Routine consultation",
+                    diagnosis="Mild hypertension under control" if pt.chronic_conditions else "General physical examination",
+                    referred_by=pt.referred_by,
+                )
+                db.add(v)
+            await db.commit()
+            print(f"  [OK] Seeded sample OPD visits with doctor referrals")
+
+        print("\n=======================================================")
+        print("  MEDI7 — SAI MULTISPECIALTY HOSPITAL DEMO READY")
+        print("  Hospital WhatsApp: +919632219690")
+        print("=======================================================")
+        print("\nOfficial 5 Staff IDs:")
+        print("  1. Manager:     manager@saihospital.in    / Admin@123")
+        print("  2. Doctor:      doctor@saihospital.in     / Doctor@123")
+        print("  3. Reception:   reception@saihospital.in  / Recept@123")
+        print("  4. Laboratory:  laboratory@saihospital.in / Lab@1234")
+        print("  5. Pharmacy:    pharmacy@saihospital.in   / Pharm@123")
+        print("\nAliases / Backwards compatibility:")
+        print("  Owner:        owner@saihospital.in        / Admin@123")
+        print("  Doctor Alias: dr.priya@saihospital.in     / Doctor@123")
         print("  Receptionist: receptionist@saihospital.in / Recept@123")
-        print("  Lab Tech:     lab@saihospital.in / Lab@1234")
-        print("  Pharmacist:   pharmacy@saihospital.in / Pharm@123")
-        print("  Radiologist:  radiology@saihospital.in / Radio@123")
+        print("  Lab Tech:     lab@saihospital.in          / Lab@1234")
 
 
 if __name__ == "__main__":

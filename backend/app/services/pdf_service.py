@@ -58,4 +58,105 @@ def generate_prescription_pdf(
             f.write(f"Visit Diagnosis: {visit.get('diagnosis')}\n")
             f.write(f"Medicines: {prescription.get('medicines')}\n")
 
-    return f"/uploads/prescriptions/{filename}"
+BILL_UPLOAD_DIR = Path(settings.LOCAL_STORAGE_PATH) / "bills"
+
+
+def number_to_words_inr(amount: float) -> str:
+    """Convert an INR amount to words (e.g. 1250.00 -> Rupees One Thousand Two Hundred Fifty Only)."""
+    try:
+        val = int(round(amount))
+        if val == 0:
+            return "Rupees Zero Only"
+
+        units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+                 "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+        tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+        def two_digits(n):
+            if n < 20:
+                return units[n]
+            return tens[n // 10] + (" " + units[n % 10] if n % 10 != 0 else "")
+
+        def three_digits(n):
+            if n == 0:
+                return ""
+            h = n // 100
+            rem = n % 100
+            res = ""
+            if h > 0:
+                res += units[h] + " Hundred"
+                if rem > 0:
+                    res += " and "
+            if rem > 0:
+                res += two_digits(rem)
+            return res
+
+        crore = val // 10000000
+        rem_crore = val % 10000000
+        lakh = rem_crore // 100000
+        rem_lakh = rem_crore % 100000
+        thousand = rem_lakh // 1000
+        rem_thousand = rem_lakh % 1000
+
+        parts = []
+        if crore > 0:
+            parts.append(two_digits(crore) + " Crore")
+        if lakh > 0:
+            parts.append(two_digits(lakh) + " Lakh")
+        if thousand > 0:
+            parts.append(two_digits(thousand) + " Thousand")
+        if rem_thousand > 0:
+            parts.append(three_digits(rem_thousand))
+
+        return "Rupees " + " ".join(parts).strip() + " Only"
+    except Exception:
+        return f"Rupees {amount:.2f} Only"
+
+
+def generate_bill_pdf(
+    patient: dict,
+    doctor: dict,
+    bill: dict,
+    visit: dict,
+) -> str:
+    """
+    Render Bill HTML → PDF on official Sai Hospital Letterhead.
+    Returns the file path of the saved PDF.
+    """
+    BILL_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"bill_{uuid.uuid4().hex}.pdf"
+    output_path = BILL_UPLOAD_DIR / filename
+
+    amt_in_words = number_to_words_inr(bill.get("net_amount", 0.0))
+    generated_date = datetime.now().strftime("%d/%m/%Y")
+
+    try:
+        from weasyprint import HTML
+        template = jinja_env.get_template("bill.html")
+        html_content = template.render(
+            hospital_name=settings.HOSPITAL_NAME,
+            patient=patient,
+            doctor=doctor,
+            bill=bill,
+            visit=visit,
+            amount_in_words=amt_in_words,
+            generated_date=generated_date,
+            generated_at=datetime.now().strftime("%d %B %Y, %I:%M %p"),
+        )
+        HTML(string=html_content).write_pdf(str(output_path))
+    except (ImportError, OSError, Exception) as e:
+        # Fallback text file
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("SAI EMERGENCY & MULTISPECIALITY HOSPITAL\n")
+            f.write("Old Motor Stand, NIPANI - 591 237. Dist. Belgavi\n")
+            f.write("REG. NO. : BLG03043ALHL3 | Mob: 9632219690, 7204583699\n")
+            f.write("========================================================\n")
+            f.write(f"BILL / INVOICE: {bill.get('bill_number')}\n")
+            f.write(f"Date: {generated_date}\n")
+            f.write(f"Patient: {patient.get('full_name')} ({patient.get('patient_id')})\n")
+            f.write(f"Doctor: Dr. {doctor.get('full_name')}\n")
+            f.write(f"Net Amount: Rs. {bill.get('net_amount', 0.0):.2f}\n")
+            f.write(f"In Words: {amt_in_words}\n")
+            f.write(f"Status: {bill.get('payment_status')}\n")
+
+    return f"/uploads/bills/{filename}"

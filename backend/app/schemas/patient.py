@@ -13,6 +13,7 @@ class PatientBase(BaseModel):
     known_allergies: str | None = None
     chronic_conditions: str | None = None
     language_preference: str = "english"
+    referred_by: str | None = None
 
 
 class PatientCreate(PatientBase):

@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "MEDI7"
     HOSPITAL_NAME: str = "Sai Hospital"
+    HOSPITAL_PHONE: str = "+919632219690"
+    HOSPITAL_WHATSAPP_NUMBER: str = "919632219690"
     PATIENT_ID_PREFIX: str = "SAI"
     DEBUG: bool = False
 
@@ -36,7 +38,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
 
-    # WhatsApp (WATI)
+    # WhatsApp — Meta Cloud API (primary)
+    META_WHATSAPP_TOKEN: str = ""       # Permanent or temp token from Meta Developer Portal
+    META_PHONE_NUMBER_ID: str = ""      # Phone Number ID (not the actual phone number)
+
+    # WhatsApp — WATI (fallback)
     WATI_API_ENDPOINT: str = ""
     WATI_API_TOKEN: str = ""
 

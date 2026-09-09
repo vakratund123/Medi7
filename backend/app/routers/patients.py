@@ -61,7 +61,8 @@ async def register_patient(
     await db.refresh(patient)
 
     # Audit log
-    await log_action(db, staff_id, "register_patient", "patient", patient_id, ip_address=request.client.host)
+    client_ip = request.client.host if request.client else None
+    await log_action(db, staff_id, "register_patient", "patient", patient_id, ip_address=client_ip)
 
     # Welcome WhatsApp (fire and forget)
     msg = await generate_whatsapp_message(

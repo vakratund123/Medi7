@@ -35,6 +35,15 @@ const NAV_BY_ROLE = {
     { label: 'Radiology', icon: Scan, path: '/radiology/orders' },
     { label: 'Pharmacy', icon: Pill, path: '/pharmacy/dashboard' },
   ],
+  manager: [
+    { label: 'Dashboard & Referrals', icon: LayoutDashboard, path: '/owner/dashboard' },
+    { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
+    { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
+    { label: 'Doctor Queue', icon: Activity, path: '/doctor/queue' },
+    { label: 'Lab Orders', icon: FlaskConical, path: '/lab/orders' },
+    { label: 'Radiology', icon: Scan, path: '/radiology/orders' },
+    { label: 'Pharmacy', icon: Pill, path: '/pharmacy/dashboard' },
+  ],
 }
 
 const ROLE_COLORS = {
@@ -44,15 +53,17 @@ const ROLE_COLORS = {
   radiologist: 'bg-orange-600',
   pharmacist: 'bg-pink-600',
   owner: 'bg-slate-800',
+  manager: 'bg-indigo-700',
 }
 
 const ROLE_LABELS = {
-  receptionist: 'Receptionist',
+  receptionist: 'Reception',
   doctor: 'Doctor',
-  lab_technician: 'Lab Technician',
+  lab_technician: 'Laboratory',
   radiologist: 'Radiologist',
-  pharmacist: 'Pharmacist',
+  pharmacist: 'Pharmacy',
   owner: 'Admin / Owner',
+  manager: 'Manager',
 }
 
 export default function Layout({ children, title }) {
@@ -83,7 +94,7 @@ export default function Layout({ children, title }) {
           </div>
           <div>
             <div className="font-bold text-slate-900 text-base leading-tight">MEDI7</div>
-            <div className="text-xs text-slate-500">Sai Hospital</div>
+            <div className="text-[11px] text-slate-500 font-medium">Sai Hospital · +919632219690</div>
           </div>
         </div>
 

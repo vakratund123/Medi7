@@ -55,23 +55,39 @@ async def get_current_staff(
     return staff
 
 
-def require_roles(*roles: str):
-    """Dependency factory: enforce RBAC by role."""
+def require_roles(*roles):
+    """Dependency factory: enforce RBAC by role. Accepts unpacked strings or lists/tuples."""
+    flat_roles = set()
+    for r in roles:
+        if isinstance(r, (list, tuple, set)):
+            flat_roles.update(r)
+        else:
+            flat_roles.add(r)
+
+    # Normalize role aliases
+    if "reception" in flat_roles:
+        flat_roles.add("receptionist")
+    if "receptionist" in flat_roles:
+        flat_roles.add("reception")
+    if "admin" in flat_roles:
+        flat_roles.add("manager")
+        flat_roles.add("owner")
+
     async def _check(current_staff: Staff = Depends(get_current_staff)) -> Staff:
-        if current_staff.role not in roles:
+        if current_staff.role not in flat_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required roles: {list(roles)}",
+                detail=f"Access denied. Required roles: {list(flat_roles)}",
             )
         return current_staff
     return _check
 
 
 # Convenience role checkers
-require_receptionist = require_roles("receptionist", "owner")
-require_doctor = require_roles("doctor", "owner")
-require_lab = require_roles("lab_technician", "owner")
-require_radiology = require_roles("radiologist", "owner")
-require_pharmacist = require_roles("pharmacist", "owner")
-require_owner = require_roles("owner")
-require_any = require_roles("receptionist", "doctor", "lab_technician", "radiologist", "pharmacist", "owner")
+require_receptionist = require_roles("receptionist", "owner", "manager")
+require_doctor = require_roles("doctor", "owner", "manager")
+require_lab = require_roles("lab_technician", "owner", "manager")
+require_radiology = require_roles("radiologist", "owner", "manager")
+require_pharmacist = require_roles("pharmacist", "owner", "manager")
+require_owner = require_roles("owner", "manager")
+require_any = require_roles("receptionist", "doctor", "lab_technician", "radiologist", "pharmacist", "owner", "manager")

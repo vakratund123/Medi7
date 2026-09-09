@@ -19,12 +19,19 @@ async def create_visit(
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(require_receptionist),
 ):
+    referred_by = data.referred_by
+    if not referred_by:
+        from app.models.patient import Patient
+        p_res = await db.execute(select(Patient.referred_by).where(Patient.patient_id == data.patient_id))
+        referred_by = p_res.scalar_one_or_none()
+
     visit = Visit(
         patient_id=data.patient_id,
         doctor_id=data.doctor_id,
         visit_date=date.today(),
         visit_type=data.visit_type,
         chief_complaint=data.chief_complaint,
+        referred_by=referred_by,
     )
     db.add(visit)
     await db.commit()

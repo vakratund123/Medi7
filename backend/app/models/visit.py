@@ -17,5 +17,6 @@ class Visit(Base):
     chief_complaint: Mapped[str | None]
     diagnosis: Mapped[str | None]
     notes: Mapped[str | None]
+    referred_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
     follow_up_date: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

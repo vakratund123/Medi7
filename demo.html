@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MEDI7 &mdash; Paperless Hospital Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#2563eb;--pl:#dbeafe;--pd:#1e40af;
+  --v:#7c3aed;--vl:#ede9fe;
+  --e:#059669;--el:#d1fae5;
+  --o:#d97706;--ol:#fef3c7;
+  --r:#dc2626;--rl:#fee2e2;
+  --k:#db2777;--kl:#fce7f3;
+  --s50:#f8fafc;--s100:#f1f5f9;--s200:#e2e8f0;--s300:#cbd5e1;
+  --s400:#94a3b8;--s500:#64748b;--s600:#475569;
+  --s700:#334155;--s800:#1e293b;--s900:#0f172a;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--s50);color:var(--s800);min-height:100vh}
+.app{display:flex;height:100vh;overflow:hidden}
+.sb{width:248px;min-width:248px;background:#fff;border-right:1px solid var(--s100);display:flex;flex-direction:column}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px;border-bottom:1px solid var(--s100)}
+.li{width:36px;height:36px;background:var(--p);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.li svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2}
+.lt .br{font-size:15px;font-weight:800;color:var(--s900)}
+.lt .su{font-size:11px;color:var(--s400);margin-top:1px}
+.sb-u{padding:12px 16px;border-bottom:1px solid var(--s100)}
+.rb{display:inline-flex;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;color:#fff;margin-bottom:4px}
+.un{font-size:13px;font-weight:600;color:var(--s800)}
+.sb-nav{flex:1;overflow-y:auto;padding:8px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:500;color:var(--s600);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .15s;font-family:inherit;position:relative}
+.ni:hover{background:var(--s50);color:var(--s900)}
+.ni.act{background:var(--pl);color:var(--p);font-weight:600}
+.ni svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.nbadge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--r);color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+.sb-ft{padding:10px;border-top:1px solid var(--s100)}
+.mn{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.tb{background:#fff;border-bottom:1px solid var(--s100);padding:0 24px;height:56px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.tt{font-size:15px;font-weight:600;color:var(--s800)}
+.ts{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--s400)}
+.sd{width:8px;height:8px;border-radius:50%;background:var(--e);box-shadow:0 0 0 3px rgba(5,150,105,.15);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.pc{flex:1;overflow-y:auto;padding:24px;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* cards */
+.card{background:#fff;border-radius:16px;border:1px solid var(--s100);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.sc{background:#fff;border-radius:16px;border:1px solid var(--s100);padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.si{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.si svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.sv2{font-size:28px;font-weight:800;color:var(--s800);line-height:1}
+.sl{font-size:12px;color:var(--s500);margin-top:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.mb4{margin-bottom:16px}.mb6{margin-bottom:24px}
+/* table */
+.tw{overflow-x:auto;border-radius:12px;border:1px solid var(--s100)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:10px 14px;text-align:left;background:var(--s50);font-weight:600;font-size:11px;color:var(--s500);text-transform:uppercase;letter-spacing:.5px}
+td{padding:12px 14px;border-top:1px solid var(--s100);color:var(--s700)}
+tr:hover td{background:var(--s50)}
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.bb{background:var(--pl);color:var(--p)}.bg2{background:var(--el);color:var(--e)}
+.bo{background:var(--ol);color:var(--o)}.br2{background:var(--rl);color:var(--r)}
+.bv{background:var(--vl);color:var(--v)}.bk{background:var(--s100);color:var(--s500)}
+.bk2{background:#fef9c3;color:#854d0e}
+/* btns */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.bp{background:var(--p);color:#fff}.bp:hover{background:var(--pd)}
+.bs2{background:var(--s100);color:var(--s700)}.bs2:hover{background:var(--s200)}
+.bg3{background:var(--el);color:var(--e)}.bg3:hover{background:#a7f3d0}
+.bsm{padding:5px 10px;font-size:12px}
+.bxs{padding:4px 8px;font-size:11px}
+/* section header */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stl{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--s800)}
+.stl svg{width:16px;height:16px;stroke:var(--p);fill:none;stroke-width:2}
+/* patient card */
+.pc2{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid var(--s100);background:#fff;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.pc2:hover{border-color:var(--p);box-shadow:0 4px 12px rgba(37,99,235,.1)}
+.av{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
+.pn{font-size:14px;font-weight:600;color:var(--s800)}
+.ps{font-size:12px;color:var(--s400);margin-top:2px}
+.pr2{margin-left:auto;text-align:right}
+/* modal */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
+.md{background:#fff;border-radius:20px;padding:0;width:92%;max-width:620px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+.md-hd{padding:20px 24px 0;flex-shrink:0}
+.md-bd{padding:0 24px 24px;overflow-y:auto;flex:1}
+.mt2{font-size:18px;font-weight:700;color:var(--s900)}
+.ms2{font-size:13px;color:var(--s400);margin-top:2px;margin-bottom:12px}
+.mc{float:right;cursor:pointer;font-size:18px;color:var(--s400);border:none;background:none;font-family:inherit;line-height:1;padding:2px}
+/* tabs */
+.tabs{display:flex;gap:2px;background:var(--s100);border-radius:10px;padding:3px;margin-bottom:16px}
+.tab{flex:1;padding:7px 4px;border-radius:8px;border:none;background:none;font-size:12px;font-weight:600;color:var(--s500);cursor:pointer;font-family:inherit;transition:all .15s;text-align:center}
+.tab.act{background:#fff;color:var(--p);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.tabpane{display:none}.tabpane.show{display:block}
+/* form */
+.fg{margin-bottom:14px}
+label{display:block;font-size:12px;font-weight:600;color:var(--s600);margin-bottom:5px}
+input[type=text],input[type=email],input[type=password],input[type=tel],input[type=number],input[type=file],select,textarea{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--s200);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--p)}
+textarea{resize:vertical;min-height:70px}
+/* checkboxes */
+.chkgroup{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.chkitem{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--s200);cursor:pointer;font-size:13px;transition:all .15s}
+.chkitem:hover{border-color:var(--p);background:var(--pl)}
+.chkitem input[type=checkbox]{width:auto;accent-color:var(--p)}
+/* ai box */
+.ai{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1.5px solid #c7d2fe;border-radius:14px;padding:16px;margin-bottom:14px}
+.ail{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--v);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ail svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.ait{font-size:13px;color:var(--s700);line-height:1.6}
+/* wa */
+.wa{display:flex;align-items:center;gap:10px;background:#dcfce7;border-radius:12px;padding:10px 14px;font-size:12px;color:#166534;font-weight:500;margin-top:8px}
+/* report card */
+.rcard{background:var(--s50);border-radius:12px;border:1px solid var(--s200);padding:14px;margin-top:8px}
+.rcard-title{font-size:13px;font-weight:700;color:var(--s800);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.rcard-sub{font-size:12px;color:var(--s500)}
+/* inv bar */
+.ibw{height:6px;background:var(--s100);border-radius:999px;overflow:hidden;margin-top:6px}
+.ib{height:100%;border-radius:999px}
+/* timeline */
+.tl{position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--s100)}
+.ti{position:relative;margin-bottom:16px}
+.td2{position:absolute;left:-20px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px var(--s200)}
+.td2.done{background:var(--e);box-shadow:0 0 0 2px rgba(5,150,105,.2)}
+.td2.act2{background:var(--p);box-shadow:0 0 0 2px rgba(37,99,235,.2);animation:pulse 2s infinite}
+.td2.pnd{background:var(--s300)}
+.ttl2{font-size:13px;font-weight:600;color:var(--s800)}
+.tts{font-size:12px;color:var(--s400);margin-top:2px}
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;z-index:300;background:var(--s800);color:#fff;border-radius:14px;padding:14px 20px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:su .3s ease;max-width:380px}
+@keyframes su{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.toast svg{width:18px;height:18px;stroke:var(--e);fill:none;stroke-width:2;flex-shrink:0}
+/* search */
+.sbar{display:flex;align-items:center;gap:10px;background:var(--s50);border:1.5px solid var(--s200);border-radius:12px;padding:9px 14px;margin-bottom:16px}
+.sbar svg{width:16px;height:16px;stroke:var(--s400);fill:none;stroke-width:2;flex-shrink:0}
+.sbar input{border:none;background:none;outline:none;font-size:13px;flex:1;font-family:inherit}
+/* cw chart */
+.cw{position:relative;height:200px}
+/* login */
+.lp{min-height:100vh;background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 40%,var(--s900) 100%);display:flex;align-items:center;justify-content:center;padding:24px;position:fixed;inset:0;z-index:200}
+.lg1{position:absolute;top:25%;left:-80px;width:350px;height:350px;border-radius:50%;background:rgba(37,99,235,.25);filter:blur(60px);pointer-events:none}
+.lg2{position:absolute;bottom:20%;right:-80px;width:300px;height:300px;border-radius:50%;background:rgba(124,58,237,.2);filter:blur(60px);pointer-events:none}
+.lc{width:100%;max-width:420px;position:relative;z-index:1}
+.lh{text-align:center;margin-bottom:28px}
+.llr{width:64px;height:64px;margin:0 auto 14px;background:rgba(255,255,255,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px)}
+.llr svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2}
+.lh h1{font-size:30px;font-weight:800;color:#fff}
+.lh p{font-size:13px;color:rgba(147,197,253,1);margin-top:4px}
+.lb{background:#fff;border-radius:24px;padding:32px;box-shadow:0 24px 48px rgba(0,0,0,.25)}
+.lb h2{font-size:18px;font-weight:700;color:var(--s800)}
+.lb p{font-size:13px;color:var(--s400);margin-top:2px;margin-bottom:20px}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.cb{padding:8px 10px;border-radius:10px;background:var(--s50);border:1.5px solid var(--s100);cursor:pointer;text-align:left;transition:all .15s;font-family:inherit}
+.cb:hover{background:var(--pl);border-color:var(--p)}
+.cr{font-size:11px;font-weight:700;color:var(--s700)}
+.ce{font-size:10px;color:var(--s400);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lf{text-align:center;margin-top:14px;font-size:11px;color:rgba(147,197,253,.7)}
+/* hamburger */
+.hbg{display:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:none;background:var(--s50);cursor:pointer;margin-right:4px}
+.hbg svg{width:18px;height:18px;stroke:var(--s600);fill:none;stroke-width:2}
+/* info row */
+.inforow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.infochip{background:var(--s50);border:1px solid var(--s200);border-radius:8px;padding:6px 12px;font-size:12px}
+.infochip b{color:var(--s800)}
+/* section divider */
+.sdiv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--s400);margin:16px 0 8px;display:flex;align-items:center;gap:8px}
+.sdiv::after{content:'';flex:1;height:1px;background:var(--s100)}
+/* empty state */
+.empty{text-align:center;padding:32px;color:var(--s400);font-size:13px}
+@media(max-width:768px){
+  .sb{position:fixed;left:-260px;top:0;bottom:0;z-index:50;transition:left .3s}
+  .sb.open{left:0;box-shadow:4px 0 24px rgba(0,0,0,.15)}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .tb{padding:0 16px}.pc{padding:16px}
+  .hbg{display:flex!important}
+}
+@media print {
+  body * { visibility: hidden !important; }
+  #official-bill-print, #official-bill-print * { visibility: visible !important; }
+  #official-bill-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .print-hide { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="lp" id="loginPage">
+  <div class="lg1"></div><div class="lg2"></div>
+  <div class="lc">
+    <div class="lh">
+      <div class="llr"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      <h1>MEDI7</h1><p>Sai Hospital &middot; Digital Health System</p>
+    </div>
+    <div class="lb">
+      <h2>Sign In</h2><p>Access your role-based dashboard</p>
+      <div class="fg"><label>Email Address</label><input type="email" id="le" placeholder="dr.priya@saihospital.in" autocomplete="username"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="lp2" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password"/></div>
+      <button class="btn bp" style="width:100%;justify-content:center;padding:11px" onclick="doLogin()">Sign In</button>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--s100)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--s600)">&#9889; Official Staff Logins (5 IDs)</div>
+          <div style="font-size:11px;font-weight:600;color:var(--p)">WA: +919632219690</div>
+        </div>
+        <div class="cg">
+          <button class="cb" onclick="fc('manager@saihospital.in','Admin@123')"><div class="cr">&#127973; Manager</div><div class="ce">manager@saihospital.in</div></button>
+          <button class="cb" onclick="fc('doctor@saihospital.in','Doctor@123')"><div class="cr">&#128104;&#8205;&#9877;&#65039; Doctor</div><div class="ce">doctor@saihospital.in</div></button>
+          <button class="cb" onclick="fc('reception@saihospital.in','Recept@123')"><div class="cr">&#128187; Reception</div><div class="ce">reception@saihospital.in</div></button>
+          <button class="cb" onclick="fc('laboratory@saihospital.in','Lab@1234')"><div class="cr">&#128300; Laboratory</div><div class="ce">laboratory@saihospital.in</div></button>
+          <button class="cb" onclick="fc('pharmacy@saihospital.in','Pharm@123')"><div class="cr">&#128138; Pharmacy</div><div class="ce">pharmacy@saihospital.in</div></button>
+        </div>
+      </div>
+    </div>
+    <div class="lf">Sai Multispecialty Hospital &middot; +919632219690 &middot; MEDI7 v1.0</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="mainApp" style="display:none">
+  <aside class="sb" id="sidebar">
+    <div class="sb-logo">
+      <div class="li"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      <div class="lt"><div class="br">MEDI7</div><div class="su">Sai Hospital</div></div>
+    </div>
+    <div class="sb-u"><div class="rb" id="roleBadge"></div><div class="un" id="userName"></div></div>
+    <nav class="sb-nav" id="sbnav"></nav>
+    <div class="sb-ft"><button class="ni" style="color:var(--r)" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</button></div>
+  </aside>
+  <div class="mn">
+    <header class="tb">
+      <button class="hbg" onclick="toggleSB()"><svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="tt" id="ptitle">Dashboard</div>
+      <div class="ts"><div class="sd"></div>System Online &mdash; Live Demo</div>
+    </header>
+    <div class="pc" id="pgcontent"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="mo" id="moverlay" style="display:none" onclick="overlayClick(event)">
+  <div class="md" id="mbox">
+    <div class="md-hd" id="mhd"></div>
+    <div class="md-bd" id="mbd"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span id="tmsg"></span></div>
+
+<script>
+/* ═══════════════════════════════════════
+   SHARED STATE — single source of truth
+═══════════════════════════════════════ */
+const STATE = {
+  patients: [
+    {id:'SAI-2026-00142',name:'Arvind Kumar', age:45,gender:'M',phone:'98765-43210',dx:'Hypertension',      dr:'Dr. Priya Sharma',st:'waiting',        vt:'10:15 AM',ref:'Dr. Kulkarni (Sangli)'},
+    {id:'SAI-2026-00143',name:'Meena Joshi',  age:32,gender:'F',phone:'91234-56789',dx:'Diabetes follow-up',dr:'Dr. Priya Sharma',st:'in_consultation',vt:'10:40 AM',ref:'Dr. A. Patil (Kolhapur)'},
+    {id:'SAI-2026-00144',name:'Sanjay Patel', age:58,gender:'M',phone:'87654-32109',dx:'Back pain',         dr:'Dr. Rohan Mehta', st:'completed',      vt:'11:00 AM',ref:'Dr. Kulkarni (Sangli)'},
+    {id:'SAI-2026-00145',name:'Laxmi Devi',   age:67,gender:'F',phone:'76543-21098',dx:'Arthritis',         dr:'Dr. Priya Sharma',st:'waiting',        vt:'11:15 AM',ref:'Dr. S. Joshi (Miraj)'},
+    {id:'SAI-2026-00146',name:'Ramesh Singh', age:39,gender:'M',phone:'99887-76543',dx:'Fever & cough',     dr:'Dr. Rohan Mehta', st:'waiting',        vt:'11:30 AM',ref:'Self / Walk-in'},
+  ],
+  consultations: {
+    'SAI-2026-00144': {dx:'Lumbar Spondylosis',rx:'1. Diclofenac 50mg BD x 5d\n2. Pantoprazole 40mg OD x 5d\n3. Physiotherapy 3x/week',notes:'X-Ray ordered. Physio referral.',by:'Dr. Rohan Mehta',at:'11:05 AM'}
+  },
+  labOrders: [
+    {id:'LAB-001',pid:'SAI-2026-00142',pt:'Arvind Kumar',  test:'CBC + HbA1c',   dr:'Dr. Priya Sharma',tm:'10:20 AM',st:'sample_collected',urg:true},
+    {id:'LAB-002',pid:'SAI-2026-00143',pt:'Meena Joshi',   test:'Lipid Profile', dr:'Dr. Priya Sharma',tm:'10:50 AM',st:'ordered',         urg:false},
+    {id:'LAB-003',pid:'SAI-2026-00145',pt:'Laxmi Devi',    test:'ESR + CRP',     dr:'Dr. Priya Sharma',tm:'11:20 AM',st:'ordered',         urg:false},
+  ],
+  radOrders: [
+    {id:'RAD-001',pid:'SAI-2026-00144',pt:'Sanjay Patel',scan:'X-Ray Lumbar Spine AP+Lat',dr:'Dr. Rohan Mehta', tm:'11:05 AM',st:'ordered'},
+    {id:'RAD-002',pid:'SAI-2026-00142',pt:'Arvind Kumar', scan:'ECG 12-Lead',              dr:'Dr. Priya Sharma',tm:'10:22 AM',st:'ordered'},
+  ],
+  prescriptions: [
+    {id:'RX-001',pid:'SAI-2026-00144',pt:'Sanjay Patel',meds:'1. Diclofenac 50mg BD x 5d\n2. Pantoprazole 40mg OD x 5d',dr:'Dr. Rohan Mehta',tm:'11:10 AM',dispensed:true},
+  ],
+  bills: {
+    'SAI-2026-00144': {
+      billNo: 'SEMH-B26-0001',
+      date: '09/09/2026',
+      items: [
+        { name: 'Doctor Consultation Fee', category: 'Consultation', qty: 1, rate: 300, total: 300 },
+        { name: 'X-Ray Lumbar Spine (Digital)', category: 'Diagnostics', qty: 1, rate: 450, total: 450 },
+        { name: 'Injectable Analgesic & Nursing', category: 'Nursing', qty: 1, rate: 150, total: 150 },
+      ],
+      subtotal: 900,
+      discount: 0,
+      net: 900,
+      st: 'paid',
+      mode: 'UPI',
+      dr: 'Dr. Rohan Mehta',
+      by: 'Dr. Rohan Mehta',
+    }
+  },
+  labReports:  {},   // labOrderId -> {file,remarks,ai,at}
+  radScans:    {},   // radOrderId -> {file,remarks,at}
+  seq: {pat:147, lab:4, rad:3, rx:2, bill:1},
+  actLog: [
+    {a:'create visit',       e:'visit',        by:'Sunita Patil',    t:'11:32 AM'},
+    {a:'start consultation', e:'visit',        by:'Dr. Priya Sharma',t:'11:28 AM'},
+    {a:'dispense',           e:'prescription', by:'Meena Joshi',     t:'11:15 AM'},
+    {a:'upload report',      e:'lab order',    by:'Ravi Shinde',     t:'11:02 AM'},
+    {a:'register patient',   e:'patient',      by:'Sunita Patil',    t:'10:58 AM'},
+  ],
+};
+
+/* ═══════════════════════════════════════
+   AUTH / USER CONFIG (Official 5 IDs)
+═══════════════════════════════════════ */
+const USERS = {
+  'manager@saihospital.in':      {name:'Dr. Rahul Desai',   role:'owner',         color:'#1e293b',label:'Manager'},
+  'doctor@saihospital.in':       {name:'Dr. Priya Sharma',  role:'doctor',        color:'#2563eb',label:'Doctor'},
+  'reception@saihospital.in':    {name:'Sunita Patil',      role:'receptionist',  color:'#7c3aed',label:'Reception'},
+  'laboratory@saihospital.in':   {name:'Ravi Shinde',       role:'lab_technician',color:'#059669',label:'Laboratory'},
+  'pharmacy@saihospital.in':     {name:'Meena Joshi',       role:'pharmacist',    color:'#db2777',label:'Pharmacy'},
+
+  // Backwards compatibility
+  'owner@saihospital.in':        {name:'Dr. Rahul Desai',   role:'owner',         color:'#1e293b',label:'Manager'},
+  'dr.priya@saihospital.in':     {name:'Dr. Priya Sharma',  role:'doctor',        color:'#2563eb',label:'Doctor'},
+  'receptionist@saihospital.in': {name:'Sunita Patil',      role:'receptionist',  color:'#7c3aed',label:'Reception'},
+  'lab@saihospital.in':          {name:'Ravi Shinde',       role:'lab_technician',color:'#059669',label:'Laboratory'},
+  'radiology@saihospital.in':    {name:'Dr. Kavita Rao',    role:'radiologist',   color:'#d97706',label:'Radiologist'},
+};
+const PW = {
+  'manager@saihospital.in':'Admin@123',
+  'doctor@saihospital.in':'Doctor@123',
+  'reception@saihospital.in':'Recept@123',
+  'laboratory@saihospital.in':'Lab@1234',
+  'pharmacy@saihospital.in':'Pharm@123',
+  'owner@saihospital.in':'Admin@123',
+  'dr.priya@saihospital.in':'Doctor@123',
+  'receptionist@saihospital.in':'Recept@123',
+  'lab@saihospital.in':'Lab@1234',
+  'radiology@saihospital.in':'Radio@123'
+};
+
+const NAV = {
+  owner:         [{l:'Dashboard',        ic:'cht',pg:'ownerDash'},{l:'OPD Queue',ic:'clp',pg:'opdQ'},{l:'Register Patient',ic:'usr',pg:'regPat'},{l:'Doctor Queue',ic:'act',pg:'drQ'},{l:'Lab Orders',ic:'flk',pg:'labO'},{l:'Radiology',ic:'scn',pg:'radO'},{l:'Pharmacy',ic:'pil',pg:'phD'}],
+  receptionist:  [{l:'OPD Queue',        ic:'clp',pg:'opdQ'},{l:'Register Patient',ic:'usr',pg:'regPat'}],
+  doctor:        [{l:'My Queue',         ic:'clp',pg:'drQ'},{l:'Lab Reports',ic:'flk',pg:'drLab'},{l:'Radiology',ic:'scn',pg:'drRad'}],
+  lab_technician:[{l:'Lab Orders',       ic:'flk',pg:'labO'}],
+  radiologist:   [{l:'Radiology Orders', ic:'scn',pg:'radO'}],
+  pharmacist:    [{l:'Prescriptions',    ic:'pil',pg:'phD'},{l:'Inventory',ic:'bar',pg:'invt'}],
+};
+
+/* ═══════════════════════════════════════
+   SVG ICONS
+═══════════════════════════════════════ */
+const IC = {
+  cht: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  clp: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
+  usr: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  act: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  flk: '<path d="M9 3h6l1 9H8z"/><path d="M6.5 21h11a1 1 0 0 0 .9-1.45L15 12H9l-3.4 7.55A1 1 0 0 0 6.5 21z"/>',
+  scn: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  pil: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/>',
+  bar: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+  tri: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  ai:  '<circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>',
+  srh: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  chk: '<polyline points="20 6 9 11 4 11"/><path d="M20 6l-6 14-5-9"/>',
+  dl:  '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+};
+function sv(id,x){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'+(x?' '+x:'')+'>'+IC[id]+'</svg>';}
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let CU = null, CHT = null, TT = null;
+
+/* ═══════════════════════════════════════
+   AUTH
+═══════════════════════════════════════ */
+function fc(e,p){document.getElementById('le').value=e;document.getElementById('lp2').value=p;}
+function doLogin(){
+  const em=document.getElementById('le').value.trim(), pw=document.getElementById('lp2').value;
+  if(!em||!pw)return toast2('Please enter credentials',1);
+  if(!USERS[em]||PW[em]!==pw)return toast2('Invalid credentials',1);
+  CU={email:em,...USERS[em]};
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('mainApp').style.display='flex';
+  buildNav(); navigate(NAV[CU.role][0].pg);
+}
+function logout(){
+  CU=null;
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('le').value='';document.getElementById('lp2').value='';
+}
+function buildNav(){
+  const b=document.getElementById('roleBadge');b.textContent=CU.label;b.style.background=CU.color;
+  document.getElementById('userName').textContent=CU.name;
+  const nav=document.getElementById('sbnav'); nav.innerHTML='';
+  NAV[CU.role].forEach(item=>{
+    const btn=document.createElement('button');
+    btn.className='ni'; btn.id='nav-'+item.pg;
+    btn.innerHTML=sv(item.ic)+'<span>'+item.l+'</span>';
+    btn.onclick=()=>navigate(item.pg);
+    nav.appendChild(btn);
+  });
+  updateBadges();
+}
+function updateBadges(){
+  // Lab pending count
+  const lp=STATE.labOrders.filter(o=>o.st==='ordered'||o.st==='sample_collected').length;
+  const rp=STATE.radOrders.filter(o=>o.st==='ordered').length;
+  const pp=STATE.prescriptions.filter(o=>!o.dispensed).length;
+  const drLab=STATE.labOrders.filter(o=>STATE.labReports[o.id]).length;
+  const drRad=STATE.radOrders.filter(o=>STATE.radScans[o.id]).length;
+  setBadge('nav-labO', lp);
+  setBadge('nav-radO', rp);
+  setBadge('nav-phD', pp);
+  setBadge('nav-drLab', drLab);
+  setBadge('nav-drRad', drRad);
+}
+function setBadge(navId, count){
+  const el=document.getElementById(navId); if(!el) return;
+  let b=el.querySelector('.nbadge');
+  if(count>0){
+    if(!b){b=document.createElement('span');b.className='nbadge';el.appendChild(b);}
+    b.textContent=count;
+  } else if(b){ b.remove(); }
+}
+
+/* ═══════════════════════════════════════
+   ROUTING
+═══════════════════════════════════════ */
+function navigate(pg){
+  document.querySelectorAll('.ni').forEach(el=>el.classList.remove('act'));
+  const a=document.getElementById('nav-'+pg); if(a) a.classList.add('act');
+  document.getElementById('sidebar').classList.remove('open');
+  const el=document.getElementById('pgcontent'); el.innerHTML='';
+  if(CHT){CHT.destroy();CHT=null;}
+  const R={ownerDash,opdQ,regPat,drQ,drLab,drRad,labO,radO,phD,invt};
+  if(R[pg]) R[pg](el);
+  updateBadges();
+}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('open');}
+function setT(t){document.getElementById('ptitle').textContent=t;}
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+function showM(hd,bd){
+  document.getElementById('mhd').innerHTML=hd;
+  document.getElementById('mbd').innerHTML=bd;
+  document.getElementById('moverlay').style.display='flex';
+}
+function closeM(){document.getElementById('moverlay').style.display='none';}
+function overlayClick(e){if(e.target===document.getElementById('moverlay'))closeM();}
+function toast2(msg,err){
+  const t=document.getElementById('toast'); document.getElementById('tmsg').textContent=msg;
+  t.style.background=err?'#dc2626':'#1e293b'; t.style.display='flex';
+  if(TT)clearTimeout(TT); TT=setTimeout(()=>{t.style.display='none';},3500);
+}
+function nowTime(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+' (now)';}
+function sc(ic,col,bg,val,lbl){return '<div class="sc"><div class="si" style="background:'+bg+';color:'+col+'">'+sv(ic)+'</div><div class="sv2">'+val+'</div><div class="sl">'+lbl+'</div></div>';}
+function ms(val,lbl,col,bg){return '<div class="card" style="text-align:center;padding:16px"><div style="font-size:26px;font-weight:800;color:'+col+'">'+val+'</div><div style="font-size:12px;color:var(--s500);margin-top:2px">'+lbl+'</div></div>';}
+function avBg(name){const c=['#2563eb','#7c3aed','#059669','#d97706','#db2777'];return c[name.charCodeAt(0)%c.length];}
+function stBadge(st){const m={waiting:['bb','Waiting'],in_consultation:['bo','In Consultation'],completed:['bg2','Completed']};const[cl,lb]=m[st]||['bk',st];return '<span class="badge '+cl+'">'+lb+'</span>';}
+function switchTab(id,groupId){
+  const g=document.getElementById(groupId||'tabgroup');
+  g.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('show'));
+  g.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
+  document.getElementById('tp-'+id).classList.add('show');
+  document.getElementById('tb-'+id).classList.add('act');
+}
+function rxRow(nm,dos,ok){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--s100)"><div><div style="font-size:13px;font-weight:600">'+nm+'</div><div style="font-size:12px;color:var(--s400)">'+dos+'</div></div><span class="badge '+(ok?'bg2':'br2')+'">'+(ok?'In Stock':'Low Stock')+'</span></div>';}
+
+/* ═══════════════════════════════════════
+   PAGE: OWNER DASHBOARD
+═══════════════════════════════════════ */
+function ownerDash(el){
+  setT('Owner Dashboard');
+  const total=STATE.patients.length;
+  const waiting=STATE.patients.filter(p=>p.st==='waiting').length;
+  const rx=STATE.prescriptions.filter(p=>!p.dispensed).length;
+  el.innerHTML='<div class="g4 mb6">'+
+    sc('act','#2563eb','#dbeafe',STATE.patients.length.toString(),"Today's OPD")+
+    sc('usr','#7c3aed','#ede9fe','1,247','Total Patients')+
+    sc('clp','#d97706','#fef3c7',waiting.toString(),'Pending Visits')+
+    sc('tri','#dc2626','#fee2e2',rx.toString(),'Pending Rx')+
+  '</div><div class="g2 mb4">'+
+    '<div class="card"><div class="sh"><div class="stl">'+sv('bar')+' Patients by Doctor</div></div><div class="cw"><canvas id="dcht"></canvas></div></div>'+
+    '<div class="card"><div class="stl" style="margin-bottom:14px">'+sv('usr')+' Active Staff</div>'+
+    '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;margin-bottom:4px"><div style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#2563eb">'+sv('act')+'</div><div style="flex:1;font-size:13px;font-weight:500">Doctors</div><div style="font-size:18px;font-weight:800;color:var(--s700)">2</div></div>'+
+    '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;margin-bottom:4px"><div style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#7c3aed">'+sv('clp')+'</div><div style="flex:1;font-size:13px;font-weight:500">Receptionist</div><div style="font-size:18px;font-weight:800;color:var(--s700)">1</div></div>'+
+    '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;margin-bottom:4px"><div style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#059669">'+sv('flk')+'</div><div style="flex:1;font-size:13px;font-weight:500">Lab Technician</div><div style="font-size:18px;font-weight:800;color:var(--s700)">1</div></div>'+
+    '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;margin-bottom:4px"><div style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#d97706">'+sv('scn')+'</div><div style="flex:1;font-size:13px;font-weight:500">Radiologist</div><div style="font-size:18px;font-weight:800;color:var(--s700)">1</div></div>'+
+    '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px"><div style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;color:#db2777">'+sv('pil')+'</div><div style="flex:1;font-size:13px;font-weight:500">Pharmacist</div><div style="font-size:18px;font-weight:800;color:var(--s700)">1</div></div>'+
+  '</div></div>'+
+  '</div></div>'+
+  '<div class="card mb4"><div class="sh"><div class="stl">'+sv('usr')+' Doctor Referral Reports &amp; Monthly Reconciliation</div><button class="btn bp bsm" onclick="downloadReferralsCSV()">&#11015; Download Monthly Report (CSV)</button></div>'+
+  '<div style="font-size:12px;color:var(--s500);margin-bottom:12px">Track incoming patient volumes by referring doctor and export monthly reports for hospital records.</div>'+
+  '<div class="tw"><table><thead><tr><th>Patient ID</th><th>Patient Name</th><th>Mobile</th><th>Referred By Doctor</th><th>Attending Doctor</th><th>Status</th></tr></thead><tbody>'+
+  STATE.patients.map(p=>'<tr><td style="font-weight:600;color:var(--p)">'+p.id+'</td><td><b>'+p.name+'</b></td><td>'+p.phone+'</td><td><span class="badge bb">'+(p.ref||'Self / Walk-in')+'</span></td><td>'+p.dr+'</td><td>'+stBadge(p.st)+'</td></tr>').join('')+
+  '</tbody></table></div></div>'+
+  '<div class="card"><div class="sh"><div class="stl">'+sv('act')+' Recent Staff Activity</div><button class="btn bs2 bsm" onclick="navigate(\'ownerDash\')">&#8635; Refresh</button></div><div class="tw"><table><thead><tr><th>Action</th><th>Entity</th><th>Staff</th><th>Time</th></tr></thead><tbody>'+
+  STATE.actLog.map(x=>'<tr><td style="font-weight:600;text-transform:capitalize">'+x.a+'</td><td style="color:var(--s500);text-transform:capitalize">'+x.e+'</td><td>'+x.by+'</td><td style="color:var(--s400);font-size:12px">'+x.t+'</td></tr>').join('')+
+  '</tbody></table></div></div>';
+  setTimeout(()=>{
+    const ctx=document.getElementById('dcht'); if(!ctx) return;
+    const drs=['Dr. Priya','Dr. Rohan','Dr. Meera'];
+    const counts=drs.map((d,i)=>STATE.patients.filter(p=>p.dr.includes(d.split(' ')[1])||p.dr.includes(['Priya','Rohan','Meera'][i])).length||[15,13,10][i]);
+    CHT=new Chart(ctx,{type:'bar',data:{labels:drs,datasets:[{data:counts,backgroundColor:['#2563eb','#7c3aed','#059669'],borderRadius:8}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:5}}},responsive:true,maintainAspectRatio:false}});
+  },50);
+}
+
+function downloadReferralsCSV(){
+  let csv="Date,Patient ID,Patient Name,Mobile,Age,Gender,Referred By Doctor,Attending Doctor,Complaint/Diagnosis\n";
+  STATE.patients.forEach(p=>{
+    csv+=`2026-09-08,${p.id},"${p.name}",${p.phone},${p.age},${p.gender},"${p.ref||'Self / Walk-in'}","${p.dr}","${p.dx}"\n`;
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=window.URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download="sai_hospital_referrals_2026_09.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  toast2("Doctor Referrals CSV Downloaded!");
+}
+
+/* ═══════════════════════════════════════
+   PAGE: OPD QUEUE
+═══════════════════════════════════════ */
+function opdQ(el){
+  setT('OPD Queue');
+  const w=STATE.patients.filter(p=>p.st==='waiting').length;
+  const c=STATE.patients.filter(p=>p.st==='completed').length;
+  el.innerHTML='<div class="g3 mb6">'+ms(STATE.patients.length.toString(),'Total Today','#2563eb','#dbeafe')+ms(w.toString(),'Waiting','#d97706','#fef3c7')+ms(c.toString(),'Completed','#059669','#d1fae5')+'</div>'+
+  '<div class="sh"><div class="stl">'+sv('clp')+' Live Queue</div><button class="btn bp bsm" onclick="navigate(\'regPat\')">+ Register Patient</button></div>'+
+  STATE.patients.map(p=>patCard(p,'opdQ')).join('');
+}
+
+function patCard(p, fromPage){
+  const init=p.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+  return '<div class="pc2" onclick="showPatDetail(\''+p.id+'\',\''+fromPage+'\')"><div class="av" style="background:'+avBg(p.name)+'">'+init+'</div><div><div class="pn">'+p.name+'</div><div class="ps">'+p.id+' &middot; '+p.age+'y '+p.gender+' &middot; '+p.vt+'</div><div class="ps" style="margin-top:3px;font-size:11px;color:var(--s500)">&#128104;&#8205;&#9877;&#65039; '+p.dr+' &middot; Ref: <b>'+(p.ref||'Self')+'</b></div></div><div class="pr2">'+stBadge(p.st)+'</div></div>';
+}
+
+/* ═══════════════════════════════════════
+   PAGE: REGISTER PATIENT (Receptionist)
+═══════════════════════════════════════ */
+function regPat(el){
+  setT('Register Patient');
+  el.innerHTML='<div style="max-width:600px"><div class="card">'+
+  '<div class="stl" style="margin-bottom:20px">'+sv('usr')+' New Patient Registration</div>'+
+  '<div class="g2"><div class="fg"><label>First Name *</label><input type="text" id="rf" placeholder="Arvind"/></div><div class="fg"><label>Last Name *</label><input type="text" id="rl" placeholder="Kumar"/></div></div>'+
+  '<div class="g2"><div class="fg"><label>Age *</label><input type="number" id="ra" placeholder="45" min="1" max="120"/></div><div class="fg"><label>Gender *</label><select id="rg"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></div></div>'+
+  '<div class="fg"><label>Mobile Number *</label><input type="tel" id="rph" placeholder="98765 43210"/></div>'+
+  '<div class="fg"><label>Address</label><input type="text" id="rad3" placeholder="123 MG Road, Mumbai"/></div>'+
+  '<div class="fg"><label>Referred By (Doctor / Clinic / Hospital)</label>'+
+  '<input type="text" id="rref" placeholder="e.g. Dr. Kulkarni (Sangli) or Self / Direct Walk-in"/>'+
+  '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">'+
+  '<button type="button" class="btn bxs bs2" onclick="document.getElementById(\'rref\').value=\'Self / Walk-in\'">Self / Walk-in</button>'+
+  '<button type="button" class="btn bxs bs2" onclick="document.getElementById(\'rref\').value=\'Dr. Kulkarni (Sangli)\'">Dr. Kulkarni</button>'+
+  '<button type="button" class="btn bxs bs2" onclick="document.getElementById(\'rref\').value=\'Dr. A. Patil (Kolhapur)\'">Dr. A. Patil</button>'+
+  '<button type="button" class="btn bxs bs2" onclick="document.getElementById(\'rref\').value=\'Dr. S. Joshi (Miraj)\'">Dr. S. Joshi</button>'+
+  '</div></div>'+
+  '<div class="fg"><label>Chief Complaint *</label><input type="text" id="rdx" placeholder="e.g. Fever and cough for 3 days"/></div>'+
+  '<div class="fg"><label>Assign to Doctor *</label><select id="rdoc">'+
+    '<option value="">Select doctor</option>'+
+    '<option value="Dr. Priya Sharma">Dr. Priya Sharma &mdash; General Medicine</option>'+
+    '<option value="Dr. Rohan Mehta">Dr. Rohan Mehta &mdash; Orthopedics</option>'+
+    '<option value="Dr. Meera Iyer">Dr. Meera Iyer &mdash; Gynecology</option>'+
+  '</select></div>'+
+  '<div style="background:var(--pl);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--pd)">&#128161; The patient will appear immediately in the selected doctor\'s queue and they will be notified.</div>'+
+  '<button class="btn bp" style="width:100%;justify-content:center;padding:11px" onclick="doReg()">Register &amp; Add to Doctor\'s Queue</button>'+
+  '</div></div>';
+}
+
+function doReg(){
+  const f=document.getElementById('rf').value.trim();
+  const l=document.getElementById('rl').value.trim();
+  const a=document.getElementById('ra').value;
+  const g=document.getElementById('rg').value;
+  const ph=document.getElementById('rph').value.trim();
+  const ref=(document.getElementById('rref')?document.getElementById('rref').value.trim():'')||'Self / Walk-in';
+  const dx=document.getElementById('rdx').value.trim();
+  const dr=document.getElementById('rdoc').value;
+  if(!f||!l||!a||!g||!ph||!dx||!dr) return toast2('Please fill all required fields',1);
+  STATE.seq.pat++;
+  const pid='SAI-2026-00'+STATE.seq.pat;
+  const vt=nowTime();
+  const newPat={id:pid,name:f+' '+l,age:parseInt(a),gender:g[0],phone:ph,dx:dx,dr:dr,st:'waiting',vt:vt,ref:ref};
+  STATE.patients.push(newPat);
+  // Add to activity log
+  STATE.actLog.unshift({a:'register patient',e:'patient',by:CU.name,t:vt});
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2" style="color:#059669">&#9989; Patient Registered!</div><div class="ms2">Record created &amp; doctor notified</div>',
+    '<div style="background:var(--pl);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center">'+
+    '<div style="font-size:11px;color:var(--p);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Patient ID Generated</div>'+
+    '<div style="font-size:24px;font-weight:800;color:var(--pd)">'+pid+'</div></div>'+
+    '<div style="font-size:13px;color:var(--s600);line-height:2;margin-bottom:14px">'+
+    '<b>Name:</b> '+f+' '+l+'<br/><b>Age / Gender:</b> '+a+'y / '+g+'<br/><b>Phone:</b> '+ph+'<br/><b>Referred By:</b> <span class="badge bb">'+ref+'</span><br/><b>Chief Complaint:</b> '+dx+'</div>'+
+    '<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:12px;padding:12px 14px;font-size:13px;color:#92400e;margin-bottom:10px">'+
+    '&#128204; Added to <b>'+dr+'\'s</b> queue &mdash; they can now see this patient</div>'+
+    '<div class="wa"><span>&#128172;</span> WhatsApp welcome sent from <b>+919632219690</b> to '+f+' at '+ph+'</div>'+
+    '<button class="btn bp" style="width:100%;justify-content:center;margin-top:14px" onclick="closeM();navigate(\'opdQ\')">View OPD Queue</button>'
+  );
+  updateBadges();
+}
+
+/* ═══════════════════════════════════════
+   PAGE: DOCTOR QUEUE
+═══════════════════════════════════════ */
+function drQ(el){
+  setT('My Patient Queue');
+  const mine=STATE.patients.filter(p=>p.dr===CU.name);
+  const w=mine.filter(p=>p.st==='waiting').length;
+  el.innerHTML='<div class="g3 mb6">'+ms(mine.length.toString(),'My Patients Today','#2563eb','#dbeafe')+ms(w.toString(),'Waiting','#d97706','#fef3c7')+ms((mine.length-w).toString(),'Seen','#059669','#d1fae5')+'</div>'+
+  (mine.length===0?'<div class="empty">No patients assigned to you yet.<br/>Ask the receptionist to register patients and assign them to you.</div>':
+  '<div class="stl mb4" style="margin-bottom:14px">'+sv('clp')+' Queue</div>'+
+  mine.map(p=>patCard(p,'drQ')).join(''));
+}
+
+/* ═══════════════════════════════════════
+   PAGE: DOCTOR - LAB REPORTS VIEW
+═══════════════════════════════════════ */
+function drLab(el){
+  setT('Lab Reports &mdash; My Patients');
+  const mine=STATE.patients.filter(p=>p.dr===CU.name).map(p=>p.id);
+  const myOrders=STATE.labOrders.filter(o=>mine.includes(o.pid));
+  el.innerHTML='<div class="card">'+
+  '<div class="stl" style="margin-bottom:14px">'+sv('flk')+' Lab Orders &amp; Reports for My Patients</div>'+
+  '<div class="tw"><table><thead><tr><th>Order ID</th><th>Patient</th><th>Test</th><th>Ordered</th><th>Status</th><th>Report</th></tr></thead><tbody>'+
+  (myOrders.length===0?'<tr><td colspan="6" class="empty">No lab orders yet. Place orders from patient consultation.</td></tr>':
+  myOrders.map(o=>{
+    const rep=STATE.labReports[o.id];
+    return '<tr><td style="font-weight:600;color:var(--p)">'+o.id+'</td><td>'+o.pt+'</td><td>'+o.test+(o.urg?'<span class="badge br2" style="margin-left:6px">URGENT</span>':'')+'</td><td style="color:var(--s400);font-size:12px">'+o.tm+'</td>'+
+    '<td><span class="badge '+(rep?'bg2':o.st==='sample_collected'?'bo':'bb')+'">'+(rep?'&#10003; Report Ready':o.st==='sample_collected'?'Sample Collected':'Ordered')+'</span></td>'+
+    '<td>'+(rep?'<button class="btn bg3 bxs" onclick="viewReport(\''+o.id+'\')">'+sv('eye')+' View Report</button>':'<span style="font-size:12px;color:var(--s400)">Awaiting lab</span>')+'</td></tr>';
+  }).join(''))+
+  '</tbody></table></div></div>';
+}
+
+/* ═══════════════════════════════════════
+   PAGE: DOCTOR - RADIOLOGY VIEW
+═══════════════════════════════════════ */
+function drRad(el){
+  setT('Radiology Scans &mdash; My Patients');
+  const mine=STATE.patients.filter(p=>p.dr===CU.name).map(p=>p.id);
+  const myOrders=STATE.radOrders.filter(o=>mine.includes(o.pid));
+  el.innerHTML='<div class="card">'+
+  '<div class="stl" style="margin-bottom:14px">'+sv('scn')+' Radiology Orders &amp; Scans for My Patients</div>'+
+  '<div class="tw"><table><thead><tr><th>Order ID</th><th>Patient</th><th>Scan Type</th><th>Ordered</th><th>Status</th><th>Scan</th></tr></thead><tbody>'+
+  (myOrders.length===0?'<tr><td colspan="6" class="empty">No radiology orders yet. Place orders from patient consultation.</td></tr>':
+  myOrders.map(o=>{
+    const sc2=STATE.radScans[o.id];
+    return '<tr><td style="font-weight:600;color:var(--o)">'+o.id+'</td><td>'+o.pt+'</td><td>'+o.scan+'</td><td style="color:var(--s400);font-size:12px">'+o.tm+'</td>'+
+    '<td><span class="badge '+(sc2?'bg2':'bb')+'">'+(sc2?'&#10003; Scan Ready':'Ordered')+'</span></td>'+
+    '<td>'+(sc2?'<button class="btn bg3 bxs" onclick="viewScan(\''+o.id+'\')">'+sv('eye')+' View Scan</button>':'<span style="font-size:12px;color:var(--s400)">Awaiting radiologist</span>')+'</td></tr>';
+  }).join(''))+
+  '</tbody></table></div></div>';
+}
+
+/* ═══════════════════════════════════════
+   PAGE: LAB TECHNICIAN
+═══════════════════════════════════════ */
+function labO(el){
+  setT('Lab Orders');
+  const pending=STATE.labOrders.filter(o=>o.st!=='reported').length;
+  el.innerHTML='<div class="g3 mb6">'+ms(STATE.labOrders.length.toString(),'Total Orders','#2563eb','#dbeafe')+ms(pending.toString(),'Pending','#d97706','#fef3c7')+ms((STATE.labOrders.length-pending).toString(),'Reports Uploaded','#059669','#d1fae5')+'</div>'+
+  '<div class="card"><div class="stl" style="margin-bottom:14px">'+sv('flk')+' Lab Orders</div>'+
+  '<div class="tw"><table><thead><tr><th>ID</th><th>Patient</th><th>Test</th><th>Doctor</th><th>Time</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+  STATE.labOrders.map(o=>{
+    const rep=STATE.labReports[o.id];
+    return '<tr><td style="font-weight:600;color:var(--p)">'+o.id+'</td><td>'+o.pt+'</td><td>'+o.test+(o.urg?'<span class="badge br2" style="margin-left:6px">URGENT</span>':'')+'</td><td style="font-size:12px">'+o.dr+'</td><td style="color:var(--s400);font-size:12px">'+o.tm+'</td>'+
+    '<td><span class="badge '+(rep?'bg2':o.st==='sample_collected'?'bo':'bb')+'">'+(rep?'Reported':o.st==='sample_collected'?'Sample Collected':'Ordered')+'</span></td>'+
+    '<td>'+(rep?'<span style="font-size:11px;color:var(--e)">&#10003; Done</span>':o.st==='ordered'?'<button class="btn bs2 bsm" onclick="collectSample(\''+o.id+'\')">Collect Sample</button>':'<button class="btn bp bsm" onclick="openUploadRpt(\''+o.id+'\')">Upload Report</button>')+'</td></tr>';
+  }).join('')+'</tbody></table></div></div>';
+}
+function collectSample(id){
+  const o=STATE.labOrders.find(x=>x.id===id);
+  if(o) o.st='sample_collected';
+  toast2('Sample collected for '+id+' \u2713');
+  labO(document.getElementById('pgcontent'));
+}
+function openUploadRpt(id){
+  const o=STATE.labOrders.find(x=>x.id===id);
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2">Upload Lab Report</div><div class="ms2">'+o.id+' &mdash; '+o.test+' &mdash; '+o.pt+'</div>',
+    '<div class="fg"><label>Report File (PDF / Image)</label><input type="file" id="rptFile" accept=".pdf,.jpg,.png"/></div>'+
+    '<div class="fg"><label>Lab Findings / Remarks</label><textarea id="rptRemarks">'+getRptDefault(o.test)+'</textarea></div>'+
+    '<div class="ai"><div class="ail">'+sv('ai')+' Gemini AI will auto-analyze</div><div class="ait">Abnormal values will be flagged and the ordering doctor ('+o.dr+') will be notified automatically.</div></div>'+
+    '<button class="btn bp" style="width:100%;justify-content:center;margin-top:8px" onclick="uploadReport(\''+id+'\')">Upload &amp; Notify Doctor</button>'
+  );
+}
+function getRptDefault(test){
+  const d={'CBC + HbA1c':'HbA1c: 8.2% (HIGH). WBC: 9.4 (normal). Hb: 12.8 (low-normal). Platelets: 245k (normal).','Lipid Profile':'Total Cholesterol: 218 mg/dL (borderline). LDL: 142 (high). HDL: 38 (low). TG: 190 (high).','ESR + CRP':'ESR: 68 mm/hr (HIGH). CRP: 24 mg/L (HIGH). Suggests active inflammation.'};
+  return d[test]||'Results within normal range. See attached report for details.';
+}
+function getAIFindings(test){
+  const d={'CBC + HbA1c':'&#9888;&#65039; <b>HbA1c 8.2%</b> — above target (<7%). Indicates poor glycemic control. <b>Recommend medication review and dietary counseling.</b> Hb slightly low, monitor for anaemia.','Lipid Profile':'&#9888;&#65039; <b>LDL 142 mg/dL</b> (HIGH) and <b>HDL 38 mg/dL</b> (LOW). Increased cardiovascular risk. <b>Recommend statin therapy and lifestyle modification.</b>','ESR + CRP':'&#9888;&#65039; Both inflammatory markers elevated. <b>ESR 68 + CRP 24 suggest active inflammation.</b> Rule out rheumatoid arthritis or infection. Consider rheumatology referral.'};
+  return d[test]||'&#10003;&#65039; All parameters within normal reference range. No immediate action required.';
+}
+function uploadReport(id){
+  const o=STATE.labOrders.find(x=>x.id===id);
+  const fileEl=document.getElementById('rptFile');
+  const remarks=document.getElementById('rptRemarks').value;
+  const aiText=getAIFindings(o.test);
+  const tm=nowTime();
+  function doStore(fname, dataURL, mime){
+    STATE.labReports[id]={file:fname, dataURL:dataURL, mime:mime||'', remarks:remarks, ai:aiText, at:tm, by:CU.name};
+    o.st='reported';
+    STATE.actLog.unshift({a:'upload lab report',e:'lab order',by:CU.name,t:tm});
+    showM(
+      '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2" style="color:#059669">&#9989; Report Uploaded!</div><div class="ms2">Lab results now visible to '+o.dr+'</div>',
+      '<div class="ai"><div class="ail">'+sv('ai')+' Gemini AI Findings</div><div class="ait">'+aiText+'</div></div>'+
+      (dataURL&&mime&&mime.startsWith('image/')? '<img src="'+dataURL+'" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;border:1px solid var(--s200);margin-bottom:12px"/>':'')+(dataURL&&mime==='application/pdf'? '<div style="background:var(--s100);padding:10px;border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--s700)">📄 PDF Report Attached</div>':'') +
+      '<div style="background:var(--s50);border-radius:12px;border:1px solid var(--s200);padding:12px;margin-bottom:10px;font-size:13px">&#128196; <b>'+fname+'</b> uploaded successfully</div>'+
+      '<div class="wa"><span>&#128172;</span> Report sent to patient via WhatsApp. <b>'+o.dr+'</b> notified &mdash; they can now view this report.</div>'+
+      '<button class="btn bp" style="width:100%;justify-content:center;margin-top:14px" onclick="closeM();labO(document.getElementById(\'pgcontent\'))">Back to Lab Orders</button>'
+    );
+    updateBadges();
+  }
+  if(fileEl.files.length>0){
+    const file=fileEl.files[0];
+    const reader=new FileReader();
+    reader.onload=e=>doStore(file.name, e.target.result, file.type);
+    reader.readAsDataURL(file);
+  } else {
+    doStore(o.test.replace(/\s+/g,'_')+'_Report.pdf', null, 'application/pdf');
+  }
+}
+
+/* ═══════════════════════════════════════
+   PAGE: RADIOLOGY
+═══════════════════════════════════════ */
+function radO(el){
+  setT('Radiology Orders');
+  const pending=STATE.radOrders.filter(o=>!STATE.radScans[o.id]).length;
+  el.innerHTML='<div class="g3 mb6">'+ms(STATE.radOrders.length.toString(),'Total Orders','#2563eb','#dbeafe')+ms(pending.toString(),'Pending','#d97706','#fef3c7')+ms((STATE.radOrders.length-pending).toString(),'Scans Uploaded','#059669','#d1fae5')+'</div>'+
+  '<div class="card"><div class="stl" style="margin-bottom:14px">'+sv('scn')+' Radiology Orders</div>'+
+  '<div class="tw"><table><thead><tr><th>ID</th><th>Patient</th><th>Scan Type</th><th>Doctor</th><th>Time</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+  STATE.radOrders.map(o=>{
+    const sc2=STATE.radScans[o.id];
+    return '<tr><td style="font-weight:600;color:var(--o)">'+o.id+'</td><td>'+o.pt+'</td><td>'+o.scan+'</td><td style="font-size:12px">'+o.dr+'</td><td style="color:var(--s400);font-size:12px">'+o.tm+'</td>'+
+    '<td><span class="badge '+(sc2?'bg2':'bb')+'">'+(sc2?'Scan Uploaded':'Ordered')+'</span></td>'+
+    '<td>'+(sc2?'<span style="font-size:11px;color:var(--e)">&#10003; Done</span>':'<button class="btn bp bsm" onclick="openUploadScn(\''+o.id+'\')">Upload Scan</button>')+'</td></tr>';
+  }).join('')+'</tbody></table></div></div>';
+}
+function openUploadScn(id){
+  const o=STATE.radOrders.find(x=>x.id===id);
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2">Upload Radiology Scan</div><div class="ms2">'+o.id+' &mdash; '+o.scan+' &mdash; '+o.pt+'</div>',
+    '<div class="fg"><label>Scan File (DICOM / JPEG / PNG)</label><input type="file" id="scnFile" accept=".dcm,.jpg,.png,.dicom"/></div>'+
+    '<div class="fg"><label>Radiologist Findings / Remarks</label><textarea id="scnRemarks">'+getScnDefault(o.scan)+'</textarea></div>'+
+    '<button class="btn bp" style="width:100%;justify-content:center;margin-top:8px" onclick="uploadScan(\''+id+'\')">Upload &amp; Notify Doctor</button>'
+  );
+}
+function getScnDefault(scan){
+  const d={'X-Ray Lumbar Spine AP+Lat':'No acute bony pathology. Mild L4-L5 disc space narrowing. Mild osteophyte formation at L4-L5. No fracture or dislocation.','ECG 12-Lead':'Normal sinus rhythm. HR: 78 bpm. No ST changes. No LVH. QTc: 420ms (normal).','X-Ray Chest PA':'Clear lung fields. No consolidation, effusion, or pneumothorax. Cardiac silhouette normal.'};
+  return d[scan]||'Scan completed. Findings within normal limits. No acute abnormality detected.';
+}
+function uploadScan(id){
+  const o=STATE.radOrders.find(x=>x.id===id);
+  const fileEl=document.getElementById('scnFile');
+  const remarks=document.getElementById('scnRemarks').value;
+  const tm=nowTime();
+  function doStore(fname, dataURL, mime){
+    STATE.radScans[id]={file:fname, dataURL:dataURL, mime:mime||'', remarks:remarks, at:tm, by:CU.name};
+    STATE.actLog.unshift({a:'upload radiology scan',e:'rad order',by:CU.name,t:tm});
+    showM(
+      '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2" style="color:#059669">&#9989; Scan Uploaded!</div><div class="ms2">Scan now visible to '+o.dr+'</div>',
+      (dataURL&&mime&&mime.startsWith('image/')? '<img src="'+dataURL+'" style="width:100%;max-height:220px;object-fit:contain;border-radius:12px;border:1px solid var(--s200);margin-bottom:12px"/>':'')+(dataURL&&mime==='application/pdf'? '<div style="background:var(--s100);padding:10px;border-radius:10px;margin-bottom:12px;font-size:12px;color:var(--s700)">📄 PDF Scan Report Attached</div>':'') +
+      '<div style="background:var(--s50);border-radius:12px;border:1px solid var(--s200);padding:12px;margin-bottom:10px;font-size:13px">&#128196; <b>'+fname+'</b> uploaded successfully</div>'+
+      '<div style="background:var(--ol);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:13px;color:var(--o)"><b>Radiologist Findings:</b> '+remarks+'</div>'+
+      '<div class="wa"><span>&#128172;</span> Scan shared with patient. <b>'+o.dr+'</b> notified &mdash; they can now view this scan.</div>'+
+      '<button class="btn bp" style="width:100%;justify-content:center;margin-top:14px" onclick="closeM();radO(document.getElementById(\'pgcontent\'))">Back to Radiology</button>'
+    );
+    updateBadges();
+  }
+  if(fileEl.files.length>0){
+    const file=fileEl.files[0];
+    const reader=new FileReader();
+    reader.onload=e=>doStore(file.name, e.target.result, file.type);
+    reader.readAsDataURL(file);
+  } else {
+    doStore(o.scan.replace(/\s+/g,'_')+'.jpg', null, 'image/jpeg');
+  }
+}
+
+/* ═══════════════════════════════════════
+   PAGE: PHARMACY
+═══════════════════════════════════════ */
+function phD(el){
+  setT('Pharmacy \u2014 Prescriptions');
+  const pending=STATE.prescriptions.filter(p=>!p.dispensed).length;
+  el.innerHTML='<div class="g3 mb6">'+ms(STATE.prescriptions.length.toString(),'Total Rx','#2563eb','#dbeafe')+ms(pending.toString(),'Pending Dispense','#d97706','#fef3c7')+ms((STATE.prescriptions.length-pending).toString(),'Dispensed','#059669','#d1fae5')+'</div>'+
+  '<div class="card"><div class="stl" style="margin-bottom:14px">'+sv('pil')+' Prescriptions from Doctors</div>'+
+  (STATE.prescriptions.length===0?'<div class="empty">No prescriptions yet. Doctors need to complete consultations first.</div>':
+  STATE.prescriptions.map(rx=>'<div style="border:1px solid var(--s200);border-radius:14px;padding:16px;margin-bottom:12px">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
+    '<div><div style="font-weight:700;font-size:14px">'+rx.pt+'</div><div style="font-size:12px;color:var(--s400)">'+rx.id+' &middot; '+rx.dr+' &middot; '+rx.tm+'</div></div>'+
+    '<span class="badge '+(rx.dispensed?'bg2':'bo')+'">'+(rx.dispensed?'&#10003; Dispensed':'Pending')+'</span></div>'+
+    '<div style="background:var(--s50);border-radius:10px;padding:12px;font-size:13px;white-space:pre-line;margin-bottom:12px;line-height:1.8">'+rx.meds+'</div>'+
+    (rx.dispensed?'':'<button class="btn bp" style="width:100%;justify-content:center" onclick="dispense(\''+rx.id+'\')">Mark as Dispensed &amp; Update Inventory</button>')+
+  '</div>').join(''))+
+  '</div>';
+}
+function dispense(rxId){
+  const rx=STATE.prescriptions.find(x=>x.id===rxId);
+  rx.dispensed=true;
+  STATE.actLog.unshift({a:'dispense prescription',e:'prescription',by:CU.name,t:nowTime()});
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2" style="color:#059669">&#128138; Dispensed!</div><div class="ms2">Medicines given to patient</div>',
+    '<div style="text-align:center;padding:8px">'+
+    '<div style="font-size:36px;margin-bottom:12px">&#128138;</div>'+
+    '<div style="font-size:14px;font-weight:600;margin-bottom:4px">'+rx.pt+'</div>'+
+    '<div style="font-size:13px;color:var(--s500);margin-bottom:16px">'+rx.id+'</div>'+
+    '</div>'+
+    '<div style="background:var(--s50);border-radius:10px;padding:12px;font-size:13px;white-space:pre-line;margin-bottom:12px;line-height:1.8">'+rx.meds+'</div>'+
+    '<div class="wa"><span>&#128172;</span> Medicine schedule &amp; dosage reminder sent to patient via WhatsApp</div>'+
+    '<button class="btn bp" style="width:100%;justify-content:center;margin-top:14px" onclick="closeM();phD(document.getElementById(\'pgcontent\'))">Back to Prescriptions</button>'
+  );
+  updateBadges();
+}
+
+/* ═══════════════════════════════════════
+   PAGE: INVENTORY
+═══════════════════════════════════════ */
+const INV=[
+  {name:'Metformin 500mg',stk:340,th:50,un:'tabs',ok:true},{name:'Amlodipine 5mg',stk:28,th:30,un:'tabs',ok:false},
+  {name:'Paracetamol 650mg',stk:512,th:100,un:'tabs',ok:true},{name:'Cefixime 200mg',stk:15,th:20,un:'caps',ok:false},
+  {name:'Omeprazole 20mg',stk:200,th:50,un:'caps',ok:true},{name:'Insulin Glargine',stk:8,th:10,un:'vials',ok:false},
+];
+function invt(el){
+  setT('Pharmacy Inventory');
+  const lc=INV.filter(i=>!i.ok).length;
+  el.innerHTML='<div class="g2 mb6" style="max-width:480px">'+ms(INV.length.toString(),'Total SKUs','#2563eb','#dbeafe')+ms(lc.toString(),'Low Stock Alerts','#dc2626','#fee2e2')+'</div>'+
+  '<div class="card"><div class="stl" style="margin-bottom:14px">'+sv('bar')+' Stock Levels</div><div class="tw"><table><thead><tr><th>Medicine</th><th>Stock</th><th>Unit</th><th>Status</th><th>Level</th></tr></thead><tbody>'+
+  INV.map(i=>{const pct=Math.min(100,Math.round(i.stk/(i.th*6)*100));return '<tr><td style="font-weight:600">'+i.name+'</td><td>'+i.stk+'</td><td style="color:var(--s400)">'+i.un+'</td><td><span class="badge '+(i.ok?'bg2':'br2')+'">'+(i.ok?'In Stock':'Low Stock')+'</span></td><td style="width:120px"><div class="ibw"><div class="ib" style="width:'+pct+'%;background:'+(i.ok?'var(--e)':'var(--r)')+'"></div></div></td></tr>';}).join('')+
+  '</tbody></table></div></div>';
+}
+
+/* ═══════════════════════════════════════
+   PATIENT DETAIL MODAL
+═══════════════════════════════════════ */
+function showPatDetail(pid, fromPage){
+  const p=STATE.patients.find(x=>x.id===pid); if(!p) return;
+  const consult=STATE.consultations[pid];
+  const myLab=STATE.labOrders.filter(o=>o.pid===pid);
+  const myRad=STATE.radOrders.filter(o=>o.pid===pid);
+  const myRx=STATE.prescriptions.filter(o=>o.pid===pid);
+  const canConsult=(CU.role==='doctor'||CU.role==='owner')&&p.st!=='completed';
+  const init=p.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+
+  const journeySteps=[
+    {l:'Patient Registered',       s:'Welcome WhatsApp sent',             d:true,  a:false},
+    {l:'Added to OPD Queue',       s:'Assigned to '+p.dr+' at '+p.vt,    d:true,  a:false},
+    {l:'Consultation',             s:consult?('Completed by '+consult.by+' at '+consult.at):(p.st==='in_consultation'?'In progress...':'Waiting'),d:!!consult,a:p.st==='in_consultation'},
+    {l:'Lab Orders',               s:myLab.length>0?(myLab.length+' test(s) ordered'):'None ordered',d:myLab.length>0&&myLab.every(o=>STATE.labReports[o.id]),a:myLab.length>0&&!myLab.every(o=>STATE.labReports[o.id])},
+    {l:'Radiology Orders',         s:myRad.length>0?(myRad.length+' scan(s) ordered'):'None ordered',d:myRad.length>0&&myRad.every(o=>STATE.radScans[o.id]),a:myRad.length>0&&!myRad.every(o=>STATE.radScans[o.id])},
+    {l:'Prescription Dispensed',   s:myRx.length>0?(myRx.every(r=>r.dispensed)?'Dispensed':'Sent to pharmacy'):'None',d:myRx.some(r=>r.dispensed),a:myRx.length>0&&!myRx.every(r=>r.dispensed)},
+  ];
+
+  let labSection='<div class="empty" style="padding:12px">No lab orders for this patient</div>';
+  if(myLab.length>0){
+    labSection=myLab.map(o=>{
+      const rep=STATE.labReports[o.id];
+      return '<div class="rcard">'+
+        '<div class="rcard-title"><span>'+sv('flk','style="width:14px;height:14px"')+' '+o.test+(o.urg?' <span class="badge br2" style="font-size:10px">URGENT</span>':'')+'</span>'+
+        '<span class="badge '+(rep?'bg2':o.st==='sample_collected'?'bo':'bb')+'">'+(rep?'&#10003; Report Ready':o.st==='sample_collected'?'Sample Collected':'Ordered')+'</span></div>'+
+        '<div class="rcard-sub">'+o.id+' &middot; Ordered '+o.tm+'</div>'+
+        (rep?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:600;color:var(--s400);margin-bottom:4px">FINDINGS</div><div style="font-size:13px;color:var(--s700);line-height:1.6">'+rep.ai+'</div>'+
+        '<div style="font-size:11px;color:var(--s500);margin-top:8px">&#128196; '+rep.file+' &middot; Uploaded '+rep.at+'</div>'+
+        '<button class="btn bg3 bsm" style="margin-top:8px" onclick="viewReport(\''+o.id+'\')">'+sv('eye')+' View Full Report</button></div>':'<div style="font-size:12px;color:var(--s400);margin-top:8px">Report not yet uploaded by lab</div>')+
+      '</div>';
+    }).join('');
+  }
+
+  let radSection='<div class="empty" style="padding:12px">No radiology orders for this patient</div>';
+  if(myRad.length>0){
+    radSection=myRad.map(o=>{
+      const sc2=STATE.radScans[o.id];
+      return '<div class="rcard">'+
+        '<div class="rcard-title"><span>'+sv('scn','style="width:14px;height:14px"')+' '+o.scan+'</span>'+
+        '<span class="badge '+(sc2?'bg2':'bb')+'">'+(sc2?'&#10003; Scan Ready':'Ordered')+'</span></div>'+
+        '<div class="rcard-sub">'+o.id+' &middot; Ordered '+o.tm+'</div>'+
+        (sc2?'<div style="margin-top:10px"><div style="font-size:11px;font-weight:600;color:var(--s400);margin-bottom:4px">RADIOLOGIST FINDINGS</div><div style="font-size:13px;color:var(--s700);line-height:1.6">'+sc2.remarks+'</div>'+
+        '<div style="font-size:11px;color:var(--s500);margin-top:8px">&#128196; '+sc2.file+' &middot; Uploaded '+sc2.at+'</div>'+
+        '<button class="btn bg3 bsm" style="margin-top:8px" onclick="viewScan(\''+o.id+'\')">'+sv('eye')+' View Scan Report</button></div>':'<div style="font-size:12px;color:var(--s400);margin-top:8px">Scan not yet uploaded by radiologist</div>')+
+      '</div>';
+    }).join('');
+  }
+
+  let rxSection='<div class="empty" style="padding:12px">No prescription for this patient yet</div>';
+  if(myRx.length>0){
+    rxSection=myRx.map(rx=>'<div class="rcard"><div class="rcard-title"><span>'+sv('pil','style="width:14px;height:14px"')+' Prescription</span><span class="badge '+(rx.dispensed?'bg2':'bo')+'">'+(rx.dispensed?'&#10003; Dispensed':'Sent to Pharmacy')+'</span></div><div class="rcard-sub">'+rx.id+' &middot; '+rx.dr+' &middot; '+rx.tm+'</div><div style="font-size:13px;white-space:pre-line;line-height:1.8;color:var(--s700);margin-top:10px">'+rx.meds+'</div></div>').join('');
+  }
+
+  showM(
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+
+    '<div class="av" style="background:'+avBg(p.name)+';width:48px;height:48px;border-radius:14px;font-size:17px">'+init+'</div>'+
+    '<div><div class="mt2">'+p.name+'</div><div class="ms2" style="margin-bottom:0">'+p.id+' &middot; '+p.age+'y '+p.gender+' &middot; &#128222; '+p.phone+'</div></div>'+
+    '<button class="mc" onclick="closeM()" style="margin-left:auto">&#x2715;</button></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    '<span class="badge bb">'+p.dx+'</span><span class="badge bv">'+p.dr+'</span>'+stBadge(p.st)+'</div>'+
+    '<div id="tabgroup" style="margin-top:14px"><div class="tabs">'+
+    '<button class="tab act" id="tb-jrny" onclick="switchTab(\'jrny\')">&#128204; Journey</button>'+
+    '<button class="tab" id="tb-labs" onclick="switchTab(\'labs\')">&#128300; Lab Reports</button>'+
+    '<button class="tab" id="tb-rads" onclick="switchTab(\'rads\')">&#129981; Radiology</button>'+
+    '<button class="tab" id="tb-rx" onclick="switchTab(\'rx\')">&#128138; Prescription</button>'+
+    (STATE.bills[pid]?'<button class="tab" id="tb-bill" onclick="switchTab(\'bill\')">&#129534; Final Bill</button>':'')+
+    '</div></div>',
+
+    '<div id="tp-jrny" class="tabpane show"><div class="tl">'+
+    journeySteps.map(s=>'<div class="ti"><div class="td2 '+(s.d?'done':s.a?'act2':'pnd')+'"></div><div class="ttl2">'+s.l+'</div><div class="tts">'+s.s+'</div></div>').join('')+
+    '</div>'+
+    (canConsult?'<button class="btn bp" style="width:100%;justify-content:center;margin-top:16px" onclick="openConsult(\''+pid+'\')">Open Consultation &rarr;</button>':'')+
+    (STATE.bills[pid]?'<button class="btn bs2" style="width:100%;justify-content:center;margin-top:8px" onclick="openLetterheadBillModal(\''+pid+'\')">&#128438;&#65039; Print Official Letterhead Bill</button>':'')+
+    '</div>',
+
+    '<div id="tp-labs" class="tabpane">'+labSection+'</div>'+
+    '<div id="tp-rads" class="tabpane">'+radSection+'</div>'+
+    '<div id="tp-rx" class="tabpane">'+rxSection+'</div>'+
+    (STATE.bills[pid]?'<div id="tp-bill" class="tabpane"><div style="text-align:center;padding:16px"><div style="font-size:15px;font-weight:700;color:var(--pd);margin-bottom:6px">&#129534; Official Letterhead Final Bill Generated</div><div style="font-size:12px;color:var(--s500);margin-bottom:14px">Ref No: <b>'+STATE.bills[pid].billNo+'</b> &middot; Net: <b>&#8377;'+STATE.bills[pid].net.toFixed(2)+'</b> &middot; Status: <b style="color:'+(STATE.bills[pid].st==='paid'?'#059669':'#d97706')+'">'+STATE.bills[pid].st.toUpperCase()+' ('+(STATE.bills[pid].mode||'CASH')+')</b></div><button class="btn bp" style="margin:0 auto;justify-content:center" onclick="openLetterheadBillModal(\''+pid+'\')">&#128438;&#65039; Open &amp; Print Letterhead Bill</button></div></div>':'')
+  );
+}
+
+/* ═══════════════════════════════════════
+   CONSULTATION MODAL (Doctor)
+═══════════════════════════════════════ */
+const LAB_TESTS=['CBC (Complete Blood Count)','HbA1c','Lipid Profile','LFT (Liver Function)','KFT (Kidney Function)','Thyroid (TSH/T3/T4)','Blood Glucose (FBS/PPBS)','Urine Routine','Culture & Sensitivity','ESR + CRP'];
+const RAD_SCANS=['X-Ray Chest PA','X-Ray Lumbar Spine AP+Lat','ECG 12-Lead','USG Abdomen & Pelvis','CT Scan Head','CT Scan Abdomen','MRI Spine','ECHO (Echocardiogram)','Bone Density (DEXA)'];
+
+window._currentBillItems = [];
+
+function addDemoBillItem(name, cat, price){
+  window._currentBillItems.push({ name, category: cat, qty: 1, rate: Number(price)||0, total: Number(price)||0 });
+  renderDemoBillRows();
+  calcDemoBill();
+}
+
+function removeDemoBillItem(idx){
+  window._currentBillItems.splice(idx, 1);
+  renderDemoBillRows();
+  calcDemoBill();
+}
+
+function renderDemoBillRows(){
+  const c = document.getElementById('bill-items-container');
+  if(!c) return;
+  if(window._currentBillItems.length === 0){
+    c.innerHTML = '<div style="font-size:12px;color:var(--s400);text-align:center;padding:12px;background:var(--s50);border-radius:10px">No charges added yet. Click quick-add buttons above.</div>';
+    return;
+  }
+  let h = '<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:8px">'+
+    '<thead><tr style="background:var(--pl);color:var(--pd);font-weight:700;text-align:left"><th style="padding:6px 8px">Particulars</th><th style="padding:6px 8px;width:70px">Qty</th><th style="padding:6px 8px;width:80px">Rate (&#8377;)</th><th style="padding:6px 8px;width:80px;text-align:right">Total</th><th style="padding:6px 4px;width:30px"></th></tr></thead><tbody>';
+  window._currentBillItems.forEach((it, idx) => {
+    h += '<tr style="border-bottom:1px solid var(--s200)">'+
+      '<td style="padding:6px 8px"><input type="text" style="width:100%;padding:4px 6px;border:1px solid var(--s200);border-radius:6px;font-size:11px" value="'+it.name+'" onchange="window._currentBillItems['+idx+'].name=this.value"/></td>'+
+      '<td style="padding:6px 8px"><input type="number" min="1" style="width:100%;padding:4px 6px;border:1px solid var(--s200);border-radius:6px;font-size:11px" value="'+it.qty+'" oninput="window._currentBillItems['+idx+'].qty=Number(this.value)||1;window._currentBillItems['+idx+'].total=window._currentBillItems['+idx+'].qty*window._currentBillItems['+idx+'].rate;calcDemoBill();"/></td>'+
+      '<td style="padding:6px 8px"><input type="number" min="0" style="width:100%;padding:4px 6px;border:1px solid var(--s200);border-radius:6px;font-size:11px" value="'+it.rate+'" oninput="window._currentBillItems['+idx+'].rate=Number(this.value)||0;window._currentBillItems['+idx+'].total=window._currentBillItems['+idx+'].qty*window._currentBillItems['+idx+'].rate;calcDemoBill();"/></td>'+
+      '<td style="padding:6px 8px;text-align:right;font-weight:700">&#8377;'+Number(it.total).toFixed(2)+'</td>'+
+      '<td style="padding:6px 4px;text-align:center"><button type="button" onclick="removeDemoBillItem('+idx+')" style="background:none;border:none;color:var(--r);cursor:pointer;font-weight:bold">&#x2715;</button></td>'+
+      '</tr>';
+  });
+  h += '</tbody></table>';
+  c.innerHTML = h;
+}
+
+const DEMO_TABLETS = [
+  { name: 'Tab. Metformin 500mg', dose: '500mg', freq: '1-0-1', dur: '30 days', inst: 'After meals', cat: 'Antidiabetic' },
+  { name: 'Tab. Metformin 850mg', dose: '850mg', freq: '1-0-1', dur: '30 days', inst: 'After meals', cat: 'Antidiabetic' },
+  { name: 'Tab. Metformin 1000mg SR', dose: '1000mg', freq: '0-0-1', dur: '30 days', inst: 'After dinner', cat: 'Antidiabetic' },
+  { name: 'Tab. Metformin + Glimepiride (Glycomet-GP 1)', dose: '1mg/500mg', freq: '1-0-0', dur: '30 days', inst: 'Before breakfast', cat: 'Antidiabetic' },
+  { name: 'Tab. Metoprolol Tartrate 25mg (Betaloc)', dose: '25mg', freq: '1-0-0', dur: '30 days', inst: 'After food', cat: 'Antihypertensive' },
+  { name: 'Tab. Metoprolol Succinate 50mg ER (Met-XL 50)', dose: '50mg', freq: '1-0-0', dur: '30 days', inst: 'After breakfast', cat: 'Antihypertensive' },
+  { name: 'Tab. Montelukast 10mg (Montair 10)', dose: '10mg', freq: '0-0-1', dur: '10 days', inst: 'At bedtime', cat: 'Antiasthmatic' },
+  { name: 'Tab. Montelukast + Levocetirizine (Montair-LC)', dose: '5mg/10mg', freq: '0-0-1', dur: '7 days', inst: 'Night before sleep', cat: 'Antiallergic' },
+  { name: 'Tab. Methylprednisolone 4mg (Medrol 4)', dose: '4mg', freq: '1-0-0', dur: '5 days', inst: 'Morning after breakfast', cat: 'Corticosteroid' },
+  { name: 'Tab. Methylprednisolone 8mg (Medrol 8)', dose: '8mg', freq: '1-0-0', dur: '5 days', inst: 'Morning after breakfast', cat: 'Corticosteroid' },
+  { name: 'Tab. Moxifloxacin 400mg (Mahaflox)', dose: '400mg', freq: '1-0-0', dur: '5 days', inst: 'After food', cat: 'Antibiotic' },
+  { name: 'Tab. Metronidazole 400mg (Flagyl 400)', dose: '400mg', freq: '1-0-1', dur: '5 days', inst: 'After meals', cat: 'Antibiotic' },
+  { name: 'Tab. Multivitamin with Zinc (Becadexamin / Supradyn)', dose: '1 tab', freq: '1-0-0', dur: '30 days', inst: 'After breakfast', cat: 'Supplements' },
+  { name: 'Tab. Meftal-Spas', dose: '250/10mg', freq: '1-0-1', dur: '3 days', inst: 'When pain SOS', cat: 'Antispasmodic' },
+  { name: 'Tab. Moxikind-CV 625 (Amox + Clav)', dose: '625mg', freq: '1-0-1', dur: '5 days', inst: 'After food', cat: 'Antibiotic' },
+  { name: 'Tab. Paracetamol 500mg', dose: '500mg', freq: '1-1-1', dur: '5 days', inst: 'After food', cat: 'Antipyretic' },
+  { name: 'Tab. Paracetamol 650mg (Dolo 650)', dose: '650mg', freq: '1-1-1', dur: '3 days', inst: 'After food SOS', cat: 'Antipyretic' },
+  { name: 'Tab. Amlodipine 5mg (Amlopres 5)', dose: '5mg', freq: '1-0-0', dur: '30 days', inst: 'Morning after food', cat: 'Antihypertensive' },
+  { name: 'Tab. Atorvastatin 10mg (Atorva 10)', dose: '10mg', freq: '0-0-1', dur: '30 days', inst: 'Night after dinner', cat: 'Lipid Lowering' },
+  { name: 'Tab. Azithromycin 500mg (Azithral 500)', dose: '500mg', freq: '1-0-0', dur: '3 days', inst: '1 hr before food', cat: 'Antibiotic' },
+  { name: 'Tab. Pantoprazole 40mg (Pan 40)', dose: '40mg', freq: '1-0-0', dur: '14 days', inst: 'Morning empty stomach', cat: 'PPI / Antacid' },
+  { name: 'Tab. Pantoprazole + Domperidone (Pan-D)', dose: '40/30mg', freq: '1-0-0', dur: '14 days', inst: 'Morning empty stomach', cat: 'Antacid' },
+  { name: 'Tab. Telmisartan 40mg (Telma 40)', dose: '40mg', freq: '1-0-0', dur: '30 days', inst: 'Morning after food', cat: 'Antihypertensive' },
+  { name: 'Tab. Cetirizine 10mg', dose: '10mg', freq: '0-0-1', dur: '5 days', inst: 'Night before sleep', cat: 'Antihistamine' },
+  { name: 'Cap. Vitamin D3 60,000 IU (Calcirol)', dose: '60K IU', freq: 'Once weekly', dur: '8 weeks', inst: 'With milk at dinner', cat: 'Vitamin' },
+];
+
+function searchDemoTablets(query){
+  const box = document.getElementById('rx-suggestions');
+  if(!box) return;
+  if(!query || !query.trim()){
+    box.style.display = 'none';
+    return;
+  }
+  const q = query.toLowerCase();
+  const matches = DEMO_TABLETS.filter(t => t.name.toLowerCase().includes(q) || t.cat.toLowerCase().includes(q)).slice(0, 10);
+  if(matches.length === 0){
+    box.innerHTML = '<div style="padding:10px;font-size:11px;color:var(--s400);text-align:center">No matching tablets found. Type full name manually below.</div>';
+    box.style.display = 'block';
+    return;
+  }
+  let h = '<div style="padding:6px 10px;background:var(--s50);font-size:10px;font-weight:700;color:var(--s500);text-transform:uppercase;border-bottom:1px solid var(--s200)">Tablet Suggestions (' + matches.length + ') &mdash; Click to add</div>';
+  matches.forEach(t => {
+    h += '<div style="padding:8px 10px;cursor:pointer;border-bottom:1px solid var(--s100);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#fff\'" onclick="selectDemoTablet(\''+t.name.replace(/'/g, "\\'")+'\',\''+t.dose+'\',\''+t.freq+'\',\''+t.dur+'\',\''+t.inst+'\')">'+
+      '<div><div style="font-size:12px;font-weight:700;color:var(--s900)">'+t.name+' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:#e0f2fe;color:#0284c7;font-weight:600">'+t.cat+'</span></div>'+
+      '<div style="font-size:10.5px;color:var(--s500);margin-top:2px">'+t.dose+' &bull; '+t.freq+' &bull; '+t.dur+' ('+t.inst+')</div></div>'+
+      '<div style="font-size:11px;font-weight:700;color:var(--p)">+ Add</div>'+
+      '</div>';
+  });
+  box.innerHTML = h;
+  box.style.display = 'block';
+}
+
+function selectDemoTablet(name, dose, freq, dur, inst){
+  const tx = document.getElementById('crxtext');
+  const line = name + ' &mdash; ' + freq + ' x ' + dur + ' (' + inst + ')';
+  if(tx){
+    const curr = tx.value.trim();
+    if(!curr || curr.includes('1. Metformin 500mg BD x 30 days\n2. Amlodipine')){
+      tx.value = '1. ' + line;
+    } else {
+      const lines = curr.split('\n').filter(Boolean);
+      tx.value = curr + '\n' + (lines.length + 1) + '. ' + line;
+    }
+  }
+  const sInput = document.getElementById('rxsearch');
+  if(sInput) sInput.value = '';
+  const box = document.getElementById('rx-suggestions');
+  if(box) box.style.display = 'none';
+  toast2('Added ' + name + ' to prescription');
+}
+
+function calcDemoBill(){
+  const sub = window._currentBillItems.reduce((acc, x) => acc + (Number(x.total)||0), 0);
+  const discEl = document.getElementById('bdiscount');
+  const disc = discEl ? (Number(discEl.value)||0) : 0;
+  const net = Math.max(0, sub - disc);
+  const el = document.getElementById('bill-net-display');
+  if(el) el.innerHTML = '&#8377;' + net.toFixed(2);
+}
+
+function openConsult(pid){
+  const p=STATE.patients.find(x=>x.id===pid);
+  window._currentBillItems = [
+    { name: 'Doctor Consultation Fee', category: 'Consultation', qty: 1, rate: 300, total: 300 }
+  ];
+  showM(
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
+    '<div class="av" style="background:'+avBg(p.name)+';width:40px;height:40px;font-size:14px">'+p.name.split(' ').map(w=>w[0]).join('').slice(0,2)+'</div>'+
+    '<div><div class="mt2" style="font-size:16px">'+p.name+'</div><div class="ms2" style="margin-bottom:0">'+p.id+' &middot; '+p.age+'y '+p.gender+' &middot; '+p.dx+'</div></div>'+
+    '<button class="mc" onclick="closeM()" style="margin-left:auto">&#x2715;</button></div>'+
+    '<div class="tabs" id="ctabs">'+
+    '<button class="tab act" id="tb-cai" onclick="switchTab(\'cai\',\'ctabs\')">&#129504; AI Summary</button>'+
+    '<button class="tab" id="tb-crx" onclick="switchTab(\'crx\',\'ctabs\')">&#128138; Prescribe</button>'+
+    '<button class="tab" id="tb-clab" onclick="switchTab(\'clab\',\'ctabs\')">&#128300; Lab Tests</button>'+
+    '<button class="tab" id="tb-crad" onclick="switchTab(\'crad\',\'ctabs\')">&#129981; Radiology</button>'+
+    '<button class="tab" id="tb-cbill" onclick="switchTab(\'cbill\',\'ctabs\')">&#129534; Final Bill &amp; Pricing</button>'+
+    '</div>',
+
+    '<div id="tp-cai" class="tabpane show">'+
+    '<div class="ai"><div class="ail">'+sv('ai')+' Gemini AI Patient Summary</div>'+
+    '<div class="ait">'+getAISummary(p)+'</div></div>'+
+    '<div class="fg"><label>Vitals (as measured today)</label><input type="text" id="cvitals" placeholder="BP: 138/88, HR: 78, Temp: 98.6F, SpO2: 97%"/></div>'+
+    '<button class="btn bp" style="margin-top:4px" onclick="switchTab(\'crx\',\'ctabs\')">Next: Write Prescription &rarr;</button></div>'+
+
+    '<div id="tp-crx" class="tabpane">'+
+    '<div class="fg"><label>Diagnosis *</label><input type="text" id="cdx" value="'+p.dx+'" /></div>'+
+    '<div class="fg" style="position:relative"><label>Quick Search Tablet (e.g. type &quot;m&quot; for Metformin)</label>'+
+    '<input type="text" id="rxsearch" placeholder="Type \'m\' to see Metformin, Metoprolol, Montelukast..." oninput="searchDemoTablets(this.value)" autocomplete="off"/>'+
+    '<div id="rx-suggestions" style="display:none;position:absolute;z-index:99;left:0;right:0;max-height:220px;overflow-y:auto;background:#fff;border:1px solid var(--s200);border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.15)"></div>'+
+    '</div>'+
+    '<div class="fg"><label>Medicines / Prescription</label><textarea id="crxtext" rows="5" placeholder="1. Medicine Name dose x duration&#10;2. ...">1. Metformin 500mg BD x 30 days\n2. Amlodipine 5mg OD x 30 days\n3. Vitamin D3 60K weekly x 4 weeks</textarea></div>'+
+    '<div class="fg"><label>Clinical Notes / Advice</label><textarea id="cnotes" placeholder="Follow up in 4 weeks...">Follow up in 4 weeks. Low carb diet advised. Reduce salt intake. Avoid smoking.</textarea></div>'+
+    '</div>'+
+
+    '<div id="tp-clab" class="tabpane">'+
+    '<label>Select Lab Tests to Order</label>'+
+    '<div class="chkgroup">'+LAB_TESTS.map((t,i)=>'<label class="chkitem"><input type="checkbox" id="lab_'+i+'" value="'+t+'"/> '+t+'</label>').join('')+'</div></div>'+
+
+    '<div id="tp-crad" class="tabpane">'+
+    '<label>Select Radiology Scans to Order</label>'+
+    '<div class="chkgroup">'+RAD_SCANS.map((s,i)=>'<label class="chkitem"><input type="checkbox" id="rad_'+i+'" value="'+s+'"/> '+s+'</label>').join('')+'</div></div>'+
+
+    '<div id="tp-cbill" class="tabpane">'+
+    '<div style="font-size:12px;color:var(--s500);margin-bottom:12px">&#129658; Pricing added by Doctor. Final bill will be printed on official Sai Emergency &amp; Multispeciality Hospital Letterhead.</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--s600);text-transform:uppercase;margin-bottom:6px">&#9889; Quick Add Standard Charges:</div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Doctor Consultation Fee\',\'Consultation\',300)">+ Consultation (&#8377;300)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Emergency Assessment\',\'Emergency\',500)">+ Emergency (&#8377;500)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Routine Follow-up\',\'Consultation\',200)">+ Follow-up (&#8377;200)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'ECG 12-Lead Test\',\'Diagnostics\',300)">+ ECG (&#8377;300)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Wound Dressing / Minor Suture\',\'Procedure\',250)">+ Dressing (&#8377;250)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Injection &amp; IV Infusion\',\'Nursing\',150)">+ Injection/IV (&#8377;150)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Day Care Observation Bed\',\'Bed Charges\',800)">+ Observation Bed (&#8377;800)</button>'+
+    '</div>'+
+    '<div id="bill-items-container"></div>'+
+    '<div class="g2" style="margin-top:12px">'+
+    '<div class="fg"><label>Discount (&#8377;)</label><input type="number" id="bdiscount" value="0" min="0" oninput="calcDemoBill()"/></div>'+
+    '<div class="fg"><label>Payment Mode</label><select id="bmode"><option value="Cash">Cash</option><option value="UPI">UPI (GPay / PhonePe)</option><option value="Card">Card</option><option value="Insurance">Insurance / Ayushman</option></select></div>'+
+    '</div>'+
+    '<div class="g2">'+
+    '<div class="fg"><label>Payment Status</label><select id="bstatus"><option value="pending">Pending (Cash Counter)</option><option value="paid">Paid (Collected)</option></select></div>'+
+    '<div class="fg"><label>Billing Remarks</label><input type="text" id="bnotes" placeholder="e.g. OPD Consultation &amp; Assessment"/></div>'+
+    '</div>'+
+    '<div style="background:var(--s50);border:1px solid var(--s200);border-radius:12px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">'+
+    '<div><div style="font-size:11px;color:var(--s500);text-transform:uppercase;font-weight:700">Net Payable Amount</div><div style="font-size:22px;font-weight:800;color:var(--pd)" id="bill-net-display">&#8377;300.00</div></div>'+
+    '<div style="font-size:11px;color:var(--s400);text-align:right">Printed on Sai Hospital Letterhead<br/>Reg. No. BLG03043ALHL3</div>'+
+    '</div>'+
+    '</div>'+
+
+    '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--s100)">'+
+    '<button class="btn bp" style="width:100%;justify-content:center;padding:11px" onclick="saveConsult(\''+pid+'\')">&#9989; Save Consultation &amp; Generate Final Bill</button></div>'
+  );
+  setTimeout(renderDemoBillRows, 50);
+}
+
+function getAISummary(p){
+  const s={
+    'Hypertension': 'Patient has <b>known hypertension</b>. Last BP 148/92 (3 weeks ago). Currently on Amlodipine 5mg. Complaints of mild headache and fatigue. <b>BP today 138/88 — suggest medication review and lifestyle counseling.</b>',
+    'Diabetes follow-up': 'Patient has <b>Type 2 Diabetes</b> (HbA1c 8.2% — 2 months ago). On Metformin 500mg BD. Reports fatigue and polyuria. <b>Consider dose escalation or addition of second agent.</b>',
+    'Arthritis': '<b>Rheumatoid arthritis</b> — ESR was 68 (last visit). On NSAIDs. Reports bilateral knee pain worsening. <b>Inflammatory markers suggest active disease — consider DMARDs evaluation.</b>',
+    'Back pain': 'Patient with <b>lower back pain x 2 weeks</b>. No trauma. Worse on bending. <b>X-Ray Lumbar spine recommended. Consider physiotherapy referral.</b>',
+    'Fever & cough': 'Fever for 5 days, productive cough. SpO2 97%. <b>Rule out pneumonia — Chest X-Ray and CBC recommended.</b>',
+  };
+  return s[p.dx]||'New patient visit. Review chief complaint: <b>'+p.dx+'</b>. Complete history and examination recommended.';
+}
+
+function saveConsult(pid){
+  const p=STATE.patients.find(x=>x.id===pid);
+  const dx=document.getElementById('cdx')?document.getElementById('cdx').value.trim():'';
+  const rx=document.getElementById('crxtext')?document.getElementById('crxtext').value.trim():'';
+  const notes=document.getElementById('cnotes')?document.getElementById('cnotes').value.trim():'';
+  if(!dx||!rx) return toast2('Please fill diagnosis and prescription',1);
+
+  // Save consultation
+  STATE.consultations[pid]={dx,rx,notes,by:CU.name,at:nowTime()};
+  p.st='completed';
+
+  // Collect selected lab tests
+  const labTests=LAB_TESTS.filter((_,i)=>{const el=document.getElementById('lab_'+i);return el&&el.checked;});
+  labTests.forEach(t=>{
+    STATE.seq.lab++;
+    STATE.labOrders.push({id:'LAB-00'+STATE.seq.lab,pid,pt:p.name,test:t,dr:CU.name,tm:nowTime(),st:'ordered',urg:false});
+  });
+
+  // Collect selected radiology scans
+  const radScans=RAD_SCANS.filter((_,i)=>{const el=document.getElementById('rad_'+i);return el&&el.checked;});
+  radScans.forEach(s=>{
+    STATE.seq.rad++;
+    STATE.radOrders.push({id:'RAD-00'+STATE.seq.rad,pid,pt:p.name,scan:s,dr:CU.name,tm:nowTime(),st:'ordered'});
+  });
+
+  // Create prescription
+  STATE.seq.rx++;
+  STATE.prescriptions.push({id:'RX-00'+STATE.seq.rx,pid,pt:p.name,meds:rx,dr:CU.name,tm:nowTime(),dispensed:false});
+
+  // Save final bill with Doctor pricing
+  STATE.seq.bill = (STATE.seq.bill || 1) + 1;
+  const billItems = (window._currentBillItems && window._currentBillItems.length > 0)
+    ? [...window._currentBillItems]
+    : [{ name: 'Doctor Consultation Fee', category: 'Consultation', qty: 1, rate: 300, total: 300 }];
+  const subtotal = billItems.reduce((acc, it) => acc + Number(it.total||0), 0);
+  const discEl = document.getElementById('bdiscount');
+  const discount = discEl ? (Number(discEl.value)||0) : 0;
+  const net = Math.max(0, subtotal - discount);
+  const modeEl = document.getElementById('bmode');
+  const mode = modeEl ? modeEl.value : 'Cash';
+  const statEl = document.getElementById('bstatus');
+  const bstatus = statEl ? statEl.value : 'pending';
+  const notesEl = document.getElementById('bnotes');
+  const bnotes = notesEl ? notesEl.value : '';
+
+  STATE.bills[pid] = {
+    billNo: 'SEMH-B26-' + String(STATE.seq.bill).padStart(4, '0'),
+    date: new Date().toLocaleDateString('en-GB'),
+    items: billItems,
+    subtotal,
+    discount,
+    net,
+    st: bstatus,
+    mode,
+    notes: bnotes,
+    dr: CU.name,
+    by: CU.name,
+  };
+
+  // Activity log
+  STATE.actLog.unshift({a:'generate bill & consultation',e:'bill',by:CU.name,t:nowTime()});
+
+  const summary=[];
+  if(labTests.length>0) summary.push('<div class="wa" style="margin-bottom:6px"><span>&#128300;</span> '+labTests.length+' lab test(s) sent to Lab Technician: '+labTests.slice(0,2).join(', ')+(labTests.length>2?'...':'')+'</div>');
+  if(radScans.length>0) summary.push('<div class="wa" style="background:#fef3c7;color:#92400e;margin-bottom:6px"><span>&#129981;</span> '+radScans.length+' radiology order(s) sent to Radiologist: '+radScans.slice(0,2).join(', ')+(radScans.length>2?'...':'')+'</div>');
+  summary.push('<div class="wa" style="margin-bottom:6px"><span>&#128138;</span> Prescription sent to Pharmacy for '+p.name+'</div>');
+  summary.push('<div class="wa" style="margin-bottom:6px"><span>&#129534;</span> <b>Final Bill Generated:</b> '+STATE.bills[pid].billNo+' &mdash; &#8377;'+net.toFixed(2)+' ('+bstatus.toUpperCase()+')</div>');
+  summary.push('<div class="wa" style="margin-bottom:0"><span>&#128172;</span> Official Letterhead Bill &amp; Prescription PDF sent to patient via WhatsApp (+91 96322 19690)</div>');
+
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2" style="color:#059669">&#9989; Consultation &amp; Final Bill Saved!</div><div class="ms2">All orders and bill generated on official letterhead</div>',
+    summary.join('')+
+    '<div style="background:var(--s50);border-radius:12px;padding:14px;margin-top:14px;font-size:13px;line-height:1.8">'+
+    '<b>Diagnosis:</b> '+dx+'<br/><b>Bill Reference:</b> '+STATE.bills[pid].billNo+' (&#8377;'+net.toFixed(2)+')<br/><b>Prescription:</b><br/><span style="white-space:pre-line">'+rx+'</span>'+
+    (notes?'<br/><b>Notes:</b> '+notes:'')+'</div>'+
+    '<div style="display:flex;gap:10px;margin-top:14px">'+
+    '<button class="btn bp" style="flex:1;justify-content:center;background:#1d4ed8" onclick="openLetterheadBillModal(\''+pid+'\')">&#128438;&#65039; Print Final Bill (Official Letterhead)</button>'+
+    '<button class="btn bs2" style="justify-content:center" onclick="closeM();navigate(\'drQ\')">Back to Queue</button>'+
+    '</div>'
+  );
+  updateBadges();
+}
+
+/* ═══════════════════════════════════════
+   OFFICIAL LETTERHEAD BILL MODAL
+═══════════════════════════════════════ */
+function openLetterheadBillModal(pid){
+  const p = STATE.patients.find(x => x.id === pid);
+  const bill = STATE.bills[pid];
+  if(!p || !bill) return toast2('No bill available for this patient', 1);
+
+  const amtInWords = 'Rupees ' + Math.round(bill.net) + ' Only';
+  const itemsHtml = bill.items.map((it, idx) => {
+    return '<tr style="border-bottom:1px solid #e2e8f0;background:'+(idx%2===0?'#fff':'#f8fafc')+'">'+
+      '<td style="padding:6px 10px;text-align:center;color:#64748b">'+(idx+1)+'</td>'+
+      '<td style="padding:6px 10px;font-weight:600;color:#0f172a">'+it.name+'</td>'+
+      '<td style="padding:6px 10px"><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600">'+(it.category||'General')+'</span></td>'+
+      '<td style="padding:6px 10px;text-align:center">'+(it.qty||1)+'</td>'+
+      '<td style="padding:6px 10px;text-align:right">&#8377;'+Number(it.rate).toFixed(2)+'</td>'+
+      '<td style="padding:6px 10px;text-align:right;font-weight:700;color:#0f172a">&#8377;'+Number(it.total).toFixed(2)+'</td>'+
+      '</tr>';
+  }).join('');
+
+  showM(
+    '<div style="display:flex;justify-content:space-between;align-items:center;width:100%" class="print-hide">'+
+    '<div style="font-weight:700;font-size:15px;color:var(--s800)">Official Letterhead Preview &mdash; '+bill.billNo+'</div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<button class="btn bp" style="background:#059669;padding:6px 14px;font-size:12px" onclick="window.print()">&#128438;&#65039; Print Bill</button>'+
+    '<button class="mc" onclick="closeM()" style="position:static">&#x2715;</button>'+
+    '</div></div>',
+
+    '<div id="official-bill-print" style="position:relative;background:#fff;padding:20px 24px;border:1px solid #cbd5e1;border-radius:12px;font-family:\'Inter\',sans-serif;color:#1e293b">'+
+    
+    // Faint Watermark
+    '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0.04;pointer-events:none;select:none">'+
+    '<div style="font-size:120px;font-weight:900;color:#1e40af;line-height:1">&#10010;</div>'+
+    '<div style="font-size:30px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:2px;margin-top:10px">Sai Emergency Hospital</div>'+
+    '</div>'+
+
+    '<div style="position:relative;z-index:1">'+
+    // Header
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:8px">'+
+    '<div style="width:28%">'+
+    '<svg style="width:135px;height:auto" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="M45 28C45 20 38 15 28 15C16 15 8 22 8 32C8 46 45 44 45 60C45 70 36 76 24 76C12 76 5 69 4 58" stroke="#1d4ed8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<path d="M50 16H62V28H74V40H62V52H50V40H38V28H50V16Z" fill="#0284c7"/>'+
+    '<path d="M68 62C72 50 82 48 90 54C94 57 96 64 96 74" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>'+
+    '<path d="M96 52V74" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>'+
+    '<text x="5" y="83" font-family="sans-serif" font-size="6.5" font-weight="700" fill="#1e3a8a">Emergency &amp; Multispeciality</text>'+
+    '<text x="5" y="90" font-family="sans-serif" font-size="5.5" font-weight="600" fill="#0284c7" letter-spacing="1.8">H O S P I T A L</text>'+
+    '</svg>'+
+    '</div>'+
+    '<div style="width:72%;text-align:center">'+
+    '<div style="font-size:19px;font-weight:800;color:#1d4ed8;letter-spacing:0.5px;text-transform:uppercase;line-height:1.2">SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL</div>'+
+    '<div style="font-size:11px;font-weight:700;color:#0284c7;margin-top:2px">REG. NO. : BLG03043ALHL3</div>'+
+    '<div style="font-size:11px;color:#334155;margin-top:2px">Old Motor Stand, NIPANI - 591 237. Dist. Belgavi</div>'+
+    '<div style="font-size:10.5px;color:#1e3a8a;font-weight:600;margin-top:2px">Mob. : 9632219690, 7204583699 &bull; Email : semhospitalnipani@gmail.com</div>'+
+    '</div></div>'+
+
+    // Accent Stripes
+    '<div style="height:3px;background:linear-gradient(90deg, #0284c7 0%, #1d4ed8 100%);margin-top:4px;border-radius:2px"></div>'+
+    '<div style="height:1px;background:#0284c7;margin-top:2px;margin-bottom:8px"></div>'+
+
+    // Ref No & Date
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px 2px;font-size:11.5px;font-weight:600;border-bottom:1px dashed #cbd5e1;margin-bottom:10px">'+
+    '<div>Ref. No. : <span style="font-weight:800;color:#0f172a">'+bill.billNo+'</span></div>'+
+    '<div>Date : <span style="font-weight:800;color:#0f172a">'+bill.date+'</span></div>'+
+    '</div>'+
+
+    // Title Banner
+    '<div style="background:#f1f5f9;border-left:4px solid #1d4ed8;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-radius:0 6px 6px 0;margin-bottom:10px">'+
+    '<div style="font-size:12px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px">Patient Final Bill / Summary Invoice</div>'+
+    '<div><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;background:'+(bill.st==='paid'?'#dcfce7':'#fef3c7')+';color:'+(bill.st==='paid'?'#15803d':'#b45309')+';border:1px solid '+(bill.st==='paid'?'#86efac':'#fde68a')+'">'+bill.st.toUpperCase()+' ('+(bill.mode||'CASH')+')</span></div>'+
+    '</div>'+
+
+    // Patient & Doctor Info Grid
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11.5px">'+
+    '<div style="line-height:1.6">'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Patient Name:</span> <b>'+p.name+'</b></div>'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Patient ID:</span> <b>'+p.id+'</b></div>'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Age / Gender:</span> <b>'+p.age+' Yrs / '+p.gender+'</b></div>'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Phone:</span> <b>'+p.phone+'</b></div>'+
+    '</div>'+
+    '<div style="line-height:1.6">'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Treating Doctor:</span> <b>'+bill.dr+'</b></div>'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Department:</span> <b>Emergency &amp; Multispeciality</b></div>'+
+    '<div><span style="color:#64748b;width:95px;display:inline-block">Diagnosis:</span> <b>'+p.dx+'</b></div>'+
+    (p.ref ? '<div><span style="color:#64748b;width:95px;display:inline-block">Referred By:</span> <b style="color:#1d4ed8">'+p.ref+'</b></div>' : '')+
+    '</div></div>'+
+
+    // Itemized Table
+    '<div style="border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;margin-bottom:12px">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:11.5px">'+
+    '<thead><tr style="background:#1e40af;color:#fff;text-align:left;font-size:10.5px;text-transform:uppercase">'+
+    '<th style="padding:6px 10px;text-align:center;width:35px">#</th>'+
+    '<th style="padding:6px 10px">Service / Particulars</th>'+
+    '<th style="padding:6px 10px;width:100px">Category</th>'+
+    '<th style="padding:6px 10px;text-align:center;width:45px">Qty</th>'+
+    '<th style="padding:6px 10px;text-align:right;width:80px">Rate (&#8377;)</th>'+
+    '<th style="padding:6px 10px;text-align:right;width:95px">Amount (&#8377;)</th>'+
+    '</tr></thead><tbody>'+itemsHtml+'</tbody></table></div>'+
+
+    // Totals Section
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-top:4px;border-top:1px solid #cbd5e1;margin-bottom:20px">'+
+    '<div style="width:58%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:11px">'+
+    '<div style="font-size:9.5px;font-weight:700;color:#64748b;text-transform:uppercase">Amount in Words:</div>'+
+    '<div style="font-size:11.5px;font-weight:800;color:#1e40af;margin-top:2px">'+amtInWords+'</div>'+
+    (bill.notes ? '<div style="font-size:10px;color:#475569;margin-top:4px">Notes: '+bill.notes+'</div>' : '')+
+    '</div>'+
+    '<div style="width:38%;font-size:11.5px;line-height:1.6">'+
+    '<div style="display:flex;justify-content:space-between;color:#64748b"><span>Subtotal:</span> <span>&#8377;'+bill.subtotal.toFixed(2)+'</span></div>'+
+    (bill.discount > 0 ? '<div style="display:flex;justify-content:space-between;color:#dc2626"><span>Discount:</span> <span>- &#8377;'+bill.discount.toFixed(2)+'</span></div>' : '')+
+    '<div style="display:flex;justify-content:space-between;color:#64748b"><span>Tax / GST:</span> <span>&#8377;0.00</span></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:800;color:#1e40af;border-top:2px solid #1e40af;padding-top:4px;margin-top:4px"><span>Net Payable:</span> <span>&#8377;'+bill.net.toFixed(2)+'</span></div>'+
+    '</div></div>'+
+
+    // Signatures
+    '<div style="display:flex;justify-content:space-between;padding:10px 20px 0 20px">'+
+    '<div style="text-align:center;width:180px">'+
+    '<div style="border-top:1px solid #64748b;margin-bottom:4px"></div>'+
+    '<div style="font-size:11px;font-weight:700;color:#0f172a">Cashier / Billing Desk</div>'+
+    '<div style="font-size:9.5px;color:#64748b">Sai Emergency Hospital</div>'+
+    '</div>'+
+    '<div style="text-align:center;width:180px">'+
+    '<div style="border-top:1px solid #64748b;margin-bottom:4px"></div>'+
+    '<div style="font-size:11px;font-weight:700;color:#0f172a">'+bill.dr+'</div>'+
+    '<div style="font-size:9.5px;color:#64748b">Treating Doctor &bull; Reg. BLG03043ALHL3</div>'+
+    '</div></div>'+
+
+    // Footer
+    '<div style="text-align:center;border-top:1px solid #e2e8f0;margin-top:24px;padding-top:6px;font-size:9.5px;color:#64748b">'+
+    'Sai Emergency &amp; Multispeciality Hospital &bull; Old Motor Stand, NIPANI - 591 237. Dist. Belgavi &bull; 24x7 Emergency Care &bull; Ph: 9632219690, 7204583699'+
+    '</div>'+
+
+    '</div></div>'
+  );
+}
+
+/* ═══════════════════════════════════════
+   REPORT / SCAN VIEWER (Doctor's view)
+═══════════════════════════════════════ */
+function viewReport(orderId){
+  const o=STATE.labOrders.find(x=>x.id===orderId);
+  const rep=STATE.labReports[orderId];
+  if(!rep) return toast2('Report not yet uploaded by lab tech',1);
+  const isImg=rep.dataURL&&rep.mime&&rep.mime.startsWith('image/');
+  const isPdf=rep.dataURL&&rep.mime==='application/pdf';
+  let filePreview='';
+  if(isImg){
+    filePreview='<div style="margin-bottom:14px"><div class="sdiv">Attached Report Image</div>'+
+      '<a href="'+rep.dataURL+'" download="'+rep.file+'" target="_blank">'+
+      '<img src="'+rep.dataURL+'" style="width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid var(--s200);cursor:zoom-in" title="Click to open full size"/>'+
+      '</a><div style="font-size:11px;color:var(--s400);margin-top:4px;text-align:center">&#128247; Click image to open full size / download</div></div>';
+  } else if(isPdf){
+    filePreview='<div style="margin-bottom:14px"><div class="sdiv">Attached Report (PDF)</div>'+
+      '<a href="'+rep.dataURL+'" download="'+rep.file+'" class="btn bp" style="width:100%;justify-content:center;margin-bottom:6px">'+sv('dl')+' Download PDF &mdash; '+rep.file+'</a>'+
+      '<div style="font-size:11px;color:var(--s400);text-align:center">PDF opens in a new tab / downloads directly</div></div>';
+  } else {
+    filePreview='<div style="display:flex;align-items:center;gap:10px;background:var(--s50);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--s600);margin-bottom:14px">'+
+      sv('dl','style="width:14px;height:14px;stroke:var(--p)"')+' <b>'+rep.file+'</b> &mdash; Uploaded by '+rep.by+' at '+rep.at+'</div>';
+  }
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2">Lab Report</div>'+
+    '<div class="ms2">'+o.test+' &mdash; '+o.pt+' &mdash; '+o.id+' &mdash; Uploaded by '+rep.by+'</div>',
+    '<div class="ai"><div class="ail">'+sv('ai')+' Gemini AI Analysis</div><div class="ait">'+rep.ai+'</div></div>'+
+    '<div class="sdiv">Lab Findings / Remarks</div>'+
+    '<div style="background:var(--s50);border-radius:12px;padding:14px;font-size:13px;line-height:1.8;white-space:pre-line;margin-bottom:14px">'+rep.remarks+'</div>'+
+    filePreview+
+    '<button class="btn bs2" style="width:100%;justify-content:center" onclick="closeM()">Close</button>'
+  );
+}
+
+function viewScan(orderId){
+  const o=STATE.radOrders.find(x=>x.id===orderId);
+  const sc2=STATE.radScans[orderId];
+  if(!sc2) return toast2('Scan not yet uploaded by radiologist',1);
+  const isImg=sc2.dataURL&&sc2.mime&&sc2.mime.startsWith('image/');
+  const isPdf=sc2.dataURL&&sc2.mime==='application/pdf';
+  let scanPreview='';
+  if(isImg){
+    scanPreview='<div style="margin-bottom:14px"><div class="sdiv">Attached Scan Image</div>'+
+      '<a href="'+sc2.dataURL+'" download="'+sc2.file+'" target="_blank">'+
+      '<img src="'+sc2.dataURL+'" style="width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:1px solid var(--s200);cursor:zoom-in;background:#0f172a" title="Click to open full size"/>'+
+      '</a><div style="font-size:11px;color:var(--s400);margin-top:4px;text-align:center">&#129981; Click scan to open full size / download</div></div>';
+  } else if(isPdf){
+    scanPreview='<div style="margin-bottom:14px"><div class="sdiv">Attached Scan (PDF)</div>'+
+      '<a href="'+sc2.dataURL+'" download="'+sc2.file+'" class="btn bp" style="width:100%;justify-content:center;margin-bottom:6px">'+sv('dl')+' Download PDF &mdash; '+sc2.file+'</a></div>';
+  } else {
+    scanPreview='<div style="background:var(--s900);border-radius:14px;padding:28px;display:flex;align-items:center;justify-content:center;margin-bottom:14px">'+
+      '<div style="text-align:center;color:rgba(255,255,255,.6)"><div style="font-size:40px;margin-bottom:8px">&#129981;</div>'+
+      '<div style="font-size:13px;font-weight:600">'+sc2.file+'</div>'+
+      '<div style="font-size:11px;margin-top:6px;opacity:.7">DICOM viewer &mdash; upload a JPEG/PNG to see scan preview here</div></div></div>';
+  }
+  showM(
+    '<button class="mc" onclick="closeM()">&#x2715;</button><div class="mt2">Radiology Report</div>'+
+    '<div class="ms2">'+o.scan+' &mdash; '+o.pt+' &mdash; '+o.id+' &mdash; Uploaded by '+sc2.by+'</div>',
+    scanPreview+
+    '<div class="sdiv">Radiologist Findings</div>'+
+    '<div style="background:var(--ol);border-radius:12px;padding:14px;font-size:13px;color:var(--o);line-height:1.8;margin-bottom:14px">'+
+    sv('scn','style="width:14px;height:14px;stroke:var(--o);display:inline"')+'&nbsp;<b>'+sc2.by+' (Radiologist)</b><br/>'+sc2.remarks+'</div>'+
+    '<div style="font-size:11px;color:var(--s400);margin-bottom:14px">Uploaded at '+sc2.at+'</div>'+
+    '<button class="btn bs2" style="width:100%;justify-content:center" onclick="closeM()">Close</button>'
+  );
+}
+
+/* ═══════════════════════════════════════
+   KEYBOARD
+═══════════════════════════════════════ */
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM();});
+document.getElementById('lp2').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>

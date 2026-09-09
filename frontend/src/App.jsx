@@ -22,6 +22,7 @@ const ROLE_HOME = {
   radiologist: '/radiology/orders',
   pharmacist: '/pharmacy/dashboard',
   owner: '/owner/dashboard',
+  manager: '/owner/dashboard',
 }
 
 function ProtectedRoute({ children, roles }) {
@@ -46,7 +47,7 @@ export default function App() {
 
         {/* Receptionist */}
         <Route path="/receptionist/*" element={
-          <ProtectedRoute roles={['receptionist', 'owner']}>
+          <ProtectedRoute roles={['receptionist', 'owner', 'manager']}>
             <Routes>
               <Route path="queue" element={<OPDQueue />} />
               <Route path="register" element={<RegisterPatient />} />
@@ -57,7 +58,7 @@ export default function App() {
 
         {/* Doctor */}
         <Route path="/doctor/*" element={
-          <ProtectedRoute roles={['doctor', 'owner']}>
+          <ProtectedRoute roles={['doctor', 'owner', 'manager']}>
             <Routes>
               <Route path="queue" element={<DoctorDashboard />} />
               <Route path="patient/:patientId" element={<PatientHistory />} />
@@ -68,7 +69,7 @@ export default function App() {
 
         {/* Lab */}
         <Route path="/lab/*" element={
-          <ProtectedRoute roles={['lab_technician', 'owner']}>
+          <ProtectedRoute roles={['lab_technician', 'owner', 'manager']}>
             <Routes>
               <Route path="orders" element={<LabDashboard />} />
             </Routes>
@@ -77,7 +78,7 @@ export default function App() {
 
         {/* Radiology */}
         <Route path="/radiology/*" element={
-          <ProtectedRoute roles={['radiologist', 'owner']}>
+          <ProtectedRoute roles={['radiologist', 'owner', 'manager']}>
             <Routes>
               <Route path="orders" element={<RadioDashboard />} />
             </Routes>
@@ -86,7 +87,7 @@ export default function App() {
 
         {/* Pharmacy */}
         <Route path="/pharmacy/*" element={
-          <ProtectedRoute roles={['pharmacist', 'owner']}>
+          <ProtectedRoute roles={['pharmacist', 'owner', 'manager']}>
             <Routes>
               <Route path="dashboard" element={<PharmacyDashboard />} />
               <Route path="inventory" element={<Inventory />} />
@@ -94,9 +95,9 @@ export default function App() {
           </ProtectedRoute>
         } />
 
-        {/* Owner */}
+        {/* Owner / Manager */}
         <Route path="/owner/*" element={
-          <ProtectedRoute roles={['owner']}>
+          <ProtectedRoute roles={['owner', 'manager']}>
             <Routes>
               <Route path="dashboard" element={<OwnerDashboard />} />
             </Routes>

@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 venv/
 .env
+*.test_token.txt
+.test_token.txt
 
 # Node
 node_modules/

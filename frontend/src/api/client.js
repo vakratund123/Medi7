@@ -1,7 +1,14 @@
 import axios from 'axios'
 
+// In production (Netlify), VITE_API_URL is the full backend URL (e.g. https://medi7-backend.onrender.com)
+// In local dev, it falls back to '/api' which is proxied by Vite to localhost:8000
+const rawUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '')
+const baseURL = rawUrl
+  ? (rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`)
+  : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   timeout: 30000,
 })
 

@@ -15,7 +15,7 @@ CREATE TABLE staff (
     mobile          VARCHAR(15) NOT NULL UNIQUE,
     role            VARCHAR(50) NOT NULL CHECK (role IN (
                         'receptionist', 'doctor', 'lab_technician',
-                        'radiologist', 'pharmacist', 'owner'
+                        'radiologist', 'pharmacist', 'owner', 'manager'
                     )),
     department      VARCHAR(100),
     login_email     VARCHAR(255) NOT NULL UNIQUE,
@@ -43,12 +43,14 @@ CREATE TABLE patients (
     chronic_conditions  TEXT,
     language_preference VARCHAR(20) NOT NULL DEFAULT 'english'
                         CHECK (language_preference IN ('marathi', 'kannada', 'hindi', 'english')),
+    referred_by         VARCHAR(200),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_patients_mobile ON patients(mobile_number);
 CREATE INDEX idx_patients_name ON patients(full_name);
 CREATE INDEX idx_patients_created ON patients(created_at);
+CREATE INDEX idx_patients_referred ON patients(referred_by);
 
 -- ============================================================
 -- VISITS TABLE
@@ -64,6 +66,7 @@ CREATE TABLE visits (
     chief_complaint TEXT,
     diagnosis       TEXT,
     notes           TEXT,
+    referred_by     VARCHAR(200),
     follow_up_date  DATE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -89,6 +92,35 @@ CREATE TABLE prescriptions (
 
 CREATE INDEX idx_prescriptions_patient ON prescriptions(patient_id);
 CREATE INDEX idx_prescriptions_visit ON prescriptions(visit_id);
+
+-- ============================================================
+-- BILLS / INVOICES TABLE
+-- ============================================================
+CREATE TABLE bills (
+    bill_id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    bill_number     VARCHAR(50) NOT NULL UNIQUE,
+    visit_id        UUID NOT NULL REFERENCES visits(visit_id) ON DELETE RESTRICT,
+    patient_id      VARCHAR(20) NOT NULL REFERENCES patients(patient_id) ON DELETE RESTRICT,
+    doctor_id       UUID NOT NULL REFERENCES staff(staff_id) ON DELETE RESTRICT,
+    -- items: [{"name": "Consultation", "category": "Consultation", "quantity": 1, "unit_price": 500, "total": 500}]
+    items           JSONB NOT NULL DEFAULT '[]',
+    subtotal        NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    discount        NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    tax             NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    net_amount      NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    payment_status  VARCHAR(20) NOT NULL DEFAULT 'pending'
+                    CHECK (payment_status IN ('pending', 'paid', 'partially_paid')),
+    payment_mode    VARCHAR(30)
+                    CHECK (payment_mode IS NULL OR payment_mode IN ('cash', 'upi', 'card', 'insurance', 'other')),
+    notes           TEXT,
+    pdf_url         TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_bills_patient ON bills(patient_id);
+CREATE INDEX idx_bills_visit ON bills(visit_id);
+CREATE INDEX idx_bills_number ON bills(bill_number);
 
 -- ============================================================
 -- LAB ORDERS TABLE

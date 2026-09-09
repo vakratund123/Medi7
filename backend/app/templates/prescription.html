@@ -60,16 +60,23 @@
 <div class="watermark">MEDI7 — {{ hospital_name }}</div>
 <div class="page">
 
-  <!-- Header -->
-  <div class="header">
-    <div>
-      <div class="hospital-name">{{ hospital_name }}</div>
-      <div class="hospital-sub">Multispecialty Hospital • Digital Health Records</div>
+  <!-- Header matching official Sai Hospital letterhead -->
+  <div class="header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 14px;">
+    <div style="width: 25%;">
+      <div style="font-weight: 800; font-size: 20px; color: #1d4ed8; line-height: 1;">Sai</div>
+      <div style="font-size: 8px; font-weight: 700; color: #1e3a8a;">Emergency &amp; Multispeciality</div>
+      <div style="font-size: 7px; font-weight: 600; color: #0284c7; letter-spacing: 1px;">H O S P I T A L</div>
     </div>
-    <div class="doctor-block">
+    <div style="width: 50%; text-align: center;">
+      <div class="hospital-name" style="font-size: 17px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL</div>
+      <div style="font-size: 10px; font-weight: 700; color: #0284c7;">REG. NO. : BLG03043ALHL3</div>
+      <div class="hospital-sub" style="font-size: 10px; color: #334155; margin-top: 2px;">Old Motor Stand, NIPANI - 591 237. Dist. Belgavi</div>
+      <div style="font-size: 9.5px; color: #1e3a8a; font-weight: 600; margin-top: 1px;">Mob. : 9632219690, 7204583699 • semhospitalnipani@gmail.com</div>
+    </div>
+    <div class="doctor-block" style="width: 25%; text-align: right;">
       <div class="doctor-name">Dr. {{ doctor.full_name }}</div>
       <div class="doctor-qual">{{ doctor.department or 'General Medicine' }}</div>
-      <div class="reg-no">Reg No: {{ doctor.get('reg_no', 'MH-12345') }}</div>
+      <div class="reg-no">Reg No: {{ doctor.get('reg_no', 'BLG03043ALHL3') }}</div>
     </div>
   </div>
 
@@ -91,6 +98,12 @@
       <label>Date</label>
       <span>{{ generated_at }}</span>
     </div>
+    {% if visit.get('referred_by') or patient.get('referred_by') %}
+    <div class="info-item">
+      <label>Referred By</label>
+      <span style="color: #1a56db;">{{ visit.get('referred_by') or patient.get('referred_by') }}</span>
+    </div>
+    {% endif %}
     {% if patient.known_allergies %}
     <div class="info-item">
       <label>⚠️ Allergies</label>

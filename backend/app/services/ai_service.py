@@ -131,22 +131,22 @@ async def generate_whatsapp_message(message_type: str, language: str, context: d
     """Generate WhatsApp message in patient's preferred language."""
     templates = {
         "welcome": {
-            "marathi": "नमस्कार {name} जी 🙏\nSai Hospital मध्ये आपले स्वागत आहे.\nआपला Patient ID: {patient_id}\nसर्व रेकॉर्ड डिजिटल सेव्ह केले जातील.",
-            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Hospital ಗೆ ಸ್ವಾಗತ.\nನಿಮ್ಮ Patient ID: {patient_id}",
-            "hindi": "नमस्कार {name} जी 🙏\nSai Hospital में आपका स्वागत है।\nआपकी Patient ID: {patient_id}",
-            "english": "Welcome {name} 🙏\nThank you for visiting Sai Hospital.\nYour Patient ID: {patient_id}",
+            "marathi": "नमस्कार {name} जी 🙏\nSai Hospital मध्ये आपले स्वागत आहे.\nआपला Patient ID: {patient_id}\nअधिक माहितीसाठी संपर्क: +919632219690\nसर्व रेकॉर्ड डिजिटल सेव्ह केले जातील.",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Hospital ಗೆ ಸ್ವಾಗತ.\nನಿಮ್ಮ Patient ID: {patient_id}\nಸಂಪರ್ಕ: +919632219690",
+            "hindi": "नमस्कार {name} जी 🙏\nSai Hospital में आपका स्वागत है।\nआपकी Patient ID: {patient_id}\nहेल्पलाइन: +919632219690",
+            "english": "Welcome {name} 🙏\nThank you for visiting Sai Hospital.\nYour Patient ID: {patient_id}\nHelpline: +919632219690",
         },
         "prescription": {
-            "marathi": "नमस्कार {name} जी,\nआपली प्रिस्क्रिप्शन तयार आहे. 📋\nपुढील भेट: {follow_up}",
-            "english": "Hello {name},\nYour prescription is ready. 📋\nNext visit: {follow_up}",
+            "marathi": "नमस्कार {name} जी,\nआपली प्रिस्क्रिप्शन तयार आहे. 📋\nपुढील भेट: {follow_up}\nSai Hospital WhatsApp: +919632219690",
+            "english": "Hello {name},\nYour prescription is ready. 📋\nNext visit: {follow_up}\nSai Hospital WhatsApp: +919632219690",
         },
         "report": {
-            "marathi": "आपला {test_name} अहवाल तयार आहे. 🧪",
-            "english": "Your {test_name} report is ready. 🧪",
+            "marathi": "आपला {test_name} अहवाल तयार आहे. 🧪\nSai Hospital: +919632219690",
+            "english": "Your {test_name} report is ready. 🧪\nSai Hospital: +919632219690",
         },
         "reminder": {
-            "marathi": "उद्या आपली appointment आहे\nDr. {doctor} यांच्याकडे — {time}\nConfirm करण्यासाठी YES reply करा.",
-            "english": "Reminder: Your appointment with Dr. {doctor} is tomorrow at {time}.\nReply YES to confirm.",
+            "marathi": "उद्या आपली appointment आहे\nDr. {doctor} यांच्याकडे — {time}\nConfirm करण्यासाठी YES reply करा.\nSai Hospital: +919632219690",
+            "english": "Reminder: Your appointment with Dr. {doctor} is tomorrow at {time}.\nReply YES to confirm.\nSai Hospital: +919632219690",
         },
     }
 

@@ -11,6 +11,7 @@ const ROLE_HOME = {
   radiologist: '/radiology/orders',
   pharmacist: '/pharmacy/dashboard',
   owner: '/owner/dashboard',
+  manager: '/owner/dashboard',
 }
 
 export default function Login() {
@@ -109,24 +110,26 @@ export default function Login() {
 
           {/* Demo credentials */}
           <div className="mt-6 pt-5 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Demo Credentials</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Official Staff Logins (5 IDs)</p>
+              <span className="text-[11px] text-primary-600 font-medium">WA: +919632219690</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               {[
-                ['Owner', 'owner@saihospital.in', 'Admin@123'],
-                ['Doctor', 'dr.priya@saihospital.in', 'Doctor@123'],
-                ['Reception', 'receptionist@saihospital.in', 'Recept@123'],
-                ['Lab Tech', 'lab@saihospital.in', 'Lab@1234'],
-                ['Pharmacist', 'pharmacy@saihospital.in', 'Pharm@123'],
-                ['Radiologist', 'radiology@saihospital.in', 'Radio@123'],
+                ['Manager', 'manager@saihospital.in', 'Admin@123'],
+                ['Doctor', 'doctor@saihospital.in', 'Doctor@123'],
+                ['Reception', 'reception@saihospital.in', 'Recept@123'],
+                ['Laboratory', 'laboratory@saihospital.in', 'Lab@1234'],
+                ['Pharmacy', 'pharmacy@saihospital.in', 'Pharm@123'],
               ].map(([role, em, pw]) => (
                 <button
                   key={role}
                   type="button"
                   onClick={() => { setEmail(em); setPassword(pw) }}
-                  className="text-left px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                  className="text-left px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-primary-50 hover:text-primary-700 transition-colors border border-slate-100"
                 >
-                  <div className="font-semibold text-slate-700">{role}</div>
-                  <div className="text-slate-400 truncate">{em}</div>
+                  <div className="font-semibold text-slate-800">{role}</div>
+                  <div className="text-slate-400 text-[11px] truncate">{em}</div>
                 </button>
               ))}
             </div>

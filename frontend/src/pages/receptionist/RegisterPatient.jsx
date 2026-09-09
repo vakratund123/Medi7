@@ -19,7 +19,7 @@ export default function RegisterPatient() {
   const [form, setForm] = useState({
     full_name: '', mobile_number: '', age: '', gender: 'male',
     address: '', blood_group: '', known_allergies: '', chronic_conditions: '',
-    language_preference: 'marathi', date_of_birth: '',
+    language_preference: 'marathi', date_of_birth: '', referred_by: '',
   })
   const [visitForm, setVisitForm] = useState({ doctor_id: '', visit_type: 'OPD', chief_complaint: '' })
 
@@ -41,17 +41,17 @@ export default function RegisterPatient() {
         ...form,
         age: parseInt(form.age),
         date_of_birth: form.date_of_birth || null,
+        referred_by: form.referred_by || null,
       })
 
-      // Create visit if doctor selected or chief complaint entered
-      if (visitForm.doctor_id || visitForm.chief_complaint) {
-        await api.post('/visits/', {
-          patient_id: patient.patient_id,
-          doctor_id: visitForm.doctor_id || null,
-          visit_type: visitForm.visit_type,
-          chief_complaint: visitForm.chief_complaint || null,
-        })
-      }
+      // Always create OPD visit so patient appears in the waiting queue immediately
+      await api.post('/visits/', {
+        patient_id: patient.patient_id,
+        doctor_id: visitForm.doctor_id || null,
+        visit_type: visitForm.visit_type || 'OPD',
+        chief_complaint: visitForm.chief_complaint || 'General OPD Consultation',
+        referred_by: form.referred_by || null,
+      })
 
       setRegistered(patient)
       toast.success(`Patient registered! ID: ${patient.patient_id}`)
@@ -152,6 +152,31 @@ export default function RegisterPatient() {
               <div>
                 <label className="label">Chronic Conditions</label>
                 <input className="input" placeholder="e.g. Hypertension, Diabetes" value={form.chronic_conditions} onChange={set('chronic_conditions')} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label flex items-center justify-between">
+                  <span className="font-semibold text-slate-700">Referred By (Doctor / Clinic / Hospital)</span>
+                  <span className="text-xs text-primary-600">Important for Dr. Referral tracking</span>
+                </label>
+                <input
+                  className="input"
+                  placeholder="e.g. Dr. Kulkarni (Sangli) or Self / Direct Walk-in"
+                  value={form.referred_by}
+                  onChange={set('referred_by')}
+                />
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <span className="text-xs text-slate-400 mr-1">Quick select:</span>
+                  {['Self / Walk-in', 'Dr. Kulkarni (Sangli)', 'Dr. A. Patil (Kolhapur)', 'Dr. S. Joshi (Miraj)', 'Dr. V. Shinde (Karad)'].map(refName => (
+                    <button
+                      key={refName}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, referred_by: refName }))}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${form.referred_by === refName ? 'bg-primary-600 border-primary-600 text-white font-medium shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      {refName}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

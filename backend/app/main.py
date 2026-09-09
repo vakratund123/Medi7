@@ -7,7 +7,7 @@ from pathlib import Path
 from app.config import get_settings
 from app.database import engine
 from app.models import *  # noqa: F401,F403 — import all models for Alembic
-from app.routers import auth, patients, visits, prescriptions, lab, radiology, pharmacy, staff, owner, uploads
+from app.routers import auth, patients, visits, prescriptions, bills, lab, radiology, pharmacy, staff, owner, uploads, whatsapp
 
 settings = get_settings()
 
@@ -16,6 +16,13 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     # Ensure upload directories exist
     Path(settings.LOCAL_STORAGE_PATH).mkdir(parents=True, exist_ok=True)
+    # Ensure database schema is created on startup (essential for fresh cloud Postgres deployments)
+    try:
+        from app.database import Base
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"[Startup Warning] Could not auto-create tables: {e}")
     yield
     await engine.dispose()
 
@@ -27,10 +34,24 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS — FRONTEND_URL can be comma-separated for multiple origins
+# e.g. "https://medi7.netlify.app,https://yourdomain.com"
+raw_origins = [
+    origin.strip().rstrip("/")
+    for origin in settings.FRONTEND_URL.split(",")
+    if origin.strip()
+]
+allowed_origins = list(set(raw_origins + [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https:\/\/.*\.netlify\.app|https:\/\/.*\.onrender\.com|https:\/\/.*\.vercel\.app|http:\/\/(localhost|127\.0\.0\.1):\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,12 +62,14 @@ app.include_router(auth.router)
 app.include_router(patients.router)
 app.include_router(visits.router)
 app.include_router(prescriptions.router)
+app.include_router(bills.router)
 app.include_router(lab.router)
 app.include_router(radiology.router)
 app.include_router(pharmacy.router)
 app.include_router(staff.router)
 app.include_router(owner.router)
 app.include_router(uploads.router)
+app.include_router(whatsapp.router)
 
 # Serve local uploads as static files (dev only)
 uploads_path = Path(settings.LOCAL_STORAGE_PATH)

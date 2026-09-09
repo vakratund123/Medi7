@@ -18,4 +18,5 @@ class Patient(Base):
     known_allergies: Mapped[str | None]
     chronic_conditions: Mapped[str | None]
     language_preference: Mapped[str] = mapped_column(String(20), default="english")
+    referred_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
