@@ -33,11 +33,25 @@ async def _save_to_s3(file_bytes: bytes, filename: str, folder: str) -> str:
     import boto3
     ext = Path(filename).suffix
     unique_name = f"{folder}/{uuid.uuid4().hex}{ext}"
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION,
+    
+    boto_kwargs = {
+        "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
+        "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
+        "region_name": settings.AWS_REGION or "auto",
+    }
+    if settings.S3_ENDPOINT_URL:
+        boto_kwargs["endpoint_url"] = settings.S3_ENDPOINT_URL
+
+    s3 = boto3.client("s3", **boto_kwargs)
+    s3.put_object(
+        Bucket=settings.S3_BUCKET,
+        Key=unique_name,
+        Body=file_bytes,
+        ContentType="application/pdf" if ext.lower() == ".pdf" else "application/octet-stream",
     )
-    s3.put_object(Bucket=settings.S3_BUCKET, Key=unique_name, Body=file_bytes)
+
+    if settings.S3_PUBLIC_URL:
+        return f"{settings.S3_PUBLIC_URL.rstrip('/')}/{unique_name}"
+    if settings.S3_ENDPOINT_URL:
+        return f"{settings.S3_ENDPOINT_URL.rstrip('/')}/{settings.S3_BUCKET}/{unique_name}"
     return f"https://{settings.S3_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{unique_name}"

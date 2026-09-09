@@ -58,6 +58,44 @@ def generate_prescription_pdf(
             f.write(f"Visit Diagnosis: {visit.get('diagnosis')}\n")
             f.write(f"Medicines: {prescription.get('medicines')}\n")
 
+    if settings.STORAGE_BACKEND == "s3":
+        return _sync_to_s3(output_path, "prescriptions")
+    return f"/uploads/prescriptions/{filename}"
+
+
+def _sync_to_s3(local_path: Path, folder: str) -> str:
+    """Upload local generated PDF to S3 / Cloudflare R2 and return URL."""
+    try:
+        import boto3
+        filename = local_path.name
+        unique_key = f"{folder}/{filename}"
+        boto_kwargs = {
+            "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
+            "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
+            "region_name": settings.AWS_REGION or "auto",
+        }
+        if settings.S3_ENDPOINT_URL:
+            boto_kwargs["endpoint_url"] = settings.S3_ENDPOINT_URL
+
+        s3 = boto3.client("s3", **boto_kwargs)
+        with open(local_path, "rb") as f:
+            s3.put_object(
+                Bucket=settings.S3_BUCKET,
+                Key=unique_key,
+                Body=f.read(),
+                ContentType="application/pdf",
+            )
+
+        if settings.S3_PUBLIC_URL:
+            return f"{settings.S3_PUBLIC_URL.rstrip('/')}/{unique_key}"
+        if settings.S3_ENDPOINT_URL:
+            return f"{settings.S3_ENDPOINT_URL.rstrip('/')}/{settings.S3_BUCKET}/{unique_key}"
+        return f"https://{settings.S3_BUCKET}.s3.{settings.AWS_REGION}.amazonaws.com/{unique_key}"
+    except Exception as e:
+        print(f"[Storage Warning] S3 upload failed for {local_path}: {e}")
+        return f"/uploads/{folder}/{local_path.name}"
+
+
 BILL_UPLOAD_DIR = Path(settings.LOCAL_STORAGE_PATH) / "bills"
 
 
@@ -159,4 +197,6 @@ def generate_bill_pdf(
             f.write(f"In Words: {amt_in_words}\n")
             f.write(f"Status: {bill.get('payment_status')}\n")
 
+    if settings.STORAGE_BACKEND == "s3":
+        return _sync_to_s3(output_path, "bills")
     return f"/uploads/bills/{filename}"

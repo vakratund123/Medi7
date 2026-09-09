@@ -26,13 +26,15 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # File Storage (S3 / local)
+    # File Storage (S3 / Cloudflare R2 / local)
     STORAGE_BACKEND: str = "local"          # "local" | "s3"
     LOCAL_STORAGE_PATH: str = "./uploads"
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_REGION: str = "ap-south-1"
+    AWS_REGION: str = "auto"
     S3_BUCKET: str = "medi7-files"
+    S3_ENDPOINT_URL: str = ""               # For Cloudflare R2: https://<accountid>.r2.cloudflarestorage.com
+    S3_PUBLIC_URL: str = ""                 # For Cloudflare R2 public URL: https://pub-<hash>.r2.dev or custom domain
 
     # AI
     GEMINI_API_KEY: str = ""
