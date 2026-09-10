@@ -561,7 +561,7 @@
       </div>
       <div class="sig-block">
         <div class="sig-line"></div>
-        <div class="sig-title">Dr. {{ doctor.full_name }}</div>
+        <div class="sig-title">{{ doctor.full_name if doctor.full_name.startswith('Dr') else 'Dr. ' ~ doctor.full_name }}</div>
         <div class="sig-sub">Treating Doctor / Reg. BLG03043ALHL3</div>
       </div>
     </div>

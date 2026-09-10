@@ -25,9 +25,9 @@ from app.database import engine, AsyncSessionLocal
 
 STAFF_SEED = [
     # 5 Standard IDs for Sai Multispecialty Hospital
-    {"full_name": "Dr. Rahul Desai", "mobile": "919632219690", "role": "manager",
+    {"full_name": "Dr. Rahul Nirmale", "mobile": "919632219690", "role": "manager",
      "department": "Administration", "login_email": "manager@saihospital.in", "password": "Admin@123"},
-    {"full_name": "Dr. Priya Sharma", "mobile": "9876543221", "role": "doctor",
+    {"full_name": "Dr. Rahul Nirmale", "mobile": "9876543221", "role": "doctor",
      "department": "General Medicine", "login_email": "doctor@saihospital.in", "password": "Doctor@123"},
     {"full_name": "Sunita Patil", "mobile": "9876543223", "role": "receptionist",
      "department": "Front Desk", "login_email": "reception@saihospital.in", "password": "Recept@123"},
@@ -37,10 +37,10 @@ STAFF_SEED = [
      "department": "Pharmacy", "login_email": "pharmacy@saihospital.in", "password": "Pharm@123"},
 
     # Alias / Secondary accounts for backwards compatibility
-    {"full_name": "Dr. Rahul Desai", "mobile": "9876543210", "role": "owner",
+    {"full_name": "Dr. Rahul Nirmale", "mobile": "9876543210", "role": "owner",
      "department": "Administration", "login_email": "owner@saihospital.in", "password": "Admin@123"},
-    {"full_name": "Dr. Priya Sharma", "mobile": "9876543211", "role": "doctor",
-     "department": "General Medicine", "login_email": "dr.priya@saihospital.in", "password": "Doctor@123"},
+    {"full_name": "Dr. Rahul Nirmale", "mobile": "9876543211", "role": "doctor",
+     "department": "General Medicine", "login_email": "dr.rahul@saihospital.in", "password": "Doctor@123"},
     {"full_name": "Sunita Patil", "mobile": "9876543213", "role": "receptionist",
      "department": "Front Desk", "login_email": "receptionist@saihospital.in", "password": "Recept@123"},
     {"full_name": "Ravi Shinde", "mobile": "9876543214", "role": "lab_technician",
@@ -116,7 +116,14 @@ async def seed():
                 )
             )
             if existing.scalar_one_or_none():
-                print(f"    [Skip] {s['login_email']} already exists")
+                from sqlalchemy import update
+                await db.execute(
+                    update(Staff)
+                    .where(Staff.login_email == s["login_email"])
+                    .values(full_name=s["full_name"])
+                )
+                await db.commit()
+                print(f"    [Updated] {s['login_email']} -> {s['full_name']}")
                 continue
             staff_obj = Staff(
                 full_name=s["full_name"],

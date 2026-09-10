@@ -202,7 +202,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
               <div className="space-y-1.5">
                 <div className="flex">
                   <span className="w-28 text-slate-500 font-medium">Treating Doctor:</span>
-                  <span className="font-bold text-slate-900">Dr. {doctor?.full_name || 'Rahul (MD)'}</span>
+                  <span className="font-bold text-slate-900">{doctor?.full_name ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`) : 'Dr. Rahul Nirmale'}</span>
                 </div>
                 <div className="flex">
                   <span className="w-28 text-slate-500 font-medium">Department:</span>
@@ -308,7 +308,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
               </div>
               <div className="text-center">
                 <div className="w-44 border-t border-slate-400 mx-auto mb-1"></div>
-                <div className="text-xs font-bold text-slate-900">Dr. {doctor?.full_name || 'Rahul (MD)'}</div>
+                <div className="text-xs font-bold text-slate-900">{doctor?.full_name ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`) : 'Dr. Rahul Nirmale'}</div>
                 <div className="text-[10px] text-slate-500">Treating Doctor &bull; Reg. BLG03043ALHL3</div>
               </div>
             </div>

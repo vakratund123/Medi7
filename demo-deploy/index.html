@@ -271,23 +271,23 @@ textarea{resize:vertical;min-height:70px}
 ═══════════════════════════════════════ */
 const STATE = {
   patients: [
-    {id:'SAI-2026-00142',name:'Arvind Kumar', age:45,gender:'M',phone:'98765-43210',dx:'Hypertension',      dr:'Dr. Priya Sharma',st:'waiting',        vt:'10:15 AM',ref:'Dr. Kulkarni (Sangli)'},
-    {id:'SAI-2026-00143',name:'Meena Joshi',  age:32,gender:'F',phone:'91234-56789',dx:'Diabetes follow-up',dr:'Dr. Priya Sharma',st:'in_consultation',vt:'10:40 AM',ref:'Dr. A. Patil (Kolhapur)'},
+    {id:'SAI-2026-00142',name:'Arvind Kumar', age:45,gender:'M',phone:'98765-43210',dx:'Hypertension',      dr:'Dr. Rahul Nirmale',st:'waiting',        vt:'10:15 AM',ref:'Dr. Kulkarni (Sangli)'},
+    {id:'SAI-2026-00143',name:'Meena Joshi',  age:32,gender:'F',phone:'91234-56789',dx:'Diabetes follow-up',dr:'Dr. Rahul Nirmale',st:'in_consultation',vt:'10:40 AM',ref:'Dr. A. Patil (Kolhapur)'},
     {id:'SAI-2026-00144',name:'Sanjay Patel', age:58,gender:'M',phone:'87654-32109',dx:'Back pain',         dr:'Dr. Rohan Mehta', st:'completed',      vt:'11:00 AM',ref:'Dr. Kulkarni (Sangli)'},
-    {id:'SAI-2026-00145',name:'Laxmi Devi',   age:67,gender:'F',phone:'76543-21098',dx:'Arthritis',         dr:'Dr. Priya Sharma',st:'waiting',        vt:'11:15 AM',ref:'Dr. S. Joshi (Miraj)'},
+    {id:'SAI-2026-00145',name:'Laxmi Devi',   age:67,gender:'F',phone:'76543-21098',dx:'Arthritis',         dr:'Dr. Rahul Nirmale',st:'waiting',        vt:'11:15 AM',ref:'Dr. S. Joshi (Miraj)'},
     {id:'SAI-2026-00146',name:'Ramesh Singh', age:39,gender:'M',phone:'99887-76543',dx:'Fever & cough',     dr:'Dr. Rohan Mehta', st:'waiting',        vt:'11:30 AM',ref:'Self / Walk-in'},
   ],
   consultations: {
     'SAI-2026-00144': {dx:'Lumbar Spondylosis',rx:'1. Diclofenac 50mg BD x 5d\n2. Pantoprazole 40mg OD x 5d\n3. Physiotherapy 3x/week',notes:'X-Ray ordered. Physio referral.',by:'Dr. Rohan Mehta',at:'11:05 AM'}
   },
   labOrders: [
-    {id:'LAB-001',pid:'SAI-2026-00142',pt:'Arvind Kumar',  test:'CBC + HbA1c',   dr:'Dr. Priya Sharma',tm:'10:20 AM',st:'sample_collected',urg:true},
-    {id:'LAB-002',pid:'SAI-2026-00143',pt:'Meena Joshi',   test:'Lipid Profile', dr:'Dr. Priya Sharma',tm:'10:50 AM',st:'ordered',         urg:false},
-    {id:'LAB-003',pid:'SAI-2026-00145',pt:'Laxmi Devi',    test:'ESR + CRP',     dr:'Dr. Priya Sharma',tm:'11:20 AM',st:'ordered',         urg:false},
+    {id:'LAB-001',pid:'SAI-2026-00142',pt:'Arvind Kumar',  test:'CBC + HbA1c',   dr:'Dr. Rahul Nirmale',tm:'10:20 AM',st:'sample_collected',urg:true},
+    {id:'LAB-002',pid:'SAI-2026-00143',pt:'Meena Joshi',   test:'Lipid Profile', dr:'Dr. Rahul Nirmale',tm:'10:50 AM',st:'ordered',         urg:false},
+    {id:'LAB-003',pid:'SAI-2026-00145',pt:'Laxmi Devi',    test:'ESR + CRP',     dr:'Dr. Rahul Nirmale',tm:'11:20 AM',st:'ordered',         urg:false},
   ],
   radOrders: [
     {id:'RAD-001',pid:'SAI-2026-00144',pt:'Sanjay Patel',scan:'X-Ray Lumbar Spine AP+Lat',dr:'Dr. Rohan Mehta', tm:'11:05 AM',st:'ordered'},
-    {id:'RAD-002',pid:'SAI-2026-00142',pt:'Arvind Kumar', scan:'ECG 12-Lead',              dr:'Dr. Priya Sharma',tm:'10:22 AM',st:'ordered'},
+    {id:'RAD-002',pid:'SAI-2026-00142',pt:'Arvind Kumar', scan:'ECG 12-Lead',              dr:'Dr. Rahul Nirmale',tm:'10:22 AM',st:'ordered'},
   ],
   prescriptions: [
     {id:'RX-001',pid:'SAI-2026-00144',pt:'Sanjay Patel',meds:'1. Diclofenac 50mg BD x 5d\n2. Pantoprazole 40mg OD x 5d',dr:'Dr. Rohan Mehta',tm:'11:10 AM',dispensed:true},
@@ -315,7 +315,7 @@ const STATE = {
   seq: {pat:147, lab:4, rad:3, rx:2, bill:1},
   actLog: [
     {a:'create visit',       e:'visit',        by:'Sunita Patil',    t:'11:32 AM'},
-    {a:'start consultation', e:'visit',        by:'Dr. Priya Sharma',t:'11:28 AM'},
+    {a:'start consultation', e:'visit',        by:'Dr. Rahul Nirmale',t:'11:28 AM'},
     {a:'dispense',           e:'prescription', by:'Meena Joshi',     t:'11:15 AM'},
     {a:'upload report',      e:'lab order',    by:'Ravi Shinde',     t:'11:02 AM'},
     {a:'register patient',   e:'patient',      by:'Sunita Patil',    t:'10:58 AM'},
@@ -326,15 +326,15 @@ const STATE = {
    AUTH / USER CONFIG (Official 5 IDs)
 ═══════════════════════════════════════ */
 const USERS = {
-  'manager@saihospital.in':      {name:'Dr. Rahul Desai',   role:'owner',         color:'#1e293b',label:'Manager'},
-  'doctor@saihospital.in':       {name:'Dr. Priya Sharma',  role:'doctor',        color:'#2563eb',label:'Doctor'},
+  'manager@saihospital.in':      {name:'Dr. Rahul Nirmale', role:'owner',         color:'#1e293b',label:'Manager'},
+  'doctor@saihospital.in':       {name:'Dr. Rahul Nirmale', role:'doctor',        color:'#2563eb',label:'Doctor'},
   'reception@saihospital.in':    {name:'Sunita Patil',      role:'receptionist',  color:'#7c3aed',label:'Reception'},
   'laboratory@saihospital.in':   {name:'Ravi Shinde',       role:'lab_technician',color:'#059669',label:'Laboratory'},
   'pharmacy@saihospital.in':     {name:'Meena Joshi',       role:'pharmacist',    color:'#db2777',label:'Pharmacy'},
 
   // Backwards compatibility
-  'owner@saihospital.in':        {name:'Dr. Rahul Desai',   role:'owner',         color:'#1e293b',label:'Manager'},
-  'dr.priya@saihospital.in':     {name:'Dr. Priya Sharma',  role:'doctor',        color:'#2563eb',label:'Doctor'},
+  'owner@saihospital.in':        {name:'Dr. Rahul Nirmale', role:'owner',         color:'#1e293b',label:'Manager'},
+  'dr.rahul@saihospital.in':     {name:'Dr. Rahul Nirmale', role:'doctor',        color:'#2563eb',label:'Doctor'},
   'receptionist@saihospital.in': {name:'Sunita Patil',      role:'receptionist',  color:'#7c3aed',label:'Reception'},
   'lab@saihospital.in':          {name:'Ravi Shinde',       role:'lab_technician',color:'#059669',label:'Laboratory'},
   'radiology@saihospital.in':    {name:'Dr. Kavita Rao',    role:'radiologist',   color:'#d97706',label:'Radiologist'},
@@ -581,7 +581,7 @@ function regPat(el){
   '<div class="fg"><label>Chief Complaint *</label><input type="text" id="rdx" placeholder="e.g. Fever and cough for 3 days"/></div>'+
   '<div class="fg"><label>Assign to Doctor *</label><select id="rdoc">'+
     '<option value="">Select doctor</option>'+
-    '<option value="Dr. Priya Sharma">Dr. Priya Sharma &mdash; General Medicine</option>'+
+    '<option value="Dr. Rahul Nirmale">Dr. Rahul Nirmale &mdash; General Medicine</option>'+
     '<option value="Dr. Rohan Mehta">Dr. Rohan Mehta &mdash; Orthopedics</option>'+
     '<option value="Dr. Meera Iyer">Dr. Meera Iyer &mdash; Gynecology</option>'+
   '</select></div>'+
