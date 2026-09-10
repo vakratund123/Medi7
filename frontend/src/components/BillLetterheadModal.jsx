@@ -1,5 +1,6 @@
 import React from 'react'
 import { Printer, Download, X, CheckCircle, Clock } from 'lucide-react'
+import { SAI_HOSPITAL_LOGO_B64 } from '../assets/hospitalLogo'
 
 // Helper for converting INR number to words
 function numberToWords(amount) {
@@ -108,25 +109,21 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
         <div id="printable-letterhead" className="p-6 sm:p-10 relative bg-white text-slate-800">
           
           {/* Faint Center Watermark */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.035] pointer-events-none select-none">
-            <div className="text-9xl font-black text-blue-900">✚</div>
-            <div className="text-4xl font-extrabold text-blue-900 tracking-widest mt-2 uppercase">Sai Emergency Hospital</div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-[0.045] pointer-events-none select-none">
+            <img src={SAI_HOSPITAL_LOGO_B64} alt="" className="w-80 max-w-full h-auto object-contain" />
           </div>
 
           <div className="relative z-10">
             {/* Header matching provided scan */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-transparent">
               
-              {/* Left Logo Stylized Graphic */}
-              <div className="w-[28%] flex flex-col items-start">
-                <svg className="w-36 h-auto" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M45 28C45 20 38 15 28 15C16 15 8 22 8 32C8 46 45 44 45 60C45 70 36 76 24 76C12 76 5 69 4 58" stroke="#1d4ed8" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M50 16H62V28H74V40H62V52H50V40H38V28H50V16Z" fill="#0284c7"/>
-                  <path d="M68 62C72 50 82 48 90 54C94 57 96 64 96 74" stroke="#1d4ed8" strokeWidth="5" strokeLinecap="round"/>
-                  <path d="M96 52V74" stroke="#1d4ed8" strokeWidth="5" strokeLinecap="round"/>
-                  <text x="5" y="83" fontFamily="system-ui, sans-serif" fontSize="6.5" fontWeight="700" fill="#1e3a8a" letterSpacing="0.2">Emergency &amp; Multispeciality</text>
-                  <text x="5" y="90" fontFamily="system-ui, sans-serif" fontSize="5.5" fontWeight="600" fill="#0284c7" letterSpacing="1.8">H O S P I T A L</text>
-                </svg>
+              {/* Left Logo Stylized Graphic matching official scan */}
+              <div className="w-[28%] flex flex-col items-start justify-center">
+                <img
+                  src={SAI_HOSPITAL_LOGO_B64}
+                  alt="Sai Emergency & Multispeciality Hospital"
+                  className="w-32 sm:w-36 max-h-24 h-auto object-contain"
+                />
               </div>
 
               {/* Center Hospital Info */}

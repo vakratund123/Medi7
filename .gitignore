@@ -12,6 +12,7 @@ venv/
 node_modules/
 dist/
 .vite/
+*.timestamp-*.mjs
 
 # Uploads (local dev)
 backend/uploads/

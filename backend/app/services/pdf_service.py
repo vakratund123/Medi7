@@ -13,6 +13,8 @@ settings = get_settings()
 TEMPLATE_DIR = Path(__file__).parent.parent / "templates"
 UPLOAD_DIR = Path(settings.LOCAL_STORAGE_PATH) / "prescriptions"
 
+from app.services.logo_data import SAI_HOSPITAL_LOGO_B64
+
 jinja_env = Environment(
     loader=FileSystemLoader(str(TEMPLATE_DIR)),
     autoescape=select_autoescape(["html"]),
@@ -42,6 +44,7 @@ def generate_prescription_pdf(
             doctor=doctor,
             prescription=prescription,
             visit=visit,
+            hospital_logo_b64=SAI_HOSPITAL_LOGO_B64,
             generated_at=datetime.now().strftime("%d %B %Y, %I:%M %p"),
         )
         HTML(string=html_content).write_pdf(str(output_path))
@@ -177,6 +180,7 @@ def generate_bill_pdf(
             doctor=doctor,
             bill=bill,
             visit=visit,
+            hospital_logo_b64=SAI_HOSPITAL_LOGO_B64,
             amount_in_words=amt_in_words,
             generated_date=generated_date,
             generated_at=datetime.now().strftime("%d %B %Y, %I:%M %p"),
