@@ -14,7 +14,8 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 EMAIL_ALIASES = {
     "manager@saihospital.in": ["manager@saihospital.in", "owner@saihospital.in"],
     "owner@saihospital.in": ["owner@saihospital.in", "manager@saihospital.in"],
-    "doctor@saihospital.in": ["doctor@saihospital.in", "dr.priya@saihospital.in"],
+    "doctor@saihospital.in": ["doctor@saihospital.in", "dr.rahul@saihospital.in", "dr.priya@saihospital.in"],
+    "dr.rahul@saihospital.in": ["dr.rahul@saihospital.in", "doctor@saihospital.in"],
     "dr.priya@saihospital.in": ["dr.priya@saihospital.in", "doctor@saihospital.in"],
     "reception@saihospital.in": ["reception@saihospital.in", "receptionist@saihospital.in"],
     "receptionist@saihospital.in": ["receptionist@saihospital.in", "reception@saihospital.in"],
