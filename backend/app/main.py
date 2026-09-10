@@ -18,11 +18,23 @@ async def lifespan(app: FastAPI):
     Path(settings.LOCAL_STORAGE_PATH).mkdir(parents=True, exist_ok=True)
     # Ensure database schema is created on startup (essential for fresh cloud Postgres deployments)
     try:
-        from app.database import Base
+        from app.database import Base, AsyncSessionLocal
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+        from app.models.staff import Staff
+        from sqlalchemy import select
+        async with AsyncSessionLocal() as session:
+            check = await session.execute(select(Staff).limit(1))
+            if not check.scalar_one_or_none():
+                print("[Startup] No staff found in database. Seeding official hospital accounts...")
+                import sys, os
+                sys.path.insert(0, str(Path(__file__).parent.parent))
+                from seed_data import seed
+                await seed()
+                print("[Startup] Hospital database successfully initialized.")
     except Exception as e:
-        print(f"[Startup Warning] Could not auto-create tables: {e}")
+        print(f"[Startup Warning] Auto-seed or table creation failed: {e}")
     yield
     await engine.dispose()
 

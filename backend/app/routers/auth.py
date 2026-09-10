@@ -51,3 +51,14 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
         staff_id=str(staff.staff_id),
         full_name=staff.full_name,
     )
+
+
+@router.post("/seed")
+async def trigger_seed(db: AsyncSession = Depends(get_db)):
+    """Initialize staff and demo data on cloud deployment."""
+    from pathlib import Path
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from seed_data import seed
+    await seed()
+    return {"status": "ok", "message": "Database initialized with hospital staff accounts"}
