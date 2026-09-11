@@ -128,29 +128,41 @@ Patient data:
 
 
 async def generate_whatsapp_message(message_type: str, language: str, context: dict) -> str:
-    """Generate WhatsApp message in patient's preferred language."""
+    """Generate WhatsApp message in patient's preferred language (Marathi, Kannada, Hindi, English)."""
     templates = {
         "welcome": {
-            "marathi": "नमस्कार {name} जी 🙏\nSai Hospital मध्ये आपले स्वागत आहे.\nआपला Patient ID: {patient_id}\nअधिक माहितीसाठी संपर्क: +919632219690\nसर्व रेकॉर्ड डिजिटल सेव्ह केले जातील.",
-            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Hospital ಗೆ ಸ್ವಾಗತ.\nನಿಮ್ಮ Patient ID: {patient_id}\nಸಂಪರ್ಕ: +919632219690",
-            "hindi": "नमस्कार {name} जी 🙏\nSai Hospital में आपका स्वागत है।\nआपकी Patient ID: {patient_id}\nहेल्पलाइन: +919632219690",
-            "english": "Welcome {name} 🙏\nThank you for visiting Sai Hospital.\nYour Patient ID: {patient_id}\nHelpline: +919632219690",
+            "marathi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital मध्ये आपले स्वागत आहे.\nआपला Patient ID: {patient_id}\nअधिक माहितीसाठी संपर्क: +919632219690\nसर्व रेकॉर्ड डिजिटल सेव्ह केले जातील.",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Emergency & Multispeciality Hospital ಗೆ ಸ್ವಾಗತ.\nನಿಮ್ಮ Patient ID: {patient_id}\nಸಂಪರ್ಕ: +919632219690\nಎಲ್ಲಾ ದಾಖಲೆಗಳು ಡಿಜಿಟಲ್ ಆಗಿ ಸುರಕ್ಷಿತವಾಗಿವೆ.",
+            "hindi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital में आपका स्वागत है।\nआपकी Patient ID: {patient_id}\nहेल्पलाइन: +919632219690\nसभी रिकॉर्ड सुरक्षित डिजिटल रूप से सेव रहेंगे।",
+            "english": "Welcome {name} 🙏\nThank you for visiting Sai Emergency & Multispeciality Hospital.\nYour Patient ID: {patient_id}\nHelpline: +919632219690\nAll your medical records are digitally saved.",
         },
         "prescription": {
-            "marathi": "नमस्कार {name} जी,\nआपली प्रिस्क्रिप्शन तयार आहे. 📋\nपुढील भेट: {follow_up}\nSai Hospital WhatsApp: +919632219690",
-            "english": "Hello {name},\nYour prescription is ready. 📋\nNext visit: {follow_up}\nSai Hospital WhatsApp: +919632219690",
+            "marathi": "नमस्कार {name} जी 🙏\nआपली प्रिस्क्रिप्शन तयार आहे. 📋\nपुढील भेट: {follow_up}\nSai Hospital WhatsApp: +919632219690",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nನಿಮ್ಮ ಪ್ರಿಸ್ಕ್ರಿಪ್ಷನ್ ಸಿದ್ಧವಾಗಿದೆ. 📋\nಮುಂದಿನ ಭೇಟಿ: {follow_up}\nSai Hospital: +919632219690",
+            "hindi": "नमस्कार {name} जी 🙏\nआपका पर्चा (Prescription) तैयार है। 📋\nअगली विजिट: {follow_up}\nSai Hospital: +919632219690",
+            "english": "Hello {name} 🙏\nYour prescription is ready. 📋\nNext visit: {follow_up}\nSai Hospital: +919632219690",
         },
         "report": {
-            "marathi": "आपला {test_name} अहवाल तयार आहे. 🧪\nSai Hospital: +919632219690",
-            "english": "Your {test_name} report is ready. 🧪\nSai Hospital: +919632219690",
+            "marathi": "नमस्कार {name} जी 🙏\nआपला {test_name} तपासणी अहवाल तयार आहे. 🧪\nSai Hospital: +919632219690",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nನಿಮ್ಮ {test_name} ಲ್ಯಾಬ್ ವರದಿ ಸಿದ್ಧವಾಗಿದೆ. 🧪\nSai Hospital: +919632219690",
+            "hindi": "नमस्कार {name} जी 🙏\nआपकी {test_name} रिपोर्ट तैयार है। 🧪\nSai Hospital: +919632219690",
+            "english": "Hello {name} 🙏\nYour {test_name} lab report is ready. 🧪\nSai Hospital: +919632219690",
+        },
+        "bill": {
+            "marathi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital चे आपले बिल तयार आहे.\nबिल क्रमांक: {bill_number}\nएकूण रक्कम: ₹{net_amount}\nस्थिती: {payment_status}\nहेल्पलाइन: 9632219690 / 7204583699\nलवकर बरे व्हा!",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Emergency & Multispeciality Hospital ನ ನಿಮ್ಮ ಬಿಲ್ ಸಿದ್ಧವಾಗಿದೆ.\nಬಿಲ್ ಸಂಖ್ಯೆ: {bill_number}\nಒಟ್ಟು ಮೊತ್ತ: ₹{net_amount}\nಸ್ಥಿತಿ: {payment_status}\nಸಂಪರ್ಕ: 9632219690 / 7204583699\nಬೇಗ ಗುಣಮುಖರಾಗಿ!",
+            "hindi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital का आपका बिल तैयार है।\nबिल नंबर: {bill_number}\nकुल राशि: ₹{net_amount}\nस्थिति: {payment_status}\nहेल्पलाइन: 9632219690 / 7204583699\nजल्द स्वस्थ हों!",
+            "english": "Dear {name} 🙏\nYour bill for Sai Emergency & Multispeciality Hospital is ready.\nBill No: {bill_number}\nTotal Amount: ₹{net_amount}\nStatus: {payment_status}\nHelpline: 9632219690 / 7204583699\nGet well soon!",
         },
         "reminder": {
-            "marathi": "उद्या आपली appointment आहे\nDr. {doctor} यांच्याकडे — {time}\nConfirm करण्यासाठी YES reply करा.\nSai Hospital: +919632219690",
-            "english": "Reminder: Your appointment with Dr. {doctor} is tomorrow at {time}.\nReply YES to confirm.\nSai Hospital: +919632219690",
+            "marathi": "नमस्कार {name} जी 🙏\nउद्या आपली Sai Hospital मध्ये भेट आहे\nडॉक्टर: Dr. {doctor} ({time})\nखात्री करण्यासाठी YES reply करा.\nहेल्पलाइन: +919632219690",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nನಾಳೆ Sai Hospital ನಲ್ಲಿ ನಿಮ್ಮ ಭೇಟಿ ಇದೆ\nವೈದ್ಯರು: Dr. {doctor} ({time})\nಖಚಿತಪಡಿಸಲು YES ಎಂದು ಉತ್ತರಿಸಿ.\nಸಂಪರ್ಕ: +919632219690",
+            "hindi": "नमस्कार {name} जी 🙏\nकल Sai Hospital में आपकी अपॉइंटमेंट है\nडॉक्टर: Dr. {doctor} ({time})\nपुष्टि के लिए YES रिप्लाई करें।\nहेल्पलाइन: +919632219690",
+            "english": "Hello {name} 🙏\nReminder: Your appointment at Sai Hospital with Dr. {doctor} is tomorrow at {time}.\nReply YES to confirm.\nHelpline: +919632219690",
         },
     }
 
-    lang = language if language in ("marathi", "kannada", "hindi", "english") else "english"
+    lang = str(language).lower() if str(language).lower() in ("marathi", "kannada", "hindi", "english") else "english"
     template_group = templates.get(message_type, {})
     template = template_group.get(lang, template_group.get("english", ""))
 
@@ -160,4 +172,4 @@ async def generate_whatsapp_message(message_type: str, language: str, context: d
         except KeyError:
             pass
 
-    return f"Message for {message_type} — {context.get('name', 'Patient')}"
+    return f"Sai Hospital message for {message_type} — {context.get('name', 'Patient')}"

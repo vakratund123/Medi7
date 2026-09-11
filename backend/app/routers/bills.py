@@ -15,6 +15,7 @@ from app.schemas.bill import BillCreate, BillOut, BillPaymentUpdate
 from app.middleware.auth_middleware import require_any, require_roles
 from app.services.pdf_service import generate_bill_pdf
 from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message
+from app.services.ai_service import generate_whatsapp_message
 from app.config import get_settings
 
 settings = get_settings()
@@ -23,8 +24,7 @@ router = APIRouter(prefix="/api/bills", tags=["Bills & Billing"])
 
 async def _generate_bill_number(db: AsyncSession) -> str:
     """Generate sequential bill number e.g. SEMH-B26-0001."""
-    year_suffix = datetime.now().strftime("%y")
-    prefix = f"SEMH-B{year_suffix}-"
+    prefix = f"SEMH-B{datetime.now().strftime('%y')}-"
     result = await db.execute(
         select(func.count(Bill.bill_id)).where(Bill.bill_number.like(f"{prefix}%"))
     )
@@ -34,14 +34,16 @@ async def _generate_bill_number(db: AsyncSession) -> str:
 
 async def _send_bill_whatsapp(patient: Patient, bill: Bill, pdf_url: str | None):
     try:
-        msg = (
-            f"Dear {patient.full_name},\n\n"
-            f"Your Final Bill for Sai Emergency & Multispeciality Hospital has been generated.\n"
-            f"Bill No: {bill.bill_number}\n"
-            f"Total Amount: Rs. {bill.net_amount:.2f}\n"
-            f"Status: {bill.payment_status.upper()}\n\n"
-            f"Hospital Contact: 9632219690 / 7204583699\n"
-            f"Get well soon!"
+        lang = getattr(patient, "language_preference", "english") or "english"
+        msg = await generate_whatsapp_message(
+            "bill",
+            lang,
+            {
+                "name": patient.full_name,
+                "bill_number": bill.bill_number,
+                "net_amount": f"{bill.net_amount:.2f}",
+                "payment_status": bill.payment_status.upper(),
+            },
         )
         await send_whatsapp_message(patient.mobile_number, msg)
         if pdf_url and pdf_url.startswith("http"):
