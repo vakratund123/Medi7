@@ -12,7 +12,7 @@ from app.schemas.lab import LabOrderCreate, LabOrderOut, LabReportOut
 from app.middleware.auth_middleware import require_doctor, require_lab, require_any
 from app.services.storage_service import save_file
 from app.services.ai_service import summarize_lab_report
-from app.services.whatsapp_service import send_whatsapp_message, send_whatsapp_document
+from app.services.whatsapp_service import send_whatsapp_message, send_whatsapp_document, send_whatsapp_template
 from app.services.ai_service import generate_whatsapp_message
 
 logger = logging.getLogger(__name__)
@@ -128,7 +128,12 @@ async def _process_report_ai(report_id: uuid.UUID, patient_id: str):
             await db.commit()
             # WhatsApp notification
             msg = await generate_whatsapp_message("report", patient.language_preference, {"name": patient.full_name, "test_name": report.report_type})
-            await send_whatsapp_message(patient.mobile_number, msg)
+            await send_whatsapp_template(
+                mobile=patient.mobile_number,
+                template_name="hospital_report_ready",
+                parameters=[patient.full_name, report.report_type],
+                fallback_message=msg,
+            )
             if report.file_url and report.file_url.startswith("http"):
                 await send_whatsapp_document(patient.mobile_number, report.file_url, "Your Lab Report")
     except Exception as e:

@@ -11,7 +11,7 @@ from app.models.radiology import Radiology
 from app.schemas.patient import PatientCreate, PatientOut
 from app.middleware.auth_middleware import require_any, require_doctor, get_current_staff, require_receptionist
 from app.services.audit_service import log_action
-from app.services.whatsapp_service import send_whatsapp_message
+from app.services.whatsapp_service import send_whatsapp_message, send_whatsapp_template
 from app.services.ai_service import generate_whatsapp_message, generate_patient_summary
 from app.models.staff import Staff
 
@@ -64,13 +64,18 @@ async def register_patient(
     client_ip = request.client.host if request.client else None
     await log_action(db, staff_id, "register_patient", "patient", patient_id, ip_address=client_ip)
 
-    # Welcome WhatsApp (fire and forget)
+    # Welcome WhatsApp (automatic template with text fallback)
     msg = await generate_whatsapp_message(
         "welcome",
         data.language_preference,
         {"name": data.full_name, "patient_id": patient_id},
     )
-    await send_whatsapp_message(data.mobile_number, msg)
+    await send_whatsapp_template(
+        mobile=data.mobile_number,
+        template_name="hospital_welcome_update",
+        parameters=[patient_id],
+        fallback_message=msg,
+    )
 
     return patient
 

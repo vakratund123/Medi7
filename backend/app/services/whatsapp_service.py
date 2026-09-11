@@ -32,6 +32,40 @@ def _normalize_mobile(mobile: str) -> str:
 
 # ─────────────────────────── Meta Cloud API ───────────────────────────────────
 
+async def _meta_send_template(
+    mobile: str,
+    template_name: str,
+    parameters: list[str] | None = None,
+    language_code: str = "en_US",
+) -> bool:
+    url = f"{_META_BASE}/{settings.META_PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {settings.META_WHATSAPP_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    components = []
+    if parameters:
+        components.append({
+            "type": "body",
+            "parameters": [{"type": "text", "text": str(p)} for p in parameters],
+        })
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": mobile,
+        "type": "template",
+        "template": {
+            "name": template_name,
+            "language": {"code": language_code},
+            "components": components,
+        },
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(url, json=payload, headers=headers)
+        resp.raise_for_status()
+        logger.info(f"[Meta WA] ✅ Template '{template_name}' sent to {mobile} | id={resp.json().get('messages', [{}])[0].get('id')}")
+        return True
+
+
 async def _meta_send_text(mobile: str, message: str) -> bool:
     url = f"{_META_BASE}/{settings.META_PHONE_NUMBER_ID}/messages"
     headers = {
@@ -91,6 +125,33 @@ async def _wati_send_document(mobile: str, file_url: str, caption: str = "") -> 
 
 
 # ─────────────────────────── Public API ───────────────────────────────────────
+
+async def send_whatsapp_template(
+    mobile: str,
+    template_name: str,
+    parameters: list[str] | None = None,
+    language_code: str = "en_US",
+    fallback_message: str | None = None,
+) -> bool:
+    """Send an approved WhatsApp template (works automatically even if user never messaged first)."""
+    mobile = _normalize_mobile(mobile)
+
+    if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
+        try:
+            return await _meta_send_template(mobile, template_name, parameters, language_code)
+        except Exception as e:
+            logger.warning(f"[Meta WA] Template '{template_name}' to {mobile} had response: {e}. Trying text fallback.")
+            if fallback_message:
+                try:
+                    return await _meta_send_text(mobile, fallback_message)
+                except Exception as ex2:
+                    logger.error(f"[Meta WA] Text fallback failed: {ex2}")
+            return False
+
+    if fallback_message:
+        return await send_whatsapp_message(mobile, fallback_message)
+    return True
+
 
 async def send_whatsapp_message(mobile: str, message: str) -> bool:
     """Send a plain text WhatsApp message. Auto-selects provider."""

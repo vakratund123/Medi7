@@ -13,7 +13,7 @@ from app.models.visit import Visit
 from app.schemas.prescription import PrescriptionCreate, PrescriptionOut
 from app.middleware.auth_middleware import require_doctor, require_any
 from app.services.pdf_service import generate_prescription_pdf
-from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message
+from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message, send_whatsapp_template
 from app.services.ai_service import generate_whatsapp_message
 from app.config import get_settings
 
@@ -22,12 +22,18 @@ router = APIRouter(prefix="/api/prescriptions", tags=["Prescriptions"])
 
 
 async def _send_rx_whatsapp(patient: Patient, pdf_url: str, follow_up: str | None):
+    fu = follow_up or "As needed"
     msg = await generate_whatsapp_message(
         "prescription",
         patient.language_preference,
-        {"name": patient.full_name, "follow_up": follow_up or "As needed"},
+        {"name": patient.full_name, "follow_up": fu},
     )
-    await send_whatsapp_message(patient.mobile_number, msg)
+    await send_whatsapp_template(
+        mobile=patient.mobile_number,
+        template_name="hospital_prescription_ready",
+        parameters=[patient.full_name, fu],
+        fallback_message=msg,
+    )
     if pdf_url and pdf_url.startswith("http"):
         await send_whatsapp_document(patient.mobile_number, pdf_url, "Your Prescription")
 

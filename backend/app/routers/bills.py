@@ -14,7 +14,7 @@ from app.models.visit import Visit
 from app.schemas.bill import BillCreate, BillOut, BillPaymentUpdate
 from app.middleware.auth_middleware import require_any, require_roles
 from app.services.pdf_service import generate_bill_pdf
-from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message
+from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message, send_whatsapp_template
 from app.services.ai_service import generate_whatsapp_message
 from app.config import get_settings
 
@@ -35,17 +35,24 @@ async def _generate_bill_number(db: AsyncSession) -> str:
 async def _send_bill_whatsapp(patient: Patient, bill: Bill, pdf_url: str | None):
     try:
         lang = getattr(patient, "language_preference", "english") or "english"
+        amt_str = f"{bill.net_amount:.2f}"
+        status_str = bill.payment_status.upper()
         msg = await generate_whatsapp_message(
             "bill",
             lang,
             {
                 "name": patient.full_name,
                 "bill_number": bill.bill_number,
-                "net_amount": f"{bill.net_amount:.2f}",
-                "payment_status": bill.payment_status.upper(),
+                "net_amount": amt_str,
+                "payment_status": status_str,
             },
         )
-        await send_whatsapp_message(patient.mobile_number, msg)
+        await send_whatsapp_template(
+            mobile=patient.mobile_number,
+            template_name="hospital_bill_ready",
+            parameters=[patient.full_name, bill.bill_number, amt_str, status_str],
+            fallback_message=msg,
+        )
         if pdf_url and pdf_url.startswith("http"):
             await send_whatsapp_document(patient.mobile_number, pdf_url, f"Final Bill {bill.bill_number}")
     except Exception as e:
