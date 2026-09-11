@@ -1,5 +1,5 @@
-import React from 'react'
-import { Printer, Download, X, CheckCircle, Clock } from 'lucide-react'
+import React, { useState } from 'react'
+import { Printer, Download, X, CheckCircle, Clock, Loader2 } from 'lucide-react'
 import { SAI_HOSPITAL_LOGO_B64 } from '../assets/hospitalLogo'
 
 // Helper for converting INR number to words
@@ -52,15 +52,109 @@ function numberToWords(amount) {
 export default function BillLetterheadModal({ bill, patient, doctor, visit, onClose }) {
   if (!bill || !patient) return null
 
+  const [downloading, setDownloading] = useState(false)
+
+  // Isolated print iframe ensures zero blank pages and perfect full-color rendering
   const handlePrint = () => {
-    window.print()
+    const el = document.getElementById('printable-letterhead')
+    if (!el) return
+
+    // Remove any previous print iframe
+    const oldFrame = document.getElementById('print-letterhead-iframe')
+    if (oldFrame) oldFrame.remove()
+
+    const iframe = document.createElement('iframe')
+    iframe.id = 'print-letterhead-iframe'
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = 'none'
+    iframe.style.zIndex = '-9999'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentWindow.document
+    doc.open()
+
+    // Grab all stylesheet and style tags from current document to keep typography & Tailwind intact
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(s => s.outerHTML)
+      .join('\n')
+
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Sai Hospital - Bill ${bill.bill_number || ''}</title>
+          ${styleTags}
+          <style>
+            * { box-sizing: border-box; }
+            html, body {
+              background: #ffffff !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              color: #1e293b !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            @page {
+              size: A4 portrait;
+              margin: 6mm;
+            }
+            #printable-letterhead {
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 10px 20px !important;
+              position: static !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="printable-letterhead">
+            ${el.innerHTML}
+          </div>
+        </body>
+      </html>
+    `)
+    doc.close()
+
+    iframe.contentWindow.focus()
+    setTimeout(() => {
+      iframe.contentWindow.print()
+    }, 300)
   }
 
-  const handleDownloadPdf = () => {
-    if (bill.pdf_url) {
-      window.open(bill.pdf_url, '_blank')
-    } else {
-      window.print()
+  // 1-Click Client-Side PDF Download
+  const handleDownloadPdf = async () => {
+    const el = document.getElementById('printable-letterhead')
+    if (!el) return
+
+    try {
+      setDownloading(true)
+      const html2pdfModule = await import('html2pdf.js')
+      const html2pdf = html2pdfModule.default || html2pdfModule
+      const opt = {
+        margin: [6, 6, 6, 6],
+        filename: `Sai_Hospital_Bill_${bill.bill_number || 'Hospital'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollY: 0,
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }
+      await html2pdf().set(opt).from(el).save()
+    } catch (err) {
+      console.error('PDF download error:', err)
+      // Reliable fallback: launch print dialog which defaults to "Save as PDF"
+      handlePrint()
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -68,13 +162,13 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
   const todayStr = new Date().toLocaleDateString('en-GB') // DD/MM/YYYY
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex justify-center items-start p-2 sm:p-6 print:p-0 print:bg-white print:static">
+    <div className="bill-modal-overlay fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex justify-center items-start p-2 sm:p-6 print:p-0 print:bg-white print:static">
       
       {/* Modal Card */}
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-4 overflow-hidden border border-slate-200 print:border-none print:shadow-none print:max-w-none print:w-full print:m-0">
+      <div className="bill-modal-card bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-4 overflow-hidden border border-slate-200 print:border-none print:shadow-none print:max-w-none print:w-full print:m-0">
         
         {/* Top Control Action Bar (Hidden on Print) */}
-        <div className="bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between print:hidden">
+        <div className="bill-control-bar bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">
             <span className="bg-primary-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
               Official Letterhead
@@ -86,15 +180,19 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Print letterhead bill"
             >
               <Printer size={15} /> Print Bill
             </button>
             <button
               onClick={handleDownloadPdf}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              disabled={downloading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Download official PDF copy"
             >
-              <Download size={15} /> Download PDF
+              {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              {downloading ? 'Preparing PDF...' : 'Download PDF'}
             </button>
             <button
               onClick={onClose}
@@ -323,19 +421,49 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
       {/* Global CSS for Print Mode */}
       <style>{`
         @media print {
+          html, body {
+            background: #ffffff !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
           body * {
             visibility: hidden;
           }
-          #printable-letterhead, #printable-letterhead * {
-            visibility: visible;
+          .bill-modal-overlay,
+          .bill-modal-card,
+          #printable-letterhead,
+          #printable-letterhead * {
+            visibility: visible !important;
+          }
+          .bill-modal-overlay {
+            position: static !important;
+            background: #ffffff !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+          }
+          .bill-modal-card {
+            position: static !important;
+            border: none !important;
+            box-shadow: none !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+          }
+          .bill-control-bar {
+            display: none !important;
           }
           #printable-letterhead {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 0;
-            margin: 0;
+            position: static !important;
+            width: 100% !important;
+            padding: 10mm !important;
+            margin: 0 !important;
           }
         }
       `}</style>
