@@ -43,9 +43,9 @@ function MedicineRow({ med, onChange, onRemove }) {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-end p-3 bg-slate-50 rounded-xl mb-2">
-      <div className="col-span-12 sm:col-span-4">
-        <label className="label text-xs">Medicine / Tablet Name</label>
+    <div className="grid grid-cols-12 md:grid-cols-[minmax(180px,2.8fr)_minmax(80px,1.2fr)_minmax(95px,1.2fr)_80px_minmax(120px,1.8fr)_42px] gap-2.5 items-end p-3 bg-slate-50 border border-slate-100 rounded-xl mb-2.5">
+      <div className="col-span-12 sm:col-span-12 md:col-auto">
+        <label className="label text-xs font-semibold text-slate-700">Medicine / Tablet Name</label>
         <MedicineAutocomplete
           value={med.medicine_name}
           onChange={(val) => onChange({ ...med, medicine_name: val })}
@@ -53,27 +53,40 @@ function MedicineRow({ med, onChange, onRemove }) {
           placeholder="Type 'm' for Metformin, 'p' for Paracetamol..."
         />
       </div>
-      <div className="col-span-6 sm:col-span-2">
-        <label className="label text-xs">Dosage</label>
+      <div className="col-span-6 sm:col-span-3 md:col-auto">
+        <label className="label text-xs font-semibold text-slate-700">Dosage</label>
         <input className="input" placeholder="500mg" value={med.dosage} onChange={set('dosage')} />
       </div>
-      <div className="col-span-6 sm:col-span-2">
-        <label className="label text-xs">Frequency</label>
+      <div className="col-span-6 sm:col-span-3 md:col-auto">
+        <label className="label text-xs font-semibold text-slate-700">Frequency</label>
         <select className="input" value={med.frequency} onChange={set('frequency')}>
           {FREQUENCIES.map(f => <option key={f}>{f}</option>)}
         </select>
       </div>
-      <div className="col-span-6 sm:col-span-1">
-        <label className="label text-xs">Days</label>
-        <input className="input" type="number" min="1" placeholder="5" value={med.duration_days} onChange={set('duration_days')} />
+      <div className="col-span-4 sm:col-span-2 md:col-auto">
+        <label className="label text-xs font-semibold text-slate-700 text-center">Days</label>
+        <input
+          className="input text-center px-1 font-bold text-slate-900 bg-white"
+          type="number"
+          min="1"
+          max="365"
+          placeholder="5"
+          value={med.duration_days ?? ''}
+          onChange={set('duration_days')}
+        />
       </div>
-      <div className="col-span-5 sm:col-span-2">
-        <label className="label text-xs">Instructions</label>
+      <div className="col-span-6 sm:col-span-3 md:col-auto">
+        <label className="label text-xs font-semibold text-slate-700">Instructions</label>
         <input className="input" placeholder="After food" value={med.instructions} onChange={set('instructions')} />
       </div>
-      <div className="col-span-1 pb-0.5">
-        <button type="button" onClick={onRemove} className="btn btn-danger btn-sm w-full justify-center h-[38px]" title="Remove medicine">
-          <Trash2 size={13} />
+      <div className="col-span-2 sm:col-span-1 md:col-auto pb-0.5">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="btn btn-danger btn-sm w-full justify-center h-[42px] rounded-xl"
+          title="Remove medicine"
+        >
+          <Trash2 size={15} />
         </button>
       </div>
     </div>

@@ -21,6 +21,17 @@
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
   ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
+
+  /* Remove annoying native browser stepper arrows that squish numbers */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
 
 @layer components {
