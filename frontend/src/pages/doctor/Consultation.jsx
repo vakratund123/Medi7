@@ -15,10 +15,13 @@ const PRESET_CHARGES = [
   { name: 'Consultation Fee', category: 'Consultation', price: 300 },
   { name: 'Emergency Assessment', category: 'Emergency', price: 500 },
   { name: 'Routine Follow-up', category: 'Consultation', price: 200 },
+  { name: 'Daily Doctor Round (IPD)', category: 'Consultation', price: 300 },
+  { name: 'General Ward Bed (Daily)', category: 'Bed Charges', price: 800 },
+  { name: 'Special Room Bed (Daily)', category: 'Bed Charges', price: 1500 },
+  { name: 'Nursing Care (Daily)', category: 'Nursing', price: 250 },
   { name: 'ECG Test & Report', category: 'Diagnostics', price: 300 },
   { name: 'Wound Dressing / Minor Suture', category: 'Procedure', price: 250 },
   { name: 'IV Infusion / Injection Charges', category: 'Nursing', price: 150 },
-  { name: 'Day Care Observation Bed', category: 'Bed Charges', price: 800 },
   { name: 'Nebulization Charges', category: 'Procedure', price: 100 },
 ]
 
@@ -104,6 +107,8 @@ export default function Consultation() {
   
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [stayType, setStayType] = useState('OPD') // 'OPD' or 'IPD'
+  const [isDischarged, setIsDischarged] = useState(false)
   const [createdBill, setCreatedBill] = useState(null)
   const [showBillModal, setShowBillModal] = useState(false)
 
@@ -113,6 +118,9 @@ export default function Consultation() {
       if (v.diagnosis) setDiagnosis(v.diagnosis)
       if (v.notes) setNotes(v.notes)
       if (v.follow_up_date) setFollowUp(v.follow_up_date)
+      if (v.visit_type?.toUpperCase() === 'IPD' || v.status === 'admitted') {
+        setStayType('IPD')
+      }
       const { data: p } = await api.get(`/patients/${v.patient_id}`)
       setPatient(p)
       
@@ -181,31 +189,39 @@ export default function Consultation() {
     }))
   }
 
-  const handleAddPreset = (preset) => {
+  const handleAddPreset = (p) => {
+    const todayTag = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+    const itemName = stayType === 'IPD' ? `${todayTag} ${p.name}` : p.name
     setBillItems(prev => [
       ...prev,
-      { name: preset.name, category: preset.category, quantity: 1, unit_price: preset.price, total: preset.price }
+      { name: itemName, category: p.category, quantity: 1, unit_price: p.price, total: p.price }
     ])
+    toast.success(`Added ${p.name} (₹${p.price}) to bill`)
   }
 
   const subtotal = billItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0)
   const netAmount = Math.max(0, subtotal - (Number(discount) || 0))
 
-  const handleSave = async () => {
+  const handleSave = async (dischargeNow = false) => {
     if (!diagnosis) return toast.error('Please enter a diagnosis')
     const validMeds = medicines.filter(m => m.medicine_name.trim())
     const validBills = billItems.filter(b => b.name.trim())
     setSubmitting(true)
     try {
+      const isIPD = stayType === 'IPD'
+      const nextStatus = (isIPD && !dischargeNow) ? 'admitted' : 'completed'
+      const nextVisitType = isIPD ? 'IPD' : 'OPD'
+
       // Update visit
       await api.put(`/visits/${visitId}`, {
-        status: 'completed',
+        status: nextStatus,
+        visit_type: nextVisitType,
         diagnosis,
         notes,
         follow_up_date: followUp || null,
       })
 
-      // Create prescription
+      // Create prescription for today's medicines
       if (validMeds.length > 0) {
         await api.post('/prescriptions/', {
           visit_id: visitId,
@@ -235,7 +251,7 @@ export default function Consultation() {
         })
       }
 
-      // Create or update Final Bill with Doctor Pricing
+      // Create or update Final/Interim Bill with Doctor Pricing
       if (validBills.length > 0) {
         const { data: billRes } = await api.post('/bills/', {
           visit_id: visitId,
@@ -253,8 +269,13 @@ export default function Consultation() {
         setCreatedBill(billRes)
       }
 
+      setIsDischarged(nextStatus === 'completed')
       setSaved(true)
-      toast.success('Consultation & Final Bill saved! Sent to patient WhatsApp.')
+      if (nextStatus === 'admitted') {
+        toast.success("Day's round saved! Patient remains admitted. Running interim bill updated.")
+      } else {
+        toast.success("Consultation & Final Discharge Bill saved! Sent to patient WhatsApp.")
+      }
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to save consultation')
     } finally {
@@ -263,12 +284,16 @@ export default function Consultation() {
   }
 
   if (saved) return (
-    <Layout title="Consultation & Bill Saved">
+    <Layout title={isDischarged ? "Consultation Completed & Discharged" : "Daily Inpatient Round Saved"}>
       <div className="max-w-lg mx-auto card text-center py-10">
-        <CheckCircle size={52} className="text-emerald-500 mx-auto mb-3" />
-        <h2 className="text-2xl font-bold text-slate-800 mb-1">Consultation Completed!</h2>
+        <CheckCircle size={52} className={isDischarged ? "text-emerald-500 mx-auto mb-3" : "text-purple-600 mx-auto mb-3"} />
+        <h2 className="text-2xl font-bold text-slate-800 mb-1">
+          {isDischarged ? "Consultation & Discharge Completed!" : "Day's Round & Prescriptions Saved!"}
+        </h2>
         <p className="text-slate-600 text-sm mb-6">
-          Prescription &amp; Final Bill generated on official Sai Emergency Hospital Letterhead.
+          {isDischarged
+            ? "Prescription & Final Discharge Bill generated on official Sai Emergency Hospital Letterhead."
+            : "Patient remains admitted in Inpatient Wards. Daily medicines and lab orders dispatched. Running interim bill updated."}
         </p>
 
         {createdBill && (
@@ -278,7 +303,11 @@ export default function Consultation() {
               <strong className="text-slate-900">{createdBill.bill_number}</strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500 font-medium">Net Amount:</span>
+              <span className="text-slate-500 font-medium">Stay Category:</span>
+              <span className="font-bold text-purple-800 uppercase">{stayType === 'IPD' ? 'Inpatient (IPD Stay)' : 'Outpatient (OPD)'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500 font-medium">Running Total:</span>
               <strong className="text-blue-700 text-sm">₹{Number(createdBill.net_amount).toFixed(2)}</strong>
             </div>
             <div className="flex justify-between">
@@ -296,11 +325,19 @@ export default function Consultation() {
               onClick={() => setShowBillModal(true)}
               className="btn-primary flex items-center justify-center gap-2"
             >
-              <Printer size={16} /> Print Final Bill (Letterhead)
+              <Printer size={16} /> {isDischarged ? "Print Final Bill (Letterhead)" : "Print Current Running Bill"}
+            </button>
+          )}
+          {!isDischarged && (
+            <button
+              onClick={() => setSaved(false)}
+              className="btn-secondary flex items-center justify-center gap-2"
+            >
+              Continue Editing Stay
             </button>
           )}
           <button onClick={() => navigate('/doctor/queue')} className="btn-secondary">
-            Back to OPD Queue
+            Back to Queue
           </button>
         </div>
 
@@ -310,7 +347,7 @@ export default function Consultation() {
             bill={createdBill}
             patient={patient}
             doctor={user}
-            visit={visit}
+            visit={{ ...visit, status: isDischarged ? 'completed' : 'admitted' }}
             onClose={() => setShowBillModal(false)}
           />
         )}
@@ -338,6 +375,45 @@ export default function Consultation() {
             </div>
           </div>
         )}
+
+        {/* Admission Category Selector */}
+        <div className="card mb-4 bg-slate-50 border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Stay Type:</span>
+            {stayType === 'IPD' ? (
+              <span className="badge bg-purple-100 text-purple-800 border-purple-300 font-bold flex items-center gap-1">
+                🏥 Multi-Day Inpatient Stay (IPD)
+              </span>
+            ) : (
+              <span className="badge bg-blue-100 text-blue-800 border-blue-300 font-bold flex items-center gap-1">
+                🚶 Same-Day Walk-in (OPD)
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStayType('OPD')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                stayType === 'OPD' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              OPD (Walk-in)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStayType('IPD')
+                toast.success('Patient set to Inpatient (IPD) Stay')
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                stayType === 'IPD' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              IPD (Admitted Stay)
+            </button>
+          </div>
+        </div>
 
         {/* Clinical notes */}
         <div className="card mb-4">
@@ -496,19 +572,33 @@ export default function Consultation() {
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <div>
               <h3 className="font-bold text-slate-800 flex items-center gap-2 text-base">
-                <Receipt size={19} className="text-primary-600" /> Patient Final Bill &amp; Pricing
+                <Receipt size={19} className="text-primary-600" />
+                {stayType === 'IPD' ? 'Inpatient Running Bill & Particulars' : 'Patient Final Bill & Pricing'}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Doctor sets pricing here. Final bill will be printed on official Sai Hospital Letterhead.
+                {stayType === 'IPD'
+                  ? 'Daily bed, doctor rounds, and procedures accumulate here. Bill remains active until discharge.'
+                  : 'Doctor sets pricing here. Final bill will be printed on official Sai Hospital Letterhead.'}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setBillItems(b => [...b, newBillItem()])}
-              className="btn-secondary btn-sm"
-            >
-              <Plus size={13} /> Add Custom Item
-            </button>
+            <div className="flex gap-2">
+              {createdBill && (
+                <button
+                  type="button"
+                  onClick={() => setShowBillModal(true)}
+                  className="btn-secondary btn-sm flex items-center gap-1.5"
+                >
+                  <Printer size={13} /> View / Print Current Bill
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setBillItems(b => [...b, newBillItem()])}
+                className="btn-secondary btn-sm"
+              >
+                <Plus size={13} /> Add Custom Item
+              </button>
+            </div>
           </div>
 
           {/* Quick-add presets */}
@@ -677,9 +767,47 @@ export default function Consultation() {
           </div>
         </div>
 
-        <button onClick={handleSave} disabled={submitting} className="btn-primary btn-lg w-full justify-center">
-          {submitting ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={17} /> Save &amp; Generate Final Bill &amp; Prescription</>}
-        </button>
+        {stayType === 'IPD' ? (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => handleSave(false)}
+              disabled={submitting}
+              className="flex-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 text-base transition-all"
+            >
+              {submitting ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={18} /> Save Day's Round (Keep Admitted)</>}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={submitting}
+              className="py-3.5 px-6 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 text-base transition-all"
+            >
+              <Printer size={18} /> Discharge &amp; Final Bill
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={submitting}
+              className="btn-primary btn-lg flex-1 justify-center"
+            >
+              {submitting ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle size={17} /> Save &amp; Generate Final Bill &amp; Prescription</>}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStayType('IPD')
+                toast.success('Shifted to Admitted (IPD) stay mode')
+              }}
+              className="px-4 py-3 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
+            >
+              🏥 Admit to Ward (IPD)
+            </button>
+          </div>
+        )}
       </div>
     </Layout>
   )

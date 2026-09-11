@@ -13,6 +13,7 @@ class VisitCreate(BaseModel):
 
 class VisitUpdate(BaseModel):
     status: str | None = None
+    visit_type: str | None = None
     chief_complaint: str | None = None
     diagnosis: str | None = None
     notes: str | None = None

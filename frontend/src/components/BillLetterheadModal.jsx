@@ -160,7 +160,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
             {/* Bill Title Banner */}
             <div className="bg-slate-50 border-l-4 border-blue-600 px-4 py-2 flex items-center justify-between rounded-r-lg mb-4">
               <span className="text-xs font-extrabold uppercase tracking-wide text-blue-900">
-                Patient Final Bill / Invoice
+                {visit?.status === 'admitted' ? 'Interim Inpatient Bill / Running Statement (Active Admission)' : 'Patient Final Bill / Discharge Summary Invoice'}
               </span>
               <div>
                 {bill.payment_status === 'paid' ? (

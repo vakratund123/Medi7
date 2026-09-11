@@ -45,10 +45,28 @@ async def get_today_queue(
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(require_any),
 ):
-    stmt = select(Visit).where(Visit.visit_date == date.today())
+    """Returns today's OPD visits PLUS all currently admitted IPD patients."""
+    from sqlalchemy import or_
+    stmt = select(Visit).where(
+        or_(
+            Visit.visit_date == date.today(),
+            Visit.status == "admitted",
+        )
+    )
     if doctor_id:
         stmt = stmt.where(Visit.doctor_id == doctor_id)
     stmt = stmt.order_by(Visit.created_at.asc())
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.get("/admitted", response_model=list[VisitOut])
+async def get_admitted_patients(
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_any),
+):
+    """Returns all currently admitted Inpatients (IPD) across hospital."""
+    stmt = select(Visit).where(Visit.status == "admitted").order_by(Visit.created_at.asc())
     result = await db.execute(stmt)
     return result.scalars().all()
 

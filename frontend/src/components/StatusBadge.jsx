@@ -5,6 +5,7 @@ const STATUS_CONFIG = {
   // Visit status
   waiting:         { label: 'Waiting',          cls: 'badge-blue',   Icon: Clock },
   in_consultation: { label: 'In Consultation',  cls: 'badge-orange', Icon: AlertCircle },
+  admitted:        { label: 'Admitted (IPD)',   cls: 'bg-purple-100 text-purple-800 border border-purple-300 font-semibold', Icon: AlertCircle },
   completed:       { label: 'Completed',         cls: 'badge-green',  Icon: CheckCircle },
   cancelled:       { label: 'Cancelled',         cls: 'badge-gray',   Icon: AlertCircle },
   // Lab / radiology status

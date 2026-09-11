@@ -410,8 +410,13 @@
     </div>
 
     <!-- Bill Title & Status -->
-    <div class="bill-banner">
-      <div class="bill-banner-title">Patient Final Bill / Discharge Summary Bill</div>
+      <div class="bill-banner-title">
+        {% if visit.status == 'admitted' %}
+        Interim Inpatient Bill / Running Hospital Statement (Active IPD)
+        {% else %}
+        Patient Final Bill / Discharge Summary Bill
+        {% endif %}
+      </div>
       <div>
         {% if bill.payment_status == 'paid' %}
         <span class="status-badge status-paid">PAID ({{ bill.payment_mode | upper if bill.payment_mode else 'CASH' }})</span>

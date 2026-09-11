@@ -175,14 +175,24 @@ export default function OPDQueue() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  {visit.status === 'admitted' && (
+                    <button
+                      onClick={() => handleOpenBill(visit)}
+                      className="btn-secondary btn-sm flex items-center gap-1 text-purple-700 hover:text-purple-800 hover:bg-purple-50 border-purple-300 font-semibold shadow-xs"
+                      title="View & Print Current Running Interim Bill"
+                    >
+                      <Receipt size={14} className="text-purple-600" />
+                      <span>Running Bill</span>
+                    </button>
+                  )}
                   {visit.status === 'completed' && (
                     <button
                       onClick={() => handleOpenBill(visit)}
-                      className="btn-secondary btn-sm flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+                      className="btn-secondary btn-sm flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 border-blue-200 font-semibold shadow-xs"
                       title="View & Print Official Final Bill"
                     >
                       <Receipt size={14} className="text-blue-600" />
-                      <span>Letterhead Bill</span>
+                      <span>Final Bill</span>
                     </button>
                   )}
                 </div>
