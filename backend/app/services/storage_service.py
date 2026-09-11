@@ -42,12 +42,17 @@ async def _save_to_s3(file_bytes: bytes, filename: str, folder: str) -> str:
     if settings.S3_ENDPOINT_URL:
         boto_kwargs["endpoint_url"] = settings.S3_ENDPOINT_URL
 
+    import mimetypes
+    content_type, _ = mimetypes.guess_type(filename)
+    if not content_type:
+        content_type = "application/pdf" if ext.lower() == ".pdf" else "application/octet-stream"
+
     s3 = boto3.client("s3", **boto_kwargs)
     s3.put_object(
         Bucket=settings.S3_BUCKET,
         Key=unique_name,
         Body=file_bytes,
-        ContentType="application/pdf" if ext.lower() == ".pdf" else "application/octet-stream",
+        ContentType=content_type,
     )
 
     if settings.S3_PUBLIC_URL:
