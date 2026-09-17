@@ -91,11 +91,16 @@ async def _meta_send_document(mobile: str, file_url: str, caption: str = "") -> 
         "Authorization": f"Bearer {settings.META_WHATSAPP_TOKEN}",
         "Content-Type": "application/json",
     }
+    doc_name = f"{caption}.pdf" if caption and not caption.lower().endswith(".pdf") else (caption or "Medical_Document.pdf")
     payload = {
         "messaging_product": "whatsapp",
         "to": mobile,
         "type": "document",
-        "document": {"link": file_url, "caption": caption},
+        "document": {
+            "link": file_url,
+            "caption": caption,
+            "filename": doc_name,
+        },
     }
     async with httpx.AsyncClient(timeout=20) as client:
         resp = await client.post(url, json=payload, headers=headers)
