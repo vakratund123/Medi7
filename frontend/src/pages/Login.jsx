@@ -109,9 +109,42 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-400 font-medium">
-              🔒 Protected Portal · Authorized Sai Hospital Staff Only
+          {/* Staff role selection (Email only — password must be entered manually) */}
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Official Staff Logins (6 IDs)</p>
+              <span className="text-[11px] text-primary-600 font-medium">WA: +919180198107</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[
+                ['Manager', 'manager@saihospital.in'],
+                ['Doctor', 'doctor@saihospital.in'],
+                ['Cashier', 'cashier@saihospital.in'],
+                ['Reception', 'reception@saihospital.in'],
+                ['Laboratory', 'laboratory@saihospital.in'],
+                ['Pharmacy', 'pharmacy@saihospital.in'],
+              ].map(([role, em]) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => {
+                    setEmail(em)
+                    setPassword('')
+                  }}
+                  className={`text-left px-2.5 py-2 rounded-lg transition-all border ${
+                    email === em
+                      ? 'bg-primary-50 border-primary-300 text-primary-900 ring-1 ring-primary-400'
+                      : 'bg-slate-50 hover:bg-slate-100 border-slate-100 text-slate-800'
+                  }`}
+                  title="Click to fill email only"
+                >
+                  <div className="font-semibold text-slate-800">{role}</div>
+                  <div className="text-slate-400 text-[11px] truncate">{em}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-400 text-center mt-3">
+              Select your role above, then enter your password to sign in.
             </p>
           </div>
         </div>
