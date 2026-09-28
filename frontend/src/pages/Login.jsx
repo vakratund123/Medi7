@@ -12,6 +12,7 @@ const ROLE_HOME = {
   pharmacist: '/pharmacy/dashboard',
   owner: '/owner/dashboard',
   manager: '/owner/dashboard',
+  cashier: '/receptionist/queue',
 }
 
 export default function Login() {
@@ -108,31 +109,10 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Official Staff Logins (5 IDs)</p>
-              <span className="text-[11px] text-primary-600 font-medium">WA: +919632219690</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              {[
-                ['Manager', 'manager@saihospital.in', 'Admin@123'],
-                ['Doctor', 'doctor@saihospital.in', 'Doctor@123'],
-                ['Reception', 'reception@saihospital.in', 'Recept@123'],
-                ['Laboratory', 'laboratory@saihospital.in', 'Lab@1234'],
-                ['Pharmacy', 'pharmacy@saihospital.in', 'Pharm@123'],
-              ].map(([role, em, pw]) => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => { setEmail(em); setPassword(pw) }}
-                  className="text-left px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-primary-50 hover:text-primary-700 transition-colors border border-slate-100"
-                >
-                  <div className="font-semibold text-slate-800">{role}</div>
-                  <div className="text-slate-400 text-[11px] truncate">{em}</div>
-                </button>
-              ))}
-            </div>
+          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-400 font-medium">
+              🔒 Protected Portal · Authorized Sai Hospital Staff Only
+            </p>
           </div>
         </div>
 
