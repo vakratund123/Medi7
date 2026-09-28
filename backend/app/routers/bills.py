@@ -21,6 +21,8 @@ from app.config import get_settings
 settings = get_settings()
 router = APIRouter(prefix="/api/bills", tags=["Bills & Billing"])
 
+BILL_ROLES = ["manager", "doctor", "admin", "owner", "cashier"]
+
 
 async def _generate_bill_number(db: AsyncSession) -> str:
     """Generate sequential bill number e.g. SEMH-B26-0001."""
@@ -64,7 +66,7 @@ async def create_or_update_bill(
     data: BillCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    current_user: Staff = Depends(require_any),
+    current_user: Staff = Depends(require_roles(BILL_ROLES)),
 ):
     # Fetch related records
     patient_result = await db.execute(select(Patient).where(Patient.patient_id == data.patient_id))
@@ -168,7 +170,7 @@ async def create_or_update_bill(
 async def get_bill_by_visit(
     visit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_any),
+    _: Staff = Depends(require_roles(BILL_ROLES)),
 ):
     result = await db.execute(select(Bill).where(Bill.visit_id == visit_id))
     bill = result.scalar_one_or_none()
@@ -181,7 +183,7 @@ async def get_bill_by_visit(
 async def get_bill_by_id(
     bill_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_any),
+    _: Staff = Depends(require_roles(BILL_ROLES)),
 ):
     result = await db.execute(select(Bill).where(Bill.bill_id == bill_id))
     bill = result.scalar_one_or_none()
@@ -195,7 +197,7 @@ async def update_bill_payment(
     bill_id: uuid.UUID,
     data: BillPaymentUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_roles(["reception", "manager", "doctor", "admin", "owner"])),
+    _: Staff = Depends(require_roles(BILL_ROLES)),
 ):
     result = await db.execute(select(Bill).where(Bill.bill_id == bill_id))
     bill = result.scalar_one_or_none()
@@ -216,7 +218,7 @@ async def update_bill_payment(
 async def download_bill_pdf(
     bill_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_any),
+    _: Staff = Depends(require_roles(BILL_ROLES)),
 ):
     result = await db.execute(select(Bill).where(Bill.bill_id == bill_id))
     bill = result.scalar_one_or_none()

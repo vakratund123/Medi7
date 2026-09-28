@@ -25,7 +25,7 @@ from app.database import engine, AsyncSessionLocal
 
 STAFF_SEED = [
     # 5 Standard IDs for Sai Multispecialty Hospital
-    {"full_name": "Dr. Rahul Nirmale", "mobile": "919632219690", "role": "manager",
+    {"full_name": "Dr. Rahul Nirmale", "mobile": "9180198107", "role": "manager",
      "department": "Administration", "login_email": "manager@saihospital.in", "password": "Admin@123"},
     {"full_name": "Dr. Rahul Nirmale", "mobile": "9876543221", "role": "doctor",
      "department": "General Medicine", "login_email": "doctor@saihospital.in", "password": "Doctor@123"},
@@ -35,6 +35,8 @@ STAFF_SEED = [
      "department": "Laboratory", "login_email": "laboratory@saihospital.in", "password": "Lab@1234"},
     {"full_name": "Meena Joshi", "mobile": "9876543215", "role": "pharmacist",
      "department": "Pharmacy", "login_email": "pharmacy@saihospital.in", "password": "Pharm@123"},
+    {"full_name": "Suresh Kale", "mobile": "9876543225", "role": "cashier",
+     "department": "Accounts & Billing Desk", "login_email": "cashier@saihospital.in", "password": "Cashier@123"},
 
     # Alias / Secondary accounts for backwards compatibility
     {"full_name": "Dr. Rahul Nirmale", "mobile": "9876543210", "role": "owner",
@@ -226,7 +228,7 @@ async def seed():
 
         print("\n=======================================================")
         print("  MEDI7 — SAI MULTISPECIALTY HOSPITAL DEMO READY")
-        print("  Hospital WhatsApp: +919632219690")
+        print("  Hospital WhatsApp: +919180198107")
         print("=======================================================")
         print("\nOfficial 5 Staff IDs:")
         print("  1. Manager:     manager@saihospital.in    / Admin@123")

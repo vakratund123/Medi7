@@ -13,6 +13,7 @@ import { format } from 'date-fns'
 
 export default function OPDQueue() {
   const { user } = useAuth()
+  const canViewBill = ['manager', 'owner', 'doctor', 'cashier', 'admin'].includes(user?.role?.toLowerCase())
   const navigate = useNavigate()
   const [visits, setVisits] = useState([])
   const [patients, setPatients] = useState({})
@@ -51,6 +52,7 @@ export default function OPDQueue() {
   }
 
   const handleOpenBill = async (visit) => {
+    if (!canViewBill) return
     try {
       const { data: bill } = await api.get(`/bills/visit/${visit.visit_id}`)
       const patient = patients[visit.patient_id]
@@ -175,7 +177,7 @@ export default function OPDQueue() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {visit.status === 'admitted' && (
+                  {canViewBill && visit.status === 'admitted' && (
                     <button
                       onClick={() => handleOpenBill(visit)}
                       className="btn-secondary btn-sm flex items-center gap-1 text-purple-700 hover:text-purple-800 hover:bg-purple-50 border-purple-300 font-semibold shadow-xs"
@@ -185,7 +187,7 @@ export default function OPDQueue() {
                       <span>Running Bill</span>
                     </button>
                   )}
-                  {visit.status === 'completed' && (
+                  {canViewBill && visit.status === 'completed' && (
                     <button
                       onClick={() => handleOpenBill(visit)}
                       className="btn-secondary btn-sm flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 border-blue-200 font-semibold shadow-xs"
@@ -203,7 +205,7 @@ export default function OPDQueue() {
       )}
 
       {/* Bill Letterhead Modal */}
-      {activeBillModal && (
+      {canViewBill && activeBillModal && (
         <div className="relative z-50">
           <BillLetterheadModal
             bill={activeBillModal.bill}

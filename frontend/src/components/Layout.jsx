@@ -44,6 +44,9 @@ const NAV_BY_ROLE = {
     { label: 'Radiology', icon: Scan, path: '/radiology/orders' },
     { label: 'Pharmacy', icon: Pill, path: '/pharmacy/dashboard' },
   ],
+  cashier: [
+    { label: 'Billing Desk', icon: ClipboardList, path: '/receptionist/queue' },
+  ],
 }
 
 const ROLE_COLORS = {
@@ -54,6 +57,7 @@ const ROLE_COLORS = {
   pharmacist: 'bg-pink-600',
   owner: 'bg-slate-800',
   manager: 'bg-indigo-700',
+  cashier: 'bg-emerald-700',
 }
 
 const ROLE_LABELS = {
@@ -64,6 +68,7 @@ const ROLE_LABELS = {
   pharmacist: 'Pharmacy',
   owner: 'Admin / Owner',
   manager: 'Manager',
+  cashier: 'Cashier / Billing',
 }
 
 export default function Layout({ children, title }) {
@@ -94,7 +99,7 @@ export default function Layout({ children, title }) {
           </div>
           <div>
             <div className="font-bold text-slate-900 text-base leading-tight">MEDI7</div>
-            <div className="text-[11px] text-slate-500 font-medium">Sai Hospital · +919632219690</div>
+            <div className="text-[11px] text-slate-500 font-medium">Sai Hospital · +919180198107</div>
           </div>
         </div>
 

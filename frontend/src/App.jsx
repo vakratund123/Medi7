@@ -23,6 +23,7 @@ const ROLE_HOME = {
   pharmacist: '/pharmacy/dashboard',
   owner: '/owner/dashboard',
   manager: '/owner/dashboard',
+  cashier: '/receptionist/queue',
 }
 
 function ProtectedRoute({ children, roles }) {
@@ -45,9 +46,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<RoleRedirect />} />
 
-        {/* Receptionist */}
+        {/* Receptionist & Billing Desk */}
         <Route path="/receptionist/*" element={
-          <ProtectedRoute roles={['receptionist', 'owner', 'manager']}>
+          <ProtectedRoute roles={['receptionist', 'owner', 'manager', 'cashier']}>
             <Routes>
               <Route path="queue" element={<OPDQueue />} />
               <Route path="register" element={<RegisterPatient />} />
