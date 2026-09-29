@@ -69,11 +69,12 @@ async def run_tests():
 
         # 3. Test Patient Registration with Referral
         print("3. Testing Patient Registration with Referred By...")
-        import uuid
+        import uuid, random
         unique_suffix = str(uuid.uuid4().hex[:6])
+        rand_8digits = f"{random.randint(10000000, 99999999)}"
         patient_payload = {
             "full_name": f"Test Patient {unique_suffix}",
-            "mobile_number": f"98{unique_suffix[:8]}",
+            "mobile_number": f"98{rand_8digits}",
             "age": 45,
             "gender": "male",
             "blood_group": "B+",

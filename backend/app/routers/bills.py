@@ -54,9 +54,15 @@ async def _send_bill_whatsapp(patient: Patient, bill: Bill, pdf_url: str | None)
             template_name="hospital_bill_ready",
             parameters=[patient.full_name, bill.bill_number, amt_str, status_str],
             fallback_message=msg,
+            patient_id=patient.patient_id,
         )
-        if pdf_url and pdf_url.startswith("http"):
-            await send_whatsapp_document(patient.mobile_number, pdf_url, f"Final Bill {bill.bill_number}")
+        if pdf_url:
+            await send_whatsapp_document(
+                mobile=patient.mobile_number,
+                file_path_or_url=pdf_url,
+                caption=f"Final Bill {bill.bill_number}",
+                patient_id=patient.patient_id,
+            )
     except Exception as e:
         print(f"[WhatsApp] Bill notification error: {e}")
 
@@ -323,6 +329,7 @@ async def get_bill_by_id(
 async def update_bill_payment(
     bill_id: uuid.UUID,
     data: BillPaymentUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(require_roles(BILL_ROLES)),
 ):
@@ -338,6 +345,14 @@ async def update_bill_payment(
 
     await db.commit()
     await db.refresh(bill)
+
+    # If marked paid, send updated bill & receipt to patient WhatsApp in background
+    if data.payment_status.lower() == "paid":
+        p_res = await db.execute(select(Patient).where(Patient.patient_id == bill.patient_id))
+        patient = p_res.scalar_one_or_none()
+        if patient:
+            background_tasks.add_task(_send_bill_whatsapp, patient, bill, bill.pdf_url)
+
     return bill
 
 

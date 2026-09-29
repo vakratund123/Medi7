@@ -19,6 +19,7 @@ import {
   User,
   Calendar,
   Stethoscope,
+  MessageSquare,
   X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -108,6 +109,17 @@ export default function BillingDesk() {
       diagnosis: bill.diagnosis,
     }
     setActiveBillModal({ bill, patient: patientObj, doctor: doctorObj, visit: visitObj })
+  }
+
+  const handleResendWhatsApp = async (b) => {
+    try {
+      const toastId = `wa-${b.bill_id}`
+      toast.loading(`Sending WhatsApp bill to ${b.patient_mobile || 'patient'}...`, { id: toastId })
+      await api.post(`/whatsapp/resend/bill/${b.bill_id}`)
+      toast.success(`WhatsApp bill & PDF sent to ${b.patient_name || 'patient'}!`, { id: toastId })
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'WhatsApp sending failed', { id: `wa-${b.bill_id}` })
+    }
   }
 
   // Filter bills
@@ -455,6 +467,14 @@ export default function BillingDesk() {
                           <span>Receipt</span>
                         </button>
                       )}
+
+                      <button
+                        onClick={() => handleResendWhatsApp(b)}
+                        className="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors border border-emerald-200/70"
+                        title={`Send Bill ${b.bill_number} to Patient WhatsApp (${b.patient_mobile || ''})`}
+                      >
+                        <MessageSquare size={16} />
+                      </button>
 
                       <button
                         onClick={() => handleOpenPrintModal(b)}

@@ -133,9 +133,15 @@ async def _process_report_ai(report_id: uuid.UUID, patient_id: str):
                 template_name="hospital_report_ready",
                 parameters=[patient.full_name, report.report_type],
                 fallback_message=msg,
+                patient_id=patient.patient_id,
             )
-            if report.file_url and report.file_url.startswith("http"):
-                await send_whatsapp_document(patient.mobile_number, report.file_url, "Your Lab Report")
+            if report.file_url:
+                await send_whatsapp_document(
+                    mobile=patient.mobile_number,
+                    file_path_or_url=report.file_url,
+                    caption=f"Lab Report - {report.report_type}",
+                    patient_id=patient.patient_id,
+                )
     except Exception as e:
         logger.error(f"AI report processing failed: {e}", exc_info=True)
 

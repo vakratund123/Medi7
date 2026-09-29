@@ -22,20 +22,30 @@ router = APIRouter(prefix="/api/prescriptions", tags=["Prescriptions"])
 
 
 async def _send_rx_whatsapp(patient: Patient, pdf_url: str, follow_up: str | None):
-    fu = follow_up or "As needed"
-    msg = await generate_whatsapp_message(
-        "prescription",
-        patient.language_preference,
-        {"name": patient.full_name, "follow_up": fu},
-    )
-    await send_whatsapp_template(
-        mobile=patient.mobile_number,
-        template_name="hospital_prescription_ready",
-        parameters=[patient.full_name, fu],
-        fallback_message=msg,
-    )
-    if pdf_url and pdf_url.startswith("http"):
-        await send_whatsapp_document(patient.mobile_number, pdf_url, "Your Prescription")
+    try:
+        fu = follow_up or "As needed"
+        msg = await generate_whatsapp_message(
+            "prescription",
+            patient.language_preference,
+            {"name": patient.full_name, "follow_up": fu},
+        )
+        await send_whatsapp_template(
+            mobile=patient.mobile_number,
+            template_name="hospital_prescription_ready",
+            parameters=[patient.full_name, fu],
+            fallback_message=msg,
+            patient_id=patient.patient_id,
+        )
+        if pdf_url:
+            await send_whatsapp_document(
+                mobile=patient.mobile_number,
+                file_path_or_url=pdf_url,
+                caption=f"Prescription - {patient.full_name}",
+                patient_id=patient.patient_id,
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"[WhatsApp] Prescription notification failed: {e}")
 
 
 @router.post("/", response_model=PrescriptionOut)

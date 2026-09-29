@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
 
@@ -49,6 +49,7 @@ async def _generate_patient_id(db: AsyncSession) -> str:
 @router.post("/", response_model=PatientOut)
 async def register_patient(
     data: PatientCreate,
+    background_tasks: BackgroundTasks,
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_staff: Staff = Depends(require_receptionist),
@@ -64,18 +65,26 @@ async def register_patient(
     client_ip = request.client.host if request.client else None
     await log_action(db, staff_id, "register_patient", "patient", patient_id, ip_address=client_ip)
 
-    # Welcome WhatsApp (automatic template with text fallback)
-    msg = await generate_whatsapp_message(
-        "welcome",
-        data.language_preference,
-        {"name": data.full_name, "patient_id": patient_id},
-    )
-    await send_whatsapp_template(
-        mobile=data.mobile_number,
-        template_name="hospital_welcome_update",
-        parameters=[patient_id],
-        fallback_message=msg,
-    )
+    # Welcome WhatsApp (automatic template with text fallback in background)
+    async def _send_welcome_wa():
+        try:
+            msg = await generate_whatsapp_message(
+                "welcome",
+                data.language_preference,
+                {"name": data.full_name, "patient_id": patient_id},
+            )
+            await send_whatsapp_template(
+                mobile=data.mobile_number,
+                template_name="hospital_welcome_update",
+                parameters=[patient_id],
+                fallback_message=msg,
+                patient_id=patient_id,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"[WhatsApp] Welcome message failed: {e}")
+
+    background_tasks.add_task(_send_welcome_wa)
 
     return patient
 

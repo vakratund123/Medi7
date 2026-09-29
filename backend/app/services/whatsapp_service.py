@@ -10,6 +10,10 @@ Meta phone numbers must include country code, no '+':
   India → 91XXXXXXXXXX
 """
 import logging
+import re
+import os
+import io
+from pathlib import Path
 import httpx
 from app.config import get_settings
 
@@ -18,16 +22,61 @@ logger = logging.getLogger(__name__)
 
 _META_BASE = "https://graph.facebook.com/v19.0"
 
+# Approved templates registered on this Meta WhatsApp Business Account
+APPROVED_META_TEMPLATES = {
+    "hospital_welcome_update",       # Takes 1 param: [patient_id]
+    "hospital_prescription_ready",   # Takes 2 params: [patient_name, follow_up]
+}
 
-def _normalize_mobile(mobile: str) -> str:
-    """Ensure number has India country code (91) and no special chars."""
-    mobile = mobile.strip().replace("+", "").replace(" ", "").replace("-", "")
-    if mobile.startswith("0"):
-        mobile = mobile[1:]
-    # Prefix India code if 10-digit number
-    if len(mobile) == 10:
-        mobile = "91" + mobile
-    return mobile
+
+def _normalize_mobile(mobile: str) -> str | None:
+    """
+    Ensure number has India country code (91) and no special characters.
+    Handles +91, 0, spaces, dashes, parentheses.
+    Returns normalized string like '919823012345' or None if invalid.
+    """
+    if not mobile:
+        return None
+    raw = str(mobile).strip()
+    digits = re.sub(r"\D", "", raw)
+    if digits.startswith("0"):
+        digits = digits[1:]
+    
+    # 10-digit standard Indian mobile number
+    if len(digits) == 10:
+        return "91" + digits
+    # 12-digit already prefixed with 91
+    if len(digits) == 12 and digits.startswith("91"):
+        return digits
+    # 11-digit leading zero that wasn't stripped
+    if len(digits) == 11 and digits.startswith("0"):
+        return "91" + digits[1:]
+
+    # If it's another length, check if valid E.164 (7-15 digits)
+    if 10 <= len(digits) <= 15:
+        return digits
+
+    logger.warning(f"[WhatsApp] Invalid or unparseable mobile number '{mobile}'")
+    return None
+
+
+async def log_whatsapp_db(patient_id: str | None, message_type: str, status: str):
+    """Asynchronously record WhatsApp delivery to the whatsapp_logs table."""
+    if not patient_id:
+        return
+    try:
+        from app.database import AsyncSessionLocal
+        from app.models.audit import WhatsAppLog
+        async with AsyncSessionLocal() as session:
+            entry = WhatsAppLog(
+                patient_id=patient_id,
+                message_type=message_type,
+                status=status,
+            )
+            session.add(entry)
+            await session.commit()
+    except Exception as e:
+        logger.debug(f"[WhatsApp Log] Could not save to DB: {e}")
 
 
 # ─────────────────────────── Meta Cloud API ───────────────────────────────────
@@ -62,7 +111,9 @@ async def _meta_send_template(
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.post(url, json=payload, headers=headers)
         resp.raise_for_status()
-        logger.info(f"[Meta WA] ✅ Template '{template_name}' sent to {mobile} | id={resp.json().get('messages', [{}])[0].get('id')}")
+        data = resp.json()
+        msg_id = data.get("messages", [{}])[0].get("id")
+        logger.info(f"[Meta WA] ✅ Template '{template_name}' sent to {mobile} | id={msg_id}")
         return True
 
 
@@ -81,31 +132,85 @@ async def _meta_send_text(mobile: str, message: str) -> bool:
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.post(url, json=payload, headers=headers)
         resp.raise_for_status()
-        logger.info(f"[Meta WA] ✅ Text sent to {mobile} | id={resp.json().get('messages', [{}])[0].get('id')}")
+        data = resp.json()
+        msg_id = data.get("messages", [{}])[0].get("id")
+        logger.info(f"[Meta WA] ✅ Text sent to {mobile} | id={msg_id}")
         return True
 
 
-async def _meta_send_document(mobile: str, file_url: str, caption: str = "") -> bool:
+async def _meta_upload_media(file_bytes: bytes, filename: str, mime_type: str = "application/pdf") -> str | None:
+    """Upload binary file to Meta Cloud API media endpoint and return media_id."""
+    url = f"{_META_BASE}/{settings.META_PHONE_NUMBER_ID}/media"
+    headers = {"Authorization": f"Bearer {settings.META_WHATSAPP_TOKEN}"}
+    files = {"file": (filename, io.BytesIO(file_bytes), mime_type)}
+    data = {"messaging_product": "whatsapp", "type": mime_type}
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(url, headers=headers, data=data, files=files)
+        resp.raise_for_status()
+        media_id = resp.json().get("id")
+        logger.info(f"[Meta WA] ✅ Media uploaded: {filename} -> media_id={media_id}")
+        return media_id
+
+
+async def _meta_send_document(mobile: str, file_path_or_url: str, caption: str = "") -> bool:
+    """
+    Send PDF document via WhatsApp.
+    Supports BOTH:
+    1. Local files / relative paths (e.g. '/uploads/prescriptions/rx_123.pdf') -> uploads directly to Meta media API
+    2. Public HTTPS URLs -> passes URL directly to Meta
+    """
     url = f"{_META_BASE}/{settings.META_PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {settings.META_WHATSAPP_TOKEN}",
         "Content-Type": "application/json",
     }
     doc_name = f"{caption}.pdf" if caption and not caption.lower().endswith(".pdf") else (caption or "Medical_Document.pdf")
+    # Clean doc_name for safe header
+    doc_name = re.sub(r'[\\/*?:"<>|]', "_", doc_name)
+
+    # Check if local file path
+    local_file = None
+    if file_path_or_url.startswith("/") or not file_path_or_url.startswith("http"):
+        rel = file_path_or_url.lstrip("/")
+        if rel.startswith("uploads/"):
+            rel = rel[len("uploads/"):]
+        candidate = Path(settings.LOCAL_STORAGE_PATH) / rel
+        if candidate.exists():
+            local_file = candidate
+        elif Path(file_path_or_url).exists():
+            local_file = Path(file_path_or_url)
+
+    if local_file and local_file.exists():
+        # Upload binary directly to Meta WhatsApp Media API
+        file_bytes = local_file.read_bytes()
+        media_id = await _meta_upload_media(file_bytes, local_file.name, "application/pdf")
+        if not media_id:
+            raise RuntimeError("Failed to obtain media_id from Meta API upload")
+        doc_payload = {
+            "id": media_id,
+            "caption": caption,
+            "filename": doc_name,
+        }
+    else:
+        # Public URL link
+        doc_payload = {
+            "link": file_path_or_url,
+            "caption": caption,
+            "filename": doc_name,
+        }
+
     payload = {
         "messaging_product": "whatsapp",
         "to": mobile,
         "type": "document",
-        "document": {
-            "link": file_url,
-            "caption": caption,
-            "filename": doc_name,
-        },
+        "document": doc_payload,
     }
-    async with httpx.AsyncClient(timeout=20) as client:
+
+    async with httpx.AsyncClient(timeout=25) as client:
         resp = await client.post(url, json=payload, headers=headers)
         resp.raise_for_status()
-        logger.info(f"[Meta WA] ✅ Document sent to {mobile}")
+        logger.info(f"[Meta WA] ✅ Document '{doc_name}' sent to {mobile}")
         return True
 
 
@@ -137,69 +242,122 @@ async def send_whatsapp_template(
     parameters: list[str] | None = None,
     language_code: str = "en_US",
     fallback_message: str | None = None,
+    patient_id: str | None = None,
 ) -> bool:
-    """Send an approved WhatsApp template (works automatically even if user never messaged first)."""
-    mobile = _normalize_mobile(mobile)
+    """
+    Send an approved WhatsApp template with automatic smart fallback.
+    - If template is in APPROVED_META_TEMPLATES, sends official Meta template.
+    - If template is not registered or fails, smoothly sends rich formatted text message.
+    - Validates mobile number and records status to audit log.
+    """
+    normalized = _normalize_mobile(mobile)
+    if not normalized:
+        logger.warning(f"[WhatsApp] Skipped template '{template_name}' due to invalid mobile '{mobile}'")
+        return False
 
+    success = False
+    # Check Meta Cloud API
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
-        try:
-            return await _meta_send_template(mobile, template_name, parameters, language_code)
-        except Exception as e:
-            logger.warning(f"[Meta WA] Template '{template_name}' to {mobile} had response: {e}. Trying text fallback.")
+        # If template is known approved, try template first
+        if template_name in APPROVED_META_TEMPLATES:
+            try:
+                success = await _meta_send_template(normalized, template_name, parameters, language_code)
+            except Exception as e:
+                logger.warning(f"[Meta WA] Template '{template_name}' to {normalized} returned error: {e}. Trying text fallback.")
+                if fallback_message:
+                    try:
+                        success = await _meta_send_text(normalized, fallback_message)
+                    except Exception as ex2:
+                        logger.error(f"[Meta WA] Text fallback also failed: {ex2}")
+        else:
+            # Template not in Meta catalog — directly send rich multilingual text message
+            logger.info(f"[Meta WA] Template '{template_name}' not in Meta catalog; sending formatted text message.")
             if fallback_message:
                 try:
-                    return await _meta_send_text(mobile, fallback_message)
-                except Exception as ex2:
-                    logger.error(f"[Meta WA] Text fallback failed: {ex2}")
-            return False
+                    success = await _meta_send_text(normalized, fallback_message)
+                except Exception as ex:
+                    logger.error(f"[Meta WA] Text sending failed: {ex}")
 
+        await log_whatsapp_db(patient_id, template_name, "delivered" if success else "failed")
+        return success
+
+    # WATI / Stub fallback
     if fallback_message:
-        return await send_whatsapp_message(mobile, fallback_message)
+        success = await send_whatsapp_message(mobile, fallback_message, patient_id=patient_id)
+        await log_whatsapp_db(patient_id, template_name, "delivered" if success else "failed")
+        return success
+
     return True
 
 
-async def send_whatsapp_message(mobile: str, message: str) -> bool:
-    """Send a plain text WhatsApp message. Auto-selects provider."""
-    mobile = _normalize_mobile(mobile)
+async def send_whatsapp_message(mobile: str, message: str, patient_id: str | None = None) -> bool:
+    """Send a plain text WhatsApp message. Auto-selects active provider."""
+    normalized = _normalize_mobile(mobile)
+    if not normalized:
+        logger.warning(f"[WhatsApp] Skipped message due to invalid mobile '{mobile}'")
+        return False
 
+    success = False
     # Meta Cloud API
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
         try:
-            return await _meta_send_text(mobile, message)
+            success = await _meta_send_text(normalized, message)
         except Exception as e:
-            logger.error(f"[Meta WA] Text failed to {mobile}: {e}")
-            return False
+            logger.error(f"[Meta WA] Text failed to {normalized}: {e}")
+            success = False
+        await log_whatsapp_db(patient_id, "text_message", "delivered" if success else "failed")
+        return success
 
     # WATI fallback
     if settings.WATI_API_TOKEN and settings.WATI_API_ENDPOINT:
         try:
-            return await _wati_send_text(mobile, message)
+            success = await _wati_send_text(normalized, message)
         except Exception as e:
-            logger.error(f"[WATI] Text failed to {mobile}: {e}")
-            return False
+            logger.error(f"[WATI] Text failed to {normalized}: {e}")
+            success = False
+        await log_whatsapp_db(patient_id, "text_message", "delivered" if success else "failed")
+        return success
 
     # Stub / dev mode
-    logger.info(f"[WhatsApp STUB] To: {mobile}\n{message}")
+    logger.info(f"[WhatsApp STUB] To: {normalized}\n{message}")
+    await log_whatsapp_db(patient_id, "text_message", "stub_logged")
     return True
 
 
-async def send_whatsapp_document(mobile: str, file_url: str, caption: str = "") -> bool:
-    """Send a document (PDF) via WhatsApp. Auto-selects provider."""
-    mobile = _normalize_mobile(mobile)
+async def send_whatsapp_document(
+    mobile: str,
+    file_path_or_url: str,
+    caption: str = "",
+    patient_id: str | None = None,
+) -> bool:
+    """
+    Send a document (PDF) via WhatsApp.
+    Supports local file paths (uploaded to Meta binary media endpoint) and public URLs.
+    """
+    normalized = _normalize_mobile(mobile)
+    if not normalized:
+        logger.warning(f"[WhatsApp] Skipped document due to invalid mobile '{mobile}'")
+        return False
 
+    success = False
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
         try:
-            return await _meta_send_document(mobile, file_url, caption)
+            success = await _meta_send_document(normalized, file_path_or_url, caption)
         except Exception as e:
-            logger.error(f"[Meta WA] Document failed to {mobile}: {e}")
-            return False
+            logger.error(f"[Meta WA] Document delivery failed to {normalized}: {e}")
+            success = False
+        await log_whatsapp_db(patient_id, "document", "delivered" if success else "failed")
+        return success
 
     if settings.WATI_API_TOKEN and settings.WATI_API_ENDPOINT:
         try:
-            return await _wati_send_document(mobile, file_url, caption)
+            success = await _wati_send_document(normalized, file_path_or_url, caption)
         except Exception as e:
-            logger.error(f"[WATI] Document failed to {mobile}: {e}")
-            return False
+            logger.error(f"[WATI] Document failed to {normalized}: {e}")
+            success = False
+        await log_whatsapp_db(patient_id, "document", "delivered" if success else "failed")
+        return success
 
-    logger.info(f"[WhatsApp STUB] Document to: {mobile} | {file_url}")
+    logger.info(f"[WhatsApp STUB] Document to: {normalized} | {file_path_or_url}")
+    await log_whatsapp_db(patient_id, "document", "stub_logged")
     return True

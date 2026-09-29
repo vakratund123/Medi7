@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
-import { Printer, Download, X, CheckCircle, Clock, Loader2 } from 'lucide-react'
+import { Printer, Download, X, CheckCircle, Clock, Loader2, MessageSquare } from 'lucide-react'
 import { SAI_HOSPITAL_LOGO_B64 } from '../assets/hospitalLogo'
+import api from '../api/client'
+import toast from 'react-hot-toast'
 
 // Helper for converting INR number to words
 function numberToWords(amount) {
@@ -53,6 +55,20 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
   if (!bill || !patient) return null
 
   const [downloading, setDownloading] = useState(false)
+  const [sendingWa, setSendingWa] = useState(false)
+
+  const handleSendWhatsApp = async () => {
+    if (!bill?.bill_id) return
+    try {
+      setSendingWa(true)
+      await api.post(`/whatsapp/resend/bill/${bill.bill_id}`)
+      toast.success(`WhatsApp bill & PDF sent to ${patient?.full_name || 'patient'}!`)
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'WhatsApp delivery failed')
+    } finally {
+      setSendingWa(false)
+    }
+  }
 
   // Isolated print iframe ensures zero blank pages and perfect full-color rendering
   const handlePrint = () => {
@@ -179,8 +195,17 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleSendWhatsApp}
+              disabled={sendingWa}
+              className="bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              title={`Send official bill and PDF directly to ${patient?.mobile_number || 'patient'} WhatsApp`}
+            >
+              {sendingWa ? <Loader2 size={15} className="animate-spin" /> : <MessageSquare size={15} />}
+              {sendingWa ? 'Sending...' : 'WhatsApp Bill'}
+            </button>
+            <button
               onClick={handlePrint}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
               title="Print letterhead bill"
             >
               <Printer size={15} /> Print Bill
