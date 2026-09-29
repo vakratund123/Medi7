@@ -14,6 +14,7 @@ import RadioDashboard from './pages/radiology/RadioDashboard'
 import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard'
 import Inventory from './pages/pharmacy/Inventory'
 import OwnerDashboard from './pages/owner/OwnerDashboard'
+import BillingDesk from './pages/cashier/BillingDesk'
 
 const ROLE_HOME = {
   receptionist: '/receptionist/queue',
@@ -23,7 +24,7 @@ const ROLE_HOME = {
   pharmacist: '/pharmacy/dashboard',
   owner: '/owner/dashboard',
   manager: '/owner/dashboard',
-  cashier: '/receptionist/queue',
+  cashier: '/billing/desk',
 }
 
 function ProtectedRoute({ children, roles }) {
@@ -101,6 +102,15 @@ export default function App() {
           <ProtectedRoute roles={['owner', 'manager']}>
             <Routes>
               <Route path="dashboard" element={<OwnerDashboard />} />
+            </Routes>
+          </ProtectedRoute>
+        } />
+
+        {/* Cashier & Billing Desk */}
+        <Route path="/billing/*" element={
+          <ProtectedRoute roles={['cashier', 'owner', 'manager', 'receptionist']}>
+            <Routes>
+              <Route path="desk" element={<BillingDesk />} />
             </Routes>
           </ProtectedRoute>
         } />

@@ -236,7 +236,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
                   Old Motor Stand, NIPANI - 591 237. Dist. Belgavi
                 </div>
                 <div className="text-[11px] font-semibold text-[#1e3a8a] mt-0.5">
-                  Mob. : 9632219690, 7204583699 &bull; Email : semhospitalnipani@gmail.com
+                  Mob. : 9180198107, 7204583699 &bull; Email : semhospitalnipani@gmail.com
                 </div>
               </div>
             </div>
@@ -410,7 +410,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
 
             {/* Bottom Letterhead Footnote */}
             <div className="mt-10 pt-3 border-t border-slate-200 text-center text-[10px] text-slate-500">
-              Sai Emergency &amp; Multispeciality Hospital &bull; Old Motor Stand, NIPANI - 591 237. Dist. Belgavi &bull; 24x7 Emergency Services &bull; Ph: 9632219690, 7204583699
+              Sai Emergency &amp; Multispeciality Hospital &bull; Old Motor Stand, NIPANI - 591 237. Dist. Belgavi &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699
             </div>
 
           </div>

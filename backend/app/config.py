@@ -6,8 +6,8 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "MEDI7"
     HOSPITAL_NAME: str = "Sai Hospital"
-    HOSPITAL_PHONE: str = "+919632219690"
-    HOSPITAL_WHATSAPP_NUMBER: str = "919632219690"
+    HOSPITAL_PHONE: str = "+919180198107"
+    HOSPITAL_WHATSAPP_NUMBER: str = "919180198107"
     PATIENT_ID_PREFIX: str = "SAI"
     DEBUG: bool = False
 

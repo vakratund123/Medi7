@@ -1,17 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, case
 from pathlib import Path
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 
 from app.database import get_db
 from app.models.bill import Bill
 from app.models.patient import Patient
 from app.models.staff import Staff
 from app.models.visit import Visit
-from app.schemas.bill import BillCreate, BillOut, BillPaymentUpdate
+from app.schemas.bill import BillCreate, BillOut, BillPaymentUpdate, BillDetailOut, BillStatsOut
 from app.middleware.auth_middleware import require_any, require_roles
 from app.services.pdf_service import generate_bill_pdf
 from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message, send_whatsapp_template
@@ -21,7 +21,7 @@ from app.config import get_settings
 settings = get_settings()
 router = APIRouter(prefix="/api/bills", tags=["Bills & Billing"])
 
-BILL_ROLES = ["manager", "doctor", "admin", "owner", "cashier"]
+BILL_ROLES = ["manager", "doctor", "admin", "owner", "cashier", "receptionist"]
 
 
 async def _generate_bill_number(db: AsyncSession) -> str:
@@ -177,6 +177,133 @@ async def get_bill_by_visit(
     if not bill:
         raise HTTPException(status_code=404, detail="No bill found for this visit")
     return bill
+
+
+@router.get("/", response_model=list[BillDetailOut])
+async def list_bills(
+    payment_status: str | None = Query(None, description="Filter by pending, paid, etc."),
+    search: str | None = Query(None, description="Search by patient name, ID, or bill number"),
+    limit: int = Query(100, le=500),
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_roles(BILL_ROLES)),
+):
+    """List bills with optional filter by payment status and keyword search, enriched with patient and doctor details."""
+    stmt = (
+        select(
+            Bill,
+            Patient.full_name.label("patient_name"),
+            Patient.mobile_number.label("patient_mobile"),
+            Patient.age.label("patient_age"),
+            Patient.gender.label("patient_gender"),
+            Staff.full_name.label("doctor_name"),
+            Staff.department.label("doctor_department"),
+            Visit.visit_type.label("visit_type"),
+            Visit.visit_date.label("visit_date"),
+            Visit.chief_complaint.label("chief_complaint"),
+            Visit.diagnosis.label("diagnosis"),
+        )
+        .join(Patient, Bill.patient_id == Patient.patient_id, isouter=True)
+        .join(Staff, Bill.doctor_id == Staff.staff_id, isouter=True)
+        .join(Visit, Bill.visit_id == Visit.visit_id, isouter=True)
+    )
+
+    if payment_status and payment_status.lower() != "all":
+        stmt = stmt.where(func.lower(Bill.payment_status) == payment_status.lower())
+
+    if search:
+        search_term = f"%{search.strip().lower()}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(Bill.bill_number).like(search_term),
+                func.lower(Bill.patient_id).like(search_term),
+                func.lower(Patient.full_name).like(search_term),
+                func.lower(Patient.mobile_number).like(search_term),
+            )
+        )
+
+    stmt = stmt.order_by(Bill.created_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    output = []
+    for r in rows:
+        bill, p_name, p_mob, p_age, p_gen, doc_name, doc_dept, v_type, v_date, v_comp, v_diag = r
+        item_data = BillDetailOut.model_validate(bill)
+        item_data.patient_name = p_name
+        item_data.patient_mobile = p_mob
+        item_data.patient_age = p_age
+        item_data.patient_gender = p_gen
+        item_data.doctor_name = doc_name
+        item_data.doctor_department = doc_dept
+        item_data.visit_type = v_type
+        item_data.visit_date = v_date
+        item_data.chief_complaint = v_comp
+        item_data.diagnosis = v_diag
+        output.append(item_data)
+
+    return output
+
+
+@router.get("/stats/summary", response_model=BillStatsOut)
+async def get_billing_stats(
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_roles(BILL_ROLES)),
+):
+    """Aggregate billing statistics for the Billing & Cashier Desk."""
+    # Pending bills & total pending amount
+    pending_res = await db.execute(
+        select(
+            func.count(Bill.bill_id),
+            func.coalesce(func.sum(Bill.net_amount), 0.0),
+        ).where(func.lower(Bill.payment_status) == "pending")
+    )
+    pending_count, pending_amount = pending_res.one()
+
+    # Today's collections
+    today_date = date.today()
+    today_paid_res = await db.execute(
+        select(
+            func.coalesce(func.sum(Bill.net_amount), 0.0),
+            func.coalesce(
+                func.sum(
+                    case((func.lower(Bill.payment_mode) == "cash", Bill.net_amount), else_=0.0)
+                ),
+                0.0,
+            ),
+            func.coalesce(
+                func.sum(
+                    case((func.lower(Bill.payment_mode) == "upi", Bill.net_amount), else_=0.0)
+                ),
+                0.0,
+            ),
+            func.coalesce(
+                func.sum(
+                    case((func.lower(Bill.payment_mode) == "card", Bill.net_amount), else_=0.0)
+                ),
+                0.0,
+            ),
+        ).where(
+            func.lower(Bill.payment_status) == "paid",
+            or_(
+                func.date(Bill.updated_at) == today_date,
+                func.date(Bill.created_at) == today_date,
+            ),
+        )
+    )
+    total_today, today_cash, today_upi, today_card = today_paid_res.one()
+
+    total_bills_res = await db.execute(select(func.count(Bill.bill_id)))
+    total_bills = total_bills_res.scalar() or 0
+
+    return BillStatsOut(
+        total_pending_count=int(pending_count or 0),
+        total_pending_amount=float(pending_amount or 0.0),
+        total_collected_today=float(total_today or 0.0),
+        today_cash=float(today_cash or 0.0),
+        today_upi=float(today_upi or 0.0),
+        today_card=float(today_card or 0.0),
+        total_bills_count=int(total_bills),
+    )
 
 
 @router.get("/{bill_id}", response_model=BillOut)

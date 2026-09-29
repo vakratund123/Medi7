@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Users, ClipboardList, FlaskConical,
   Scan, Pill, BarChart3, LogOut, Menu, X, ChevronRight,
-  Activity, Heart
+  Activity, Heart, Receipt
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -12,6 +12,7 @@ const NAV_BY_ROLE = {
   receptionist: [
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
     { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
+    { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
   ],
   doctor: [
     { label: 'My Queue', icon: ClipboardList, path: '/doctor/queue' },
@@ -28,6 +29,7 @@ const NAV_BY_ROLE = {
   ],
   owner: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/owner/dashboard' },
+    { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
     { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
     { label: 'Doctor Queue', icon: Activity, path: '/doctor/queue' },
@@ -37,6 +39,7 @@ const NAV_BY_ROLE = {
   ],
   manager: [
     { label: 'Dashboard & Referrals', icon: LayoutDashboard, path: '/owner/dashboard' },
+    { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
     { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
     { label: 'Doctor Queue', icon: Activity, path: '/doctor/queue' },
@@ -45,7 +48,8 @@ const NAV_BY_ROLE = {
     { label: 'Pharmacy', icon: Pill, path: '/pharmacy/dashboard' },
   ],
   cashier: [
-    { label: 'Billing Desk', icon: ClipboardList, path: '/receptionist/queue' },
+    { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
+    { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
   ],
 }
 

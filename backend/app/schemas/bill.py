@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -50,3 +50,27 @@ class BillOut(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BillDetailOut(BillOut):
+    patient_name: str | None = None
+    patient_mobile: str | None = None
+    patient_age: int | None = None
+    patient_gender: str | None = None
+    doctor_name: str | None = None
+    doctor_department: str | None = None
+    visit_type: str | None = None
+    visit_date: date | None = None
+    chief_complaint: str | None = None
+    diagnosis: str | None = None
+
+
+class BillStatsOut(BaseModel):
+    total_pending_count: int
+    total_pending_amount: float
+    total_collected_today: float
+    today_cash: float
+    today_upi: float
+    today_card: float
+    total_bills_count: int
+

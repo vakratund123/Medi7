@@ -99,6 +99,9 @@ async def update_visit(
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(visit, field, value)
 
+    if data.status in ["completed", "in_consultation", "admitted"]:
+        visit.visit_date = date.today()
+
     await db.commit()
     await db.refresh(visit)
     return visit

@@ -115,7 +115,7 @@ def _add_hospital_header(elements, styles):
         ParagraphStyle("Addr", fontName="Helvetica", fontSize=8, leading=10, textColor=colors.HexColor("#334155"), alignment=1)
     )
     contact_p = Paragraph(
-        "Mob. : 9632219690, 7204583699 &bull; Email : semhospitalnipani@gmail.com",
+        "Mob. : 9180198107, 7204583699 &bull; Email : semhospitalnipani@gmail.com",
         ParagraphStyle("Contact", fontName="Helvetica-Bold", fontSize=8, leading=10, textColor=colors.HexColor("#1e3a8a"), alignment=1)
     )
 
@@ -286,7 +286,7 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
     elements.append(Spacer(1, 15))
     elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=5))
     foot_p = Paragraph(
-        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9632219690, 7204583699",
+        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699",
         ParagraphStyle("Foot", fontName="Helvetica", fontSize=7.5, leading=9, textColor=colors.HexColor("#64748b"), alignment=1)
     )
     elements.append(foot_p)
@@ -464,7 +464,7 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
     elements.append(Spacer(1, 15))
     elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=5))
     foot_p = Paragraph(
-        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9632219690, 7204583699",
+        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699",
         ParagraphStyle("Foot", fontName="Helvetica", fontSize=7.5, leading=9, textColor=colors.HexColor("#64748b"), alignment=1)
     )
     elements.append(foot_p)
@@ -502,7 +502,7 @@ def generate_prescription_pdf(
             c.setFont("Helvetica-Bold", 16)
             c.drawString(50, 800, "SAI EMERGENCY & MULTISPECIALITY HOSPITAL")
             c.setFont("Helvetica", 10)
-            c.drawString(50, 780, "REG. NO. : BLG03043ALHL3 | Mob: 9632219690")
+            c.drawString(50, 780, "REG. NO. : BLG03043ALHL3 | Mob: 9180198107")
             c.drawString(50, 750, f"Patient: {patient.get('full_name', '')} ({patient.get('patient_id', '')})")
             c.drawString(50, 730, f"Doctor: Dr. {doctor.get('full_name', '')}")
             c.drawString(50, 700, "Prescription Details:")
@@ -551,7 +551,7 @@ def generate_bill_pdf(
             c.setFont("Helvetica-Bold", 16)
             c.drawString(50, 800, "SAI EMERGENCY & MULTISPECIALITY HOSPITAL")
             c.setFont("Helvetica", 10)
-            c.drawString(50, 780, "REG. NO. : BLG03043ALHL3 | Mob: 9632219690")
+            c.drawString(50, 780, "REG. NO. : BLG03043ALHL3 | Mob: 9180198107")
             c.drawString(50, 750, f"Bill No: {bill.get('bill_number')} | Date: {datetime.now().strftime('%d/%m/%Y')}")
             c.drawString(50, 730, f"Patient: {patient.get('full_name')} ({patient.get('patient_id')})")
             c.drawString(50, 710, f"Net Amount: Rs. {bill.get('net_amount', 0):.2f}")
