@@ -75,7 +75,10 @@ export default function RegisterPatient() {
               {registered.patient_id}
             </div>
             <p className="text-slate-600 text-sm mb-1"><strong>{registered.full_name}</strong></p>
-            <p className="text-slate-400 text-sm mb-6">WhatsApp welcome message sent ✅</p>
+            <div className="my-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 text-left">
+              <p className="font-semibold mb-1">📱 Reception Action:</p>
+              <p>Please ask patient <strong>{registered.full_name}</strong> to send <strong>"HI"</strong> to <strong>+91 91801 98107</strong> on WhatsApp to receive direct prescription & bill PDFs in {registered.language_preference || 'their chosen language'}!</p>
+            </div>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setRegistered(null)} className="btn-primary">
                 <UserPlus size={15} /> Register Another

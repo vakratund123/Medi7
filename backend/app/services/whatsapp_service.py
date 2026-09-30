@@ -291,25 +291,32 @@ async def send_whatsapp_template(
 
     # Check Meta Cloud API
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
-        if template_name in APPROVED_META_TEMPLATES:
-            # 1. ALWAYS dispatch the official approved Meta Template.
-            # This is the ONLY message guaranteed by Meta to deliver to a brand-new patient outside the 24h window.
-            # It attempts preferred language code (kn, mr, hi) first; if translation is pending in Meta, gracefully falls back to en_US.
+        if lang != "english" and fallback_message:
+            # Regional language patient (Marathi, Kannada, Hindi)
+            # Patient says 'HI' at reception desk opening the 24h session window.
+            # Send the localized message in their preferred language directly — NO duplicate English template!
             try:
-                success = await _meta_send_template(normalized, template_name, parameters, target_lang_code)
+                logger.info(f"[Meta WA] Sending clean localized message in '{lang}' to {normalized}")
+                success = await _meta_send_text(normalized, fallback_message)
             except Exception as e:
-                if target_lang_code != "en_US":
+                logger.warning(f"[Meta WA] Localized text failed: {e}. Trying template fallback.")
+                if template_name in APPROVED_META_TEMPLATES:
                     try:
-                        logger.info(f"[Meta WA] Template '{template_name}' in '{target_lang_code}' pending in Meta. Delivering 'en_US' template.")
                         success = await _meta_send_template(normalized, template_name, parameters, "en_US")
-                    except Exception as ex_en:
-                        logger.error(f"[Meta WA] Template fallback 'en_US' failed: {ex_en}")
-                else:
-                    logger.error(f"[Meta WA] Template '{template_name}' failed: {e}")
+                    except Exception as ex2:
+                        logger.error(f"[Meta WA] Template fallback also failed: {ex2}")
         else:
-            # Template not in Meta approved catalog — dispatch formatted text message
-            logger.info(f"[Meta WA] Template '{template_name}' not in Meta catalog; sending formatted text message.")
-            if fallback_message:
+            # English patient — send approved Meta template or text
+            if template_name in APPROVED_META_TEMPLATES:
+                try:
+                    success = await _meta_send_template(normalized, template_name, parameters, "en_US")
+                except Exception as e:
+                    if fallback_message:
+                        try:
+                            success = await _meta_send_text(normalized, fallback_message)
+                        except Exception as ex2:
+                            logger.error(f"[Meta WA] English text fallback failed: {ex2}")
+            elif fallback_message:
                 try:
                     success = await _meta_send_text(normalized, fallback_message)
                 except Exception as ex:
@@ -317,6 +324,7 @@ async def send_whatsapp_template(
 
         await log_whatsapp_db(patient_id, template_name, "delivered" if success else "failed")
         return success
+
 
     # WATI / Stub fallback
     if fallback_message:
