@@ -152,7 +152,18 @@ async def resend_bill_whatsapp(
         raise HTTPException(status_code=400, detail="Patient or patient mobile number not found")
 
     from app.routers.bills import _send_bill_whatsapp
-    background_tasks.add_task(_send_bill_whatsapp, patient, bill, bill.pdf_url)
+    background_tasks.add_task(
+        _send_bill_whatsapp,
+        patient.patient_id,
+        patient.full_name,
+        patient.mobile_number,
+        getattr(patient, "language_preference", "english") or "english",
+        bill.bill_number,
+        bill.net_amount,
+        bill.payment_status,
+        str(bill.bill_id),
+        bill.pdf_url,
+    )
 
     return {
         "ok": True,
@@ -180,7 +191,16 @@ async def resend_prescription_whatsapp(
         raise HTTPException(status_code=400, detail="Patient or patient mobile number not found")
 
     from app.routers.prescriptions import _send_rx_whatsapp
-    background_tasks.add_task(_send_rx_whatsapp, patient, rx.pdf_url, None)
+    background_tasks.add_task(
+        _send_rx_whatsapp,
+        patient.patient_id,
+        patient.full_name,
+        patient.mobile_number,
+        patient.language_preference,
+        rx.pdf_url,
+        None,
+        str(rx.prescription_id),
+    )
 
     return {
         "ok": True,

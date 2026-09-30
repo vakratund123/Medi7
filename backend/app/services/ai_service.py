@@ -129,6 +129,14 @@ Patient data:
 
 async def generate_whatsapp_message(message_type: str, language: str, context: dict) -> str:
     """Generate WhatsApp message in patient's preferred language (Marathi, Kannada, Hindi, English)."""
+    download_url = context.get("download_url", "")
+    pdf_section = {
+        "marathi": f"\n\n📄 PDF डाउनलोड लिंक:\n{download_url}" if download_url else "",
+        "kannada": f"\n\n📄 ಪಿಡಿಎಫ್ ಡೌನ್‌ಲೋಡ್ ಲಿಂಕ್:\n{download_url}" if download_url else "",
+        "hindi": f"\n\n📄 पीडीएफ डाउनलोड लिंक:\n{download_url}" if download_url else "",
+        "english": f"\n\n📄 PDF Download Link:\n{download_url}" if download_url else "",
+    }
+
     templates = {
         "welcome": {
             "marathi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital मध्ये आपले स्वागत आहे.\nआपला Patient ID: {patient_id}\nअधिक माहितीसाठी संपर्क: +919180198107\nसर्व रेकॉर्ड डिजिटल सेव्ह केले जातील.",
@@ -166,10 +174,17 @@ async def generate_whatsapp_message(message_type: str, language: str, context: d
     template_group = templates.get(message_type, {})
     template = template_group.get(lang, template_group.get("english", ""))
 
+    msg = ""
     if template:
         try:
-            return template.format(**context)
+            msg = template.format(**context)
         except KeyError:
-            pass
+            msg = f"Sai Hospital message for {message_type} — {context.get('name', 'Patient')}"
+    else:
+        msg = f"Sai Hospital message for {message_type} — {context.get('name', 'Patient')}"
 
-    return f"Sai Hospital message for {message_type} — {context.get('name', 'Patient')}"
+    # Append PDF download link and attachment hint for document-type messages
+    if message_type in ("prescription", "bill", "report") and download_url:
+        msg += pdf_section.get(lang, pdf_section["english"])
+
+    return msg

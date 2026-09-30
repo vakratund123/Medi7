@@ -134,6 +134,7 @@ async def _process_report_ai(report_id: uuid.UUID, patient_id: str):
                 parameters=[patient.full_name, report.report_type],
                 fallback_message=msg,
                 patient_id=patient.patient_id,
+                preferred_language=patient.language_preference,
             )
             if report.file_url:
                 await send_whatsapp_document(

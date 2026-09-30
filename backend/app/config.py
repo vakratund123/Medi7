@@ -48,8 +48,9 @@ class Settings(BaseSettings):
     WATI_API_ENDPOINT: str = ""
     WATI_API_TOKEN: str = ""
 
-    # CORS
+    # CORS & Public URL
     FRONTEND_URL: str = "http://localhost:5173"
+    PUBLIC_URL: str = ""                # Public domain or server IP (e.g. http://localhost:8000 or https://hospital.in)
 
     class Config:
         env_file = ".env"

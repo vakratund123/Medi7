@@ -34,34 +34,50 @@ async def _generate_bill_number(db: AsyncSession) -> str:
     return f"{prefix}{count + 1:04d}"
 
 
-async def _send_bill_whatsapp(patient: Patient, bill: Bill, pdf_url: str | None):
+async def _send_bill_whatsapp(
+    patient_id: str,
+    full_name: str,
+    mobile_number: str,
+    lang: str,
+    bill_number: str,
+    net_amount: float,
+    payment_status: str,
+    bill_id: str,
+    pdf_url: str | None,
+):
     try:
-        lang = getattr(patient, "language_preference", "english") or "english"
-        amt_str = f"{bill.net_amount:.2f}"
-        status_str = bill.payment_status.upper()
+        amt_str = f"{net_amount:.2f}"
+        status_str = payment_status.upper()
+        base_url = (settings.PUBLIC_URL or "http://localhost:8000").rstrip("/")
+        download_url = f"{base_url}/api/bills/public/{bill_id}/pdf"
+        if pdf_url and pdf_url.startswith("http"):
+            download_url = pdf_url
+
         msg = await generate_whatsapp_message(
             "bill",
             lang,
             {
-                "name": patient.full_name,
-                "bill_number": bill.bill_number,
+                "name": full_name,
+                "bill_number": bill_number,
                 "net_amount": amt_str,
                 "payment_status": status_str,
+                "download_url": download_url,
             },
         )
         await send_whatsapp_template(
-            mobile=patient.mobile_number,
+            mobile=mobile_number,
             template_name="hospital_bill_ready",
-            parameters=[patient.full_name, bill.bill_number, amt_str, status_str],
+            parameters=[full_name, bill_number, amt_str, status_str],
             fallback_message=msg,
-            patient_id=patient.patient_id,
+            patient_id=patient_id,
+            preferred_language=lang,
         )
         if pdf_url:
             await send_whatsapp_document(
-                mobile=patient.mobile_number,
+                mobile=mobile_number,
                 file_path_or_url=pdf_url,
-                caption=f"Final Bill {bill.bill_number}",
-                patient_id=patient.patient_id,
+                caption=f"Final Bill {bill_number}",
+                patient_id=patient_id,
             )
     except Exception as e:
         print(f"[WhatsApp] Bill notification error: {e}")
@@ -167,7 +183,18 @@ async def create_or_update_bill(
     await db.refresh(bill)
 
     # Trigger WhatsApp notification in background
-    background_tasks.add_task(_send_bill_whatsapp, patient, bill, bill.pdf_url)
+    background_tasks.add_task(
+        _send_bill_whatsapp,
+        patient.patient_id,
+        patient.full_name,
+        patient.mobile_number,
+        getattr(patient, "language_preference", "english") or "english",
+        bill.bill_number,
+        bill.net_amount,
+        bill.payment_status,
+        str(bill.bill_id),
+        bill.pdf_url,
+    )
 
     return bill
 
@@ -351,9 +378,43 @@ async def update_bill_payment(
         p_res = await db.execute(select(Patient).where(Patient.patient_id == bill.patient_id))
         patient = p_res.scalar_one_or_none()
         if patient:
-            background_tasks.add_task(_send_bill_whatsapp, patient, bill, bill.pdf_url)
+            background_tasks.add_task(
+                _send_bill_whatsapp,
+                patient.patient_id,
+                patient.full_name,
+                patient.mobile_number,
+                getattr(patient, "language_preference", "english") or "english",
+                bill.bill_number,
+                bill.net_amount,
+                bill.payment_status,
+                str(bill.bill_id),
+                bill.pdf_url,
+            )
 
     return bill
+
+
+@router.get("/public/{bill_id}/pdf")
+async def download_bill_pdf_public(
+    bill_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public bill PDF download for patients via WhatsApp link without needing staff login."""
+    result = await db.execute(select(Bill).where(Bill.bill_id == bill_id))
+    bill = result.scalar_one_or_none()
+    if not bill or not bill.pdf_url:
+        raise HTTPException(status_code=404, detail="Bill PDF not found")
+
+    from app.services.whatsapp_service import _resolve_local_file
+    local_file = _resolve_local_file(bill.pdf_url)
+    if local_file and local_file.exists():
+        return FileResponse(str(local_file), media_type="application/pdf", filename=f"{bill.bill_number}.pdf")
+
+    if bill.pdf_url.startswith("http"):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(bill.pdf_url)
+
+    raise HTTPException(status_code=404, detail="Bill PDF file not found on disk")
 
 
 @router.get("/{bill_id}/pdf")
@@ -370,16 +431,13 @@ async def download_bill_pdf(
     if not bill.pdf_url:
         raise HTTPException(status_code=404, detail="Bill PDF not yet generated")
 
-    rel_path = bill.pdf_url.lstrip("/")
-    if rel_path.startswith("uploads/"):
-        rel_path = rel_path[len("uploads/"):]
-    file_path = Path(settings.LOCAL_STORAGE_PATH) / rel_path
+    from app.services.whatsapp_service import _resolve_local_file
+    local_file = _resolve_local_file(bill.pdf_url)
+    if local_file and local_file.exists():
+        return FileResponse(str(local_file), media_type="application/pdf", filename=f"{bill.bill_number}.pdf")
 
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Bill PDF file not found on disk")
+    if bill.pdf_url.startswith("http"):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(bill.pdf_url)
 
-    return FileResponse(
-        str(file_path),
-        media_type="application/pdf",
-        filename=f"{bill.bill_number}.pdf",
-    )
+    raise HTTPException(status_code=404, detail="Bill PDF file not found on disk")

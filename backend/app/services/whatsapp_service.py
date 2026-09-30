@@ -153,6 +153,34 @@ async def _meta_upload_media(file_bytes: bytes, filename: str, mime_type: str = 
         return media_id
 
 
+def _resolve_local_file(file_path_or_url: str) -> Path | None:
+    """Resolve a relative or absolute local file path across multiple candidate directories."""
+    if not file_path_or_url or file_path_or_url.startswith("http://") or file_path_or_url.startswith("https://"):
+        return None
+    clean = str(file_path_or_url).replace("\\", "/").strip()
+    direct = Path(clean)
+    if direct.is_file():
+        return direct
+
+    rel = clean.lstrip("/")
+    if rel.startswith("uploads/"):
+        rel = rel[len("uploads/"):]
+
+    candidates = [
+        Path(settings.LOCAL_STORAGE_PATH) / rel,
+        Path(settings.LOCAL_STORAGE_PATH) / "uploads" / rel,
+        Path(__file__).resolve().parent.parent / "uploads" / rel,
+        Path(__file__).resolve().parent.parent.parent / "uploads" / rel,
+        Path.cwd() / "uploads" / rel,
+        Path.cwd() / "backend" / "uploads" / rel,
+        Path.cwd() / rel,
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+    return None
+
+
 async def _meta_send_document(mobile: str, file_path_or_url: str, caption: str = "") -> bool:
     """
     Send PDF document via WhatsApp.
@@ -170,16 +198,7 @@ async def _meta_send_document(mobile: str, file_path_or_url: str, caption: str =
     doc_name = re.sub(r'[\\/*?:"<>|]', "_", doc_name)
 
     # Check if local file path
-    local_file = None
-    if file_path_or_url.startswith("/") or not file_path_or_url.startswith("http"):
-        rel = file_path_or_url.lstrip("/")
-        if rel.startswith("uploads/"):
-            rel = rel[len("uploads/"):]
-        candidate = Path(settings.LOCAL_STORAGE_PATH) / rel
-        if candidate.exists():
-            local_file = candidate
-        elif Path(file_path_or_url).exists():
-            local_file = Path(file_path_or_url)
+    local_file = _resolve_local_file(file_path_or_url)
 
     if local_file and local_file.exists():
         # Upload binary directly to Meta WhatsApp Media API
@@ -192,13 +211,16 @@ async def _meta_send_document(mobile: str, file_path_or_url: str, caption: str =
             "caption": caption,
             "filename": doc_name,
         }
-    else:
+    elif file_path_or_url.startswith("http://") or file_path_or_url.startswith("https://"):
         # Public URL link
         doc_payload = {
             "link": file_path_or_url,
             "caption": caption,
             "filename": doc_name,
         }
+    else:
+        logger.error(f"[Meta WA] Document file not found on disk or invalid URL: {file_path_or_url}")
+        return False
 
     payload = {
         "messaging_product": "whatsapp",
@@ -243,11 +265,14 @@ async def send_whatsapp_template(
     language_code: str = "en_US",
     fallback_message: str | None = None,
     patient_id: str | None = None,
+    preferred_language: str = "english",
 ) -> bool:
     """
-    Send an approved WhatsApp template with automatic smart fallback.
-    - If template is in APPROVED_META_TEMPLATES, sends official Meta template.
-    - If template is not registered or fails, smoothly sends rich formatted text message.
+    Send an approved WhatsApp template with automatic smart language handling:
+    - If preferred_language is NOT English (e.g. Marathi, Hindi, Kannada) and fallback_message is provided:
+      Sends the rich, localized message in that language via WhatsApp text (Meta templates are English-only).
+    - If preferred_language is English and template is in APPROVED_META_TEMPLATES:
+      Sends the official Meta template with automatic fallback.
     - Validates mobile number and records status to audit log.
     """
     normalized = _normalize_mobile(mobile)
@@ -256,10 +281,27 @@ async def send_whatsapp_template(
         return False
 
     success = False
+    lang = (preferred_language or "english").strip().lower()
+
     # Check Meta Cloud API
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
-        # If template is known approved, try template first
-        if template_name in APPROVED_META_TEMPLATES:
+        # If the patient selected a regional language (Marathi, Hindi, Kannada), Meta only has English
+        # templates approved for this account. Send the rich localized text message directly so they
+        # receive it in their chosen language.
+        if lang != "english" and fallback_message:
+            logger.info(f"[Meta WA] Sending localized message in '{lang}' to {normalized}")
+            try:
+                success = await _meta_send_text(normalized, fallback_message)
+            except Exception as e:
+                logger.error(f"[Meta WA] Localized text sending failed in {lang}: {e}")
+                # Try template as emergency fallback
+                if template_name in APPROVED_META_TEMPLATES:
+                    try:
+                        success = await _meta_send_template(normalized, template_name, parameters, language_code)
+                    except Exception as ex2:
+                        logger.error(f"[Meta WA] Emergency template fallback also failed: {ex2}")
+        elif template_name in APPROVED_META_TEMPLATES:
+            # English patient — send approved Meta template
             try:
                 success = await _meta_send_template(normalized, template_name, parameters, language_code)
             except Exception as e:
@@ -270,7 +312,7 @@ async def send_whatsapp_template(
                     except Exception as ex2:
                         logger.error(f"[Meta WA] Text fallback also failed: {ex2}")
         else:
-            # Template not in Meta catalog — directly send rich multilingual text message
+            # Template not in Meta catalog — directly send formatted text message
             logger.info(f"[Meta WA] Template '{template_name}' not in Meta catalog; sending formatted text message.")
             if fallback_message:
                 try:

@@ -21,27 +21,41 @@ settings = get_settings()
 router = APIRouter(prefix="/api/prescriptions", tags=["Prescriptions"])
 
 
-async def _send_rx_whatsapp(patient: Patient, pdf_url: str, follow_up: str | None):
+async def _send_rx_whatsapp(
+    patient_id: str,
+    full_name: str,
+    mobile_number: str,
+    lang_pref: str,
+    pdf_url: str,
+    follow_up: str | None,
+    rx_id: str,
+):
     try:
         fu = follow_up or "As needed"
+        base_url = (settings.PUBLIC_URL or "http://localhost:8000").rstrip("/")
+        download_url = f"{base_url}/api/prescriptions/public/{rx_id}/pdf"
+        if pdf_url and pdf_url.startswith("http"):
+            download_url = pdf_url
+
         msg = await generate_whatsapp_message(
             "prescription",
-            patient.language_preference,
-            {"name": patient.full_name, "follow_up": fu},
+            lang_pref,
+            {"name": full_name, "follow_up": fu, "download_url": download_url},
         )
         await send_whatsapp_template(
-            mobile=patient.mobile_number,
+            mobile=mobile_number,
             template_name="hospital_prescription_ready",
-            parameters=[patient.full_name, fu],
+            parameters=[full_name, fu],
             fallback_message=msg,
-            patient_id=patient.patient_id,
+            patient_id=patient_id,
+            preferred_language=lang_pref,
         )
         if pdf_url:
             await send_whatsapp_document(
-                mobile=patient.mobile_number,
+                mobile=mobile_number,
                 file_path_or_url=pdf_url,
-                caption=f"Prescription - {patient.full_name}",
-                patient_id=patient.patient_id,
+                caption=f"Prescription - {full_name}",
+                patient_id=patient_id,
             )
     except Exception as e:
         import logging
@@ -89,9 +103,42 @@ async def create_prescription(
     await db.refresh(rx)
 
     # Send WhatsApp in background
-    background_tasks.add_task(_send_rx_whatsapp, patient, pdf_path, str(visit.follow_up_date) if visit.follow_up_date else None)
+    follow_up_str = str(visit.follow_up_date) if visit.follow_up_date else None
+    background_tasks.add_task(
+        _send_rx_whatsapp,
+        patient.patient_id,
+        patient.full_name,
+        patient.mobile_number,
+        patient.language_preference,
+        pdf_path,
+        follow_up_str,
+        str(rx.prescription_id),
+    )
 
     return rx
+
+
+@router.get("/public/{prescription_id}/pdf")
+async def download_prescription_pdf_public(
+    prescription_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public PDF download for patients via WhatsApp link without requiring staff login."""
+    result = await db.execute(select(Prescription).where(Prescription.prescription_id == prescription_id))
+    rx = result.scalar_one_or_none()
+    if not rx or not rx.pdf_url:
+        raise HTTPException(status_code=404, detail="Prescription PDF not found")
+
+    from app.services.whatsapp_service import _resolve_local_file
+    local_file = _resolve_local_file(rx.pdf_url)
+    if local_file and local_file.exists():
+        return FileResponse(str(local_file), media_type="application/pdf", filename=f"prescription_{prescription_id}.pdf")
+
+    if rx.pdf_url.startswith("http"):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(rx.pdf_url)
+
+    raise HTTPException(status_code=404, detail="PDF file not found on disk")
 
 
 @router.get("/{prescription_id}", response_model=PrescriptionOut)
@@ -118,11 +165,13 @@ async def download_prescription_pdf(
     if not rx or not rx.pdf_url:
         raise HTTPException(status_code=404, detail="PDF not found")
 
-    # For local storage, serve the file
-    if rx.pdf_url.startswith("/uploads"):
-        file_path = Path(settings.LOCAL_STORAGE_PATH) / rx.pdf_url.lstrip("/uploads/")
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="PDF file not found on disk")
-        return FileResponse(str(file_path), media_type="application/pdf", filename=f"prescription_{prescription_id}.pdf")
+    from app.services.whatsapp_service import _resolve_local_file
+    local_file = _resolve_local_file(rx.pdf_url)
+    if local_file and local_file.exists():
+        return FileResponse(str(local_file), media_type="application/pdf", filename=f"prescription_{prescription_id}.pdf")
+
+    if rx.pdf_url.startswith("http"):
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(rx.pdf_url)
 
     return {"pdf_url": rx.pdf_url}

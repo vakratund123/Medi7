@@ -79,6 +79,7 @@ async def register_patient(
                 parameters=[patient_id],
                 fallback_message=msg,
                 patient_id=patient_id,
+                preferred_language=data.language_preference,
             )
         except Exception as e:
             import logging
