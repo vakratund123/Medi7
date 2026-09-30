@@ -280,6 +280,8 @@ async def send_whatsapp_template(
         logger.warning(f"[WhatsApp] Skipped template '{template_name}' due to invalid mobile '{mobile}'")
         return False
 
+    lang = (preferred_language or "english").strip().lower()
+
     # Map language names to Meta Cloud API language codes
     lang_code_map = {
         "kannada": "kn",
