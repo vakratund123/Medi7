@@ -280,20 +280,34 @@ async def send_whatsapp_template(
         logger.warning(f"[WhatsApp] Skipped template '{template_name}' due to invalid mobile '{mobile}'")
         return False
 
-    success = False
-    lang = (preferred_language or "english").strip().lower()
+    # Map language names to Meta Cloud API language codes
+    lang_code_map = {
+        "kannada": "kn",
+        "marathi": "mr",
+        "hindi": "hi",
+        "english": "en_US",
+    }
+    target_lang_code = lang_code_map.get(lang, language_code or "en_US")
 
     # Check Meta Cloud API
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
         # Step 1: If template is an approved Meta template, ALWAYS send it.
-        # This is mandatory because WhatsApp Business API ONLY allows approved templates
-        # to initiate conversations with patients outside the 24-hour service window.
+        # Try preferred language code first (e.g. 'kn', 'mr', 'hi').
+        # If translation not yet added in Meta catalog (132001), gracefully fall back to 'en_US'.
         if template_name in APPROVED_META_TEMPLATES:
             try:
-                success = await _meta_send_template(normalized, template_name, parameters, language_code)
+                success = await _meta_send_template(normalized, template_name, parameters, target_lang_code)
             except Exception as e:
-                logger.warning(f"[Meta WA] Template '{template_name}' to {normalized} failed: {e}. Trying text fallback.")
-                if fallback_message:
+                if target_lang_code != "en_US":
+                    logger.info(f"[Meta WA] Template in '{target_lang_code}' not yet registered in Meta. Falling back to 'en_US'.")
+                    try:
+                        success = await _meta_send_template(normalized, template_name, parameters, "en_US")
+                    except Exception as ex_en:
+                        logger.warning(f"[Meta WA] English template '{template_name}' also failed: {ex_en}")
+                else:
+                    logger.warning(f"[Meta WA] Template '{template_name}' to {normalized} failed: {e}")
+                
+                if not success and fallback_message:
                     try:
                         success = await _meta_send_text(normalized, fallback_message)
                     except Exception as ex2:
