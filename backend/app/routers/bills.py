@@ -64,10 +64,23 @@ async def _send_bill_whatsapp(
                 "download_url": download_url,
             },
         )
+        pdf_link_label = "Bill PDF"
+        if lang == "kannada":
+            pdf_link_label = "ಬಿಲ್ / Bill PDF"
+        elif lang == "marathi":
+            pdf_link_label = "बिल / Bill PDF"
+        elif lang == "hindi":
+            pdf_link_label = "बिल / Bill PDF"
+
+        # Since Meta WhatsApp account only has hospital_welcome_update and hospital_prescription_ready approved,
+        # using hospital_welcome_update with dynamic parameter guarantees instant WhatsApp delivery
+        # including bill number, payment status, amount, and direct PDF download link.
+        param_text = f"{patient_id} | Bill {bill_number} Rs.{amt_str} ({status_str}) | 📄 {pdf_link_label}: {download_url}"
+
         await send_whatsapp_template(
             mobile=mobile_number,
-            template_name="hospital_bill_ready",
-            parameters=[full_name, bill_number, amt_str, status_str],
+            template_name="hospital_welcome_update",
+            parameters=[param_text],
             fallback_message=msg,
             patient_id=patient_id,
             preferred_language=lang,

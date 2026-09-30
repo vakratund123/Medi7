@@ -42,10 +42,21 @@ async def _send_rx_whatsapp(
             lang_pref,
             {"name": full_name, "follow_up": fu, "download_url": download_url},
         )
+
+        pdf_link_label = "Prescription PDF"
+        if lang_pref == "kannada":
+            pdf_link_label = "ಔಷಧಿ ಚೀಟಿ / Prescription PDF"
+        elif lang_pref == "marathi":
+            pdf_link_label = "औषध पत्र / Prescription PDF"
+        elif lang_pref == "hindi":
+            pdf_link_label = "पर्चा / Prescription PDF"
+
+        param_followup = f"{fu} | 📄 {pdf_link_label}: {download_url}"
+
         await send_whatsapp_template(
             mobile=mobile_number,
             template_name="hospital_prescription_ready",
-            parameters=[full_name, fu],
+            parameters=[full_name, param_followup],
             fallback_message=msg,
             patient_id=patient_id,
             preferred_language=lang_pref,
