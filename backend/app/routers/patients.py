@@ -201,3 +201,37 @@ async def get_patient_history(
     ai_summary = await generate_patient_summary(history)
     history["ai_summary"] = ai_summary
     return history
+
+
+@router.post("/{patient_id}/resend-welcome-whatsapp")
+async def resend_welcome_whatsapp(
+    patient_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_any),
+):
+    """Resend the welcome WhatsApp template to the patient's registered mobile number."""
+    result = await db.execute(select(Patient).where(Patient.patient_id == patient_id))
+    patient = result.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    msg = await generate_whatsapp_message(
+        "welcome",
+        patient.language_preference,
+        {"name": patient.full_name, "patient_id": patient.patient_id},
+    )
+    sent = await send_whatsapp_template(
+        mobile=patient.mobile_number,
+        template_name="hospital_welcome_update",
+        parameters=[patient.patient_id],
+        fallback_message=msg,
+        patient_id=patient.patient_id,
+        preferred_language=patient.language_preference,
+    )
+    return {
+        "status": "success" if sent else "failed",
+        "patient_id": patient.patient_id,
+        "mobile": patient.mobile_number,
+        "delivered": sent,
+    }
+
