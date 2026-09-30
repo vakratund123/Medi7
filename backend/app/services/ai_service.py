@@ -183,8 +183,8 @@ async def generate_whatsapp_message(message_type: str, language: str, context: d
     else:
         msg = f"Sai Hospital message for {message_type} — {context.get('name', 'Patient')}"
 
-    # Append PDF download link and attachment hint for document-type messages
-    if message_type in ("prescription", "bill", "report") and download_url:
+    # Only append raw PDF link if explicitly requested (e.g. when physical PDF file cannot be attached)
+    if message_type in ("prescription", "bill", "report") and download_url and context.get("include_pdf_link", False):
         msg += pdf_section.get(lang, pdf_section["english"])
 
     return msg

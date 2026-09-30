@@ -291,40 +291,33 @@ async def send_whatsapp_template(
 
     # Check Meta Cloud API
     if settings.META_WHATSAPP_TOKEN and settings.META_PHONE_NUMBER_ID:
-        # Step 1: If template is an approved Meta template, ALWAYS send it.
-        # Try preferred language code first (e.g. 'kn', 'mr', 'hi').
-        # If translation not yet added in Meta catalog (132001), gracefully fall back to 'en_US'.
-        if template_name in APPROVED_META_TEMPLATES:
+        if lang != "english" and fallback_message:
+            # Regional language patient (Marathi, Kannada, Hindi)
+            # Send the localized message directly so they receive ONLY their preferred language.
+            # Do NOT send the English template when localized message is delivered!
             try:
-                success = await _meta_send_template(normalized, template_name, parameters, target_lang_code)
+                logger.info(f"[Meta WA] Sending clean localized message in '{lang}' to {normalized}")
+                success = await _meta_send_text(normalized, fallback_message)
             except Exception as e:
-                if target_lang_code != "en_US":
-                    logger.info(f"[Meta WA] Template in '{target_lang_code}' not yet registered in Meta. Falling back to 'en_US'.")
+                logger.warning(f"[Meta WA] Localized text failed: {e}. Falling back to template.")
+                # Only if text delivery fails (e.g. 24h window closed), fall back to approved template
+                if template_name in APPROVED_META_TEMPLATES:
                     try:
                         success = await _meta_send_template(normalized, template_name, parameters, "en_US")
-                    except Exception as ex_en:
-                        logger.warning(f"[Meta WA] English template '{template_name}' also failed: {ex_en}")
-                else:
-                    logger.warning(f"[Meta WA] Template '{template_name}' to {normalized} failed: {e}")
-                
-                if not success and fallback_message:
-                    try:
-                        success = await _meta_send_text(normalized, fallback_message)
                     except Exception as ex2:
-                        logger.error(f"[Meta WA] Text fallback also failed: {ex2}")
-            
-            # Step 2: If patient selected a regional language (Marathi, Kannada, Hindi),
-            # also send the localized message so they have it in their chosen language.
-            if lang != "english" and fallback_message:
-                try:
-                    logger.info(f"[Meta WA] Dispatching localized text in '{lang}' to {normalized}")
-                    await _meta_send_text(normalized, fallback_message)
-                except Exception as e:
-                    logger.warning(f"[Meta WA] Accompanying localized text failed: {e}")
+                        logger.error(f"[Meta WA] Template fallback failed: {ex2}")
         else:
-            # Template not in Meta catalog — directly send formatted text message
-            logger.info(f"[Meta WA] Template '{template_name}' not in Meta catalog; sending formatted text message.")
-            if fallback_message:
+            # English patient — send approved Meta template or text
+            if template_name in APPROVED_META_TEMPLATES:
+                try:
+                    success = await _meta_send_template(normalized, template_name, parameters, "en_US")
+                except Exception as e:
+                    if fallback_message:
+                        try:
+                            success = await _meta_send_text(normalized, fallback_message)
+                        except Exception as ex2:
+                            logger.error(f"[Meta WA] English text fallback failed: {ex2}")
+            elif fallback_message:
                 try:
                     success = await _meta_send_text(normalized, fallback_message)
                 except Exception as ex:
