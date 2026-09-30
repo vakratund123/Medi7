@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # WhatsApp — Meta Cloud API (primary)
     META_WHATSAPP_TOKEN: str = ""       # Permanent or temp token from Meta Developer Portal
     META_PHONE_NUMBER_ID: str = ""      # Phone Number ID (not the actual phone number)
+    META_WEBHOOK_VERIFY_TOKEN: str = "medi7_whatsapp_verify_token"
 
     # WhatsApp — WATI (fallback)
     WATI_API_ENDPOINT: str = ""
