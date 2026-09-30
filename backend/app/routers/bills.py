@@ -11,7 +11,7 @@ from app.models.bill import Bill
 from app.models.patient import Patient
 from app.models.staff import Staff
 from app.models.visit import Visit
-from app.schemas.bill import BillCreate, BillOut, BillPaymentUpdate, BillDetailOut, BillStatsOut
+from app.schemas.bill import BillCreate, BillUpdate, BillOut, BillPaymentUpdate, BillDetailOut, BillStatsOut
 from app.middleware.auth_middleware import require_any, require_roles
 from app.services.pdf_service import generate_bill_pdf
 from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message, send_whatsapp_template
@@ -21,7 +21,7 @@ from app.config import get_settings
 settings = get_settings()
 router = APIRouter(prefix="/api/bills", tags=["Bills & Billing"])
 
-BILL_ROLES = ["manager", "doctor", "admin", "owner", "cashier", "receptionist"]
+BILL_ROLES = ["manager", "doctor", "admin", "owner", "cashier", "receptionist", "reception"]
 
 
 async def _generate_bill_number(db: AsyncSession) -> str:
@@ -182,19 +182,20 @@ async def create_or_update_bill(
     await db.commit()
     await db.refresh(bill)
 
-    # Trigger WhatsApp notification in background
-    background_tasks.add_task(
-        _send_bill_whatsapp,
-        patient.patient_id,
-        patient.full_name,
-        patient.mobile_number,
-        getattr(patient, "language_preference", "english") or "english",
-        bill.bill_number,
-        bill.net_amount,
-        bill.payment_status,
-        str(bill.bill_id),
-        bill.pdf_url,
-    )
+    # Trigger WhatsApp notification in background ONLY if paid (pending bills wait for cashier collection)
+    if bill.payment_status.lower() == "paid":
+        background_tasks.add_task(
+            _send_bill_whatsapp,
+            patient.patient_id,
+            patient.full_name,
+            patient.mobile_number,
+            getattr(patient, "language_preference", "english") or "english",
+            bill.bill_number,
+            bill.net_amount,
+            bill.payment_status,
+            str(bill.bill_id),
+            bill.pdf_url,
+        )
 
     return bill
 
@@ -349,6 +350,104 @@ async def get_bill_by_id(
     bill = result.scalar_one_or_none()
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    return bill
+
+
+@router.put("/{bill_id}", response_model=BillOut)
+async def update_bill(
+    bill_id: uuid.UUID,
+    data: BillUpdate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: Staff = Depends(require_roles(BILL_ROLES)),
+):
+    """Edit bill items, quantities, rates, discounts, notes, and payment mode. Accessible to Doctor & Receptionist."""
+    result = await db.execute(select(Bill).where(Bill.bill_id == bill_id))
+    bill = result.scalar_one_or_none()
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+
+    if data.items is not None:
+        bill.items = [item.model_dump() for item in data.items]
+    if data.subtotal is not None:
+        bill.subtotal = data.subtotal
+    if data.discount is not None:
+        bill.discount = data.discount
+    if data.tax is not None:
+        bill.tax = data.tax
+    if data.net_amount is not None:
+        bill.net_amount = data.net_amount
+    if data.payment_status is not None:
+        bill.payment_status = data.payment_status
+    if data.payment_mode is not None:
+        bill.payment_mode = data.payment_mode
+    if data.notes is not None:
+        bill.notes = data.notes
+
+    # Fetch patient, doctor, and visit to regenerate Letterhead PDF
+    patient_result = await db.execute(select(Patient).where(Patient.patient_id == bill.patient_id))
+    patient = patient_result.scalar_one_or_none()
+    doctor_result = await db.execute(select(Staff).where(Staff.staff_id == bill.doctor_id))
+    doctor = doctor_result.scalar_one_or_none()
+    visit_result = await db.execute(select(Visit).where(Visit.visit_id == bill.visit_id))
+    visit = visit_result.scalar_one_or_none()
+
+    if patient and doctor and visit:
+        doctor_dict = {
+            "full_name": doctor.full_name,
+            "department": doctor.department,
+            "reg_no": getattr(doctor, "reg_no", "BLG03043ALHL3") or "BLG03043ALHL3",
+        }
+        patient_dict = {
+            "full_name": patient.full_name,
+            "patient_id": patient.patient_id,
+            "age": patient.age,
+            "gender": patient.gender,
+            "phone": patient.mobile_number,
+            "address": getattr(patient, "address", "") or "",
+            "referred_by": getattr(patient, "referred_by", None),
+        }
+        visit_dict = {
+            "visit_id": str(visit.visit_id),
+            "diagnosis": visit.diagnosis,
+            "visit_type": getattr(visit, "visit_type", "OPD"),
+            "referred_by": getattr(visit, "referred_by", None),
+        }
+        bill_dict = {
+            "bill_number": bill.bill_number,
+            "items": bill.items,
+            "subtotal": bill.subtotal,
+            "discount": bill.discount,
+            "tax": bill.tax,
+            "net_amount": bill.net_amount,
+            "payment_status": bill.payment_status,
+            "payment_mode": bill.payment_mode,
+            "notes": bill.notes,
+        }
+        try:
+            pdf_rel_path = generate_bill_pdf(patient_dict, doctor_dict, bill_dict, visit_dict)
+            bill.pdf_url = pdf_rel_path
+        except Exception as e:
+            print(f"[PDF Error] Failed to regenerate bill PDF on edit: {e}")
+
+    await db.commit()
+    await db.refresh(bill)
+
+    # If marked paid, send updated bill & receipt to patient WhatsApp in background
+    if bill.payment_status.lower() == "paid" and patient:
+        background_tasks.add_task(
+            _send_bill_whatsapp,
+            patient.patient_id,
+            patient.full_name,
+            patient.mobile_number,
+            getattr(patient, "language_preference", "english") or "english",
+            bill.bill_number,
+            bill.net_amount,
+            bill.payment_status,
+            str(bill.bill_id),
+            bill.pdf_url,
+        )
+
     return bill
 
 

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-import { Printer, Download, X, CheckCircle, Clock, Loader2, MessageSquare } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Printer, Download, X, CheckCircle, Clock, Loader2, MessageSquare, Edit3 } from 'lucide-react'
 import { SAI_HOSPITAL_LOGO_B64 } from '../assets/hospitalLogo'
+import EditBillModal from './EditBillModal'
 import api from '../api/client'
 import toast from 'react-hot-toast'
 
@@ -51,17 +52,23 @@ function numberToWords(amount) {
   }
 }
 
-export default function BillLetterheadModal({ bill, patient, doctor, visit, onClose }) {
+export default function BillLetterheadModal({ bill, patient, doctor, visit, onClose, onBillUpdated }) {
   if (!bill || !patient) return null
 
+  const [currentBill, setCurrentBill] = useState(bill)
+  const [isEditing, setIsEditing] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [sendingWa, setSendingWa] = useState(false)
 
+  useEffect(() => {
+    if (bill) setCurrentBill(bill)
+  }, [bill])
+
   const handleSendWhatsApp = async () => {
-    if (!bill?.bill_id) return
+    if (!currentBill?.bill_id) return
     try {
       setSendingWa(true)
-      await api.post(`/whatsapp/resend/bill/${bill.bill_id}`)
+      await api.post(`/whatsapp/resend/bill/${currentBill.bill_id}`)
       toast.success(`WhatsApp bill & PDF sent to ${patient?.full_name || 'patient'}!`)
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'WhatsApp delivery failed')
@@ -174,8 +181,14 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
     }
   }
 
-  const amountInWords = numberToWords(bill.net_amount)
+  const amountInWords = numberToWords(currentBill.net_amount)
   const todayStr = new Date().toLocaleDateString('en-GB') // DD/MM/YYYY
+
+  const handleEditSaved = (updated) => {
+    setCurrentBill(updated)
+    if (onBillUpdated) onBillUpdated(updated)
+    setIsEditing(false)
+  }
 
   return (
     <div className="bill-modal-overlay fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex justify-center items-start p-2 sm:p-6 print:p-0 print:bg-white print:static">
@@ -190,10 +203,17 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
               Official Letterhead
             </span>
             <span className="text-sm font-medium text-slate-300">
-              Bill Ref: <strong className="text-white">{bill.bill_number}</strong>
+              Bill Ref: <strong className="text-white">{currentBill.bill_number}</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+              title="Edit bill items, rates, quantities, and discount"
+            >
+              <Edit3 size={15} /> Edit Bill
+            </button>
             <button
               onClick={handleSendWhatsApp}
               disabled={sendingWa}
@@ -273,7 +293,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
             {/* Ref. No. & Date */}
             <div className="flex justify-between items-center py-2 text-xs font-semibold text-slate-800 border-b border-dashed border-slate-300 mb-4">
               <div>
-                Ref. No. : <span className="font-bold text-slate-900">{bill.bill_number}</span>
+                Ref. No. : <span className="font-bold text-slate-900">{currentBill.bill_number}</span>
               </div>
               <div>
                 Date : <span className="font-bold text-slate-900">{todayStr}</span>
@@ -286,9 +306,9 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
                 {visit?.status === 'admitted' ? 'Interim Inpatient Bill / Running Statement (Active Admission)' : 'Patient Final Bill / Discharge Summary Invoice'}
               </span>
               <div>
-                {bill.payment_status === 'paid' ? (
+                {currentBill.payment_status === 'paid' ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    <CheckCircle size={11} /> PAID ({bill.payment_mode ? bill.payment_mode.toUpperCase() : 'CASH'})
+                    <CheckCircle size={11} /> PAID ({currentBill.payment_mode ? currentBill.payment_mode.toUpperCase() : 'CASH'})
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
@@ -355,7 +375,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {bill.items && bill.items.map((item, idx) => (
+                  {currentBill.items && currentBill.items.map((item, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                       <td className="py-2 px-3 text-center text-slate-500 font-medium">{idx + 1}</td>
                       <td className="py-2 px-3 font-semibold text-slate-900">{item.name}</td>
@@ -383,14 +403,14 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
                 <span className="font-bold text-blue-900 text-xs mt-0.5 block">
                   {amountInWords}
                 </span>
-                {bill.payment_mode && (
+                {currentBill.payment_mode && (
                   <div className="mt-2 text-[11px] text-slate-600">
-                    Payment Mode: <strong className="uppercase text-slate-800">{bill.payment_mode}</strong>
+                    Payment Mode: <strong className="uppercase text-slate-800">{currentBill.payment_mode}</strong>
                   </div>
                 )}
-                {bill.notes && (
+                {currentBill.notes && (
                   <div className="mt-1 text-[11px] text-slate-500 italic">
-                    Notes: {bill.notes}
+                    Notes: {currentBill.notes}
                   </div>
                 )}
               </div>
@@ -398,23 +418,23 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
               <div className="w-full sm:w-4/12 space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-600 px-1">
                   <span>Subtotal:</span>
-                  <span className="font-semibold text-slate-800">₹{Number(bill.subtotal).toFixed(2)}</span>
+                  <span className="font-semibold text-slate-800">₹{Number(currentBill.subtotal).toFixed(2)}</span>
                 </div>
-                {bill.discount > 0 && (
+                {currentBill.discount > 0 && (
                   <div className="flex justify-between text-rose-600 px-1">
                     <span>Discount:</span>
-                    <span className="font-semibold">- ₹{Number(bill.discount).toFixed(2)}</span>
+                    <span className="font-semibold">- ₹{Number(currentBill.discount).toFixed(2)}</span>
                   </div>
                 )}
-                {bill.tax > 0 && (
+                {currentBill.tax > 0 && (
                   <div className="flex justify-between text-slate-600 px-1">
                     <span>Tax:</span>
-                    <span className="font-semibold">+ ₹{Number(bill.tax).toFixed(2)}</span>
+                    <span className="font-semibold">+ ₹{Number(currentBill.tax).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-base font-extrabold text-blue-900 pt-2 border-t-2 border-blue-900 px-1">
                   <span>Net Amount:</span>
-                  <span>₹{Number(bill.net_amount).toFixed(2)}</span>
+                  <span>₹{Number(currentBill.net_amount).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -442,6 +462,18 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
         </div>
 
       </div>
+
+      {/* Embedded Edit Bill Modal */}
+      {isEditing && (
+        <EditBillModal
+          bill={currentBill}
+          patient={patient}
+          doctor={doctor}
+          visit={visit}
+          onClose={() => setIsEditing(false)}
+          onSaveSuccess={handleEditSaved}
+        />
+      )}
 
       {/* Global CSS for Print Mode */}
       <style>{`

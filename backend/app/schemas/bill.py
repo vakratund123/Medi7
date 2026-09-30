@@ -31,6 +31,17 @@ class BillPaymentUpdate(BaseModel):
     notes: str | None = None
 
 
+class BillUpdate(BaseModel):
+    items: list[BillItem] | None = None
+    subtotal: float | None = None
+    discount: float | None = 0.0
+    tax: float | None = 0.0
+    net_amount: float | None = None
+    payment_status: str | None = None
+    payment_mode: str | None = None
+    notes: str | None = None
+
+
 class BillOut(BaseModel):
     bill_id: UUID
     bill_number: str

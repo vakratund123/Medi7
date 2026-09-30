@@ -1069,7 +1069,7 @@ function calcDemoBill(){
 function openConsult(pid){
   const p=STATE.patients.find(x=>x.id===pid);
   window._currentBillItems = [
-    { name: 'Doctor Consultation Fee', category: 'Consultation', qty: 1, rate: 300, total: 300 }
+    { name: 'Consulting Fees', category: 'Consultation', qty: 1, rate: 200, total: 200 }
   ];
   showM(
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
@@ -1109,16 +1109,53 @@ function openConsult(pid){
     '<div class="chkgroup">'+RAD_SCANS.map((s,i)=>'<label class="chkitem"><input type="checkbox" id="rad_'+i+'" value="'+s+'"/> '+s+'</label>').join('')+'</div></div>'+
 
     '<div id="tp-cbill" class="tabpane">'+
-    '<div style="font-size:12px;color:var(--s500);margin-bottom:12px">&#129658; Pricing added by Doctor. Final bill will be printed on official Sai Emergency &amp; Multispeciality Hospital Letterhead.</div>'+
-    '<div style="font-size:11px;font-weight:700;color:var(--s600);text-transform:uppercase;margin-bottom:6px">&#9889; Quick Add Standard Charges:</div>'+
+    '<div style="font-size:12px;color:var(--s500);margin-bottom:12px">&#129658; Pricing added by Doctor &amp; Receptionist. Valid as per hospital tariff until 31 March 2027.</div>'+
+    
+    '<div class="fg" style="margin-bottom:12px"><label style="font-weight:700;color:var(--pd)">&#128221; Select Hospital Tariff Charge (Dropdown):</label>'+
+    '<select style="width:100%;padding:8px 10px;border:2px solid var(--p);border-radius:8px;font-size:12px;font-weight:600;background:#f8fafc" onchange="if(this.value){const d=JSON.parse(this.value);addDemoBillItem(d.name,d.cat,d.rate);this.value=\'\';}">'+
+    '<option value="">-- Choose Standard Charge to Add --</option>'+
+    '<optgroup label="OPD Consultation &amp; Assessment">'+
+    '<option value=\'{"name":"Consulting Fees","cat":"Consultation","rate":200}\'>Consulting Fees (ಸಲಹಾ ಶುಲ್ಕ) - &#8377;200</option>'+
+    '<option value=\'{"name":"Follow-up Charges (Up to 1 Month)","cat":"Consultation","rate":100}\'>Follow-up Charges (ಫಾಲೋ-ಅಪ್ ಶುಲ್ಕ) - &#8377;100</option>'+
+    '<option value=\'{"name":"Emergency Consultation Charges","cat":"Emergency","rate":2000}\'>Emergency Consultation Charges (ತುರ್ತು ಶುಲ್ಕ) - &#8377;2000</option>'+
+    '<option value=\'{"name":"Doctor Professional Charges","cat":"Consultation","rate":500}\'>Doctor Professional Charges - &#8377;500</option>'+
+    '</optgroup>'+
+    '<optgroup label="OPD Procedures &amp; Diagnostics">'+
+    '<option value=\'{"name":"Injection Charges","cat":"Procedure","rate":100}\'>Injection Charges (ಇಂಜೆಕ್ಷನ್ ಶುಲ್ಕ) - &#8377;100</option>'+
+    '<option value=\'{"name":"E.C.G. Test","cat":"Diagnostics","rate":300}\'>E.C.G. (ಇ.ಸಿ.ಜಿ.) - &#8377;300</option>'+
+    '<option value=\'{"name":"Dressing Charges (Minor)","cat":"Procedure","rate":300}\'>Dressing Charges (Minor) (ಸಾಮಾನ್ಯ ಡ್ರೆಸಿಂಗ್) - &#8377;300</option>'+
+    '<option value=\'{"name":"Dressing Charges (Major)","cat":"Procedure","rate":500}\'>Dressing Charges (Major) (ಗಂಭೀರ ಡ್ರೆಸಿಂಗ್) - &#8377;500</option>'+
+    '<option value=\'{"name":"Nebuliser Charges","cat":"Procedure","rate":100}\'>Nebuliser (ನೆಬುಲೈಸರ್) - &#8377;100</option>'+
+    '<option value=\'{"name":"GRBS Charges (Blood Test)","cat":"Diagnostics","rate":50}\'>GRBS Charges (Blood Sugar Test) - &#8377;50</option>'+
+    '<option value=\'{"name":"Day Care (With Treatment)","cat":"Bed Charges","rate":1200}\'>Day Care (With Treatment) - &#8377;1200</option>'+
+    '<option value=\'{"name":"Treadmill Test (TMT)","cat":"Diagnostics","rate":1000}\'>Treadmill Test (TMT) - &#8377;1000</option>'+
+    '<option value=\'{"name":"2D ECHO & Color Doppler","cat":"Diagnostics","rate":2200}\'>2D ECHO &amp; Color Doppler - &#8377;2200</option>'+
+    '<option value=\'{"name":"Bedside USG","cat":"Diagnostics","rate":1800}\'>Bedside USG - &#8377;1800</option>'+
+    '</optgroup>'+
+    '<optgroup label="IPD Specific (Inpatient Wards &amp; Procedures)">'+
+    '<option value=\'{"name":"General Ward (Bed+Nursing+MO+Visit)","cat":"Bed Charges","rate":2750}\'>General Ward (ಜನರಲ್ ವಾರ್ಡ್) - &#8377;2750 / Day</option>'+
+    '<option value=\'{"name":"Special Room (Double Occupancy)","cat":"Bed Charges","rate":3500}\'>Special Room (Double) - &#8377;3500 / Day</option>'+
+    '<option value=\'{"name":"Special Room (Single Occupancy)","cat":"Bed Charges","rate":3000}\'>Special Room (Single) - &#8377;3000 / Day</option>'+
+    '<option value=\'{"name":"ICU Charges (Bed+Nursing+MO+Visit)","cat":"Bed Charges","rate":5500}\'>ICU Charges (ಐಸಿಯು ಶುಲ್ಕ) - &#8377;5500 / Day</option>'+
+    '<option value=\'{"name":"Ventilator Charges","cat":"Procedure","rate":4000}\'>Ventilator Charges (ವೆಂಟಿಲೇಟರ್ ಶುಲ್ಕ) - &#8377;4000 / Day</option>'+
+    '<option value=\'{"name":"Oxygen Charges (Per Hour)","cat":"Procedure","rate":50}\'>Oxygen Charges - &#8377;50 / Hour</option>'+
+    '<option value=\'{"name":"Consultant Specialist Visit","cat":"Consultation","rate":500}\'>Consultant Visit Charges - &#8377;500 / Visit</option>'+
+    '<option value=\'{"name":"Operation Theatre Charges","cat":"Procedure","rate":2000}\'>Operation Theatre Charges - &#8377;2000</option>'+
+    '<option value=\'{"name":"Syringe Pump Charges","cat":"Procedure","rate":600}\'>Syringe Pump Charges - &#8377;600</option>'+
+    '</optgroup>'+
+    '</select></div>'+
+
+    '<div style="font-size:11px;font-weight:700;color:var(--s600);text-transform:uppercase;margin-bottom:6px">&#9889; Quick Add:</div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Doctor Consultation Fee\',\'Consultation\',300)">+ Consultation (&#8377;300)</button>'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Emergency Assessment\',\'Emergency\',500)">+ Emergency (&#8377;500)</button>'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Routine Follow-up\',\'Consultation\',200)">+ Follow-up (&#8377;200)</button>'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'ECG 12-Lead Test\',\'Diagnostics\',300)">+ ECG (&#8377;300)</button>'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Wound Dressing / Minor Suture\',\'Procedure\',250)">+ Dressing (&#8377;250)</button>'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Injection &amp; IV Infusion\',\'Nursing\',150)">+ Injection/IV (&#8377;150)</button>'+
-    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Day Care Observation Bed\',\'Bed Charges\',800)">+ Observation Bed (&#8377;800)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Consulting Fees\',\'Consultation\',200)">+ Consulting (&#8377;200)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Follow-up Charges\',\'Consultation\',100)">+ Follow-up (&#8377;100)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Injection Charges\',\'Procedure\',100)">+ Injection (&#8377;100)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'E.C.G. Test\',\'Diagnostics\',300)">+ ECG (&#8377;300)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Dressing Charges (Minor)\',\'Procedure\',300)">+ Dressing Minor (&#8377;300)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'GRBS Charges\',\'Diagnostics\',50)">+ GRBS Sugar (&#8377;50)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'General Ward (Bed+Care)\',\'Bed Charges\',2750)">+ General Ward (&#8377;2750/d)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'Special Room (Single)\',\'Bed Charges\',3000)">+ Special Room (&#8377;3000/d)</button>'+
+    '<button type="button" class="btn bxs bs2" onclick="addDemoBillItem(\'ICU Charges (Daily)\',\'Bed Charges\',5500)">+ ICU (&#8377;5500/d)</button>'+
     '</div>'+
     '<div id="bill-items-container"></div>'+
     '<div class="g2" style="margin-top:12px">'+
@@ -1130,7 +1167,7 @@ function openConsult(pid){
     '<div class="fg"><label>Billing Remarks</label><input type="text" id="bnotes" placeholder="e.g. OPD Consultation &amp; Assessment"/></div>'+
     '</div>'+
     '<div style="background:var(--s50);border:1px solid var(--s200);border-radius:12px;padding:12px;margin-top:10px;display:flex;justify-content:space-between;align-items:center">'+
-    '<div><div style="font-size:11px;color:var(--s500);text-transform:uppercase;font-weight:700">Net Payable Amount</div><div style="font-size:22px;font-weight:800;color:var(--pd)" id="bill-net-display">&#8377;300.00</div></div>'+
+    '<div><div style="font-size:11px;color:var(--s500);text-transform:uppercase;font-weight:700">Net Payable Amount</div><div style="font-size:22px;font-weight:800;color:var(--pd)" id="bill-net-display">&#8377;200.00</div></div>'+
     '<div style="font-size:11px;color:var(--s400);text-align:right">Printed on Sai Hospital Letterhead<br/>Reg. No. BLG03043ALHL3</div>'+
     '</div>'+
     '</div>'+

@@ -5,15 +5,16 @@ import PatientCard from '../../components/PatientCard'
 import StatusBadge from '../../components/StatusBadge'
 import SearchBar from '../../components/SearchBar'
 import BillLetterheadModal from '../../components/BillLetterheadModal'
+import EditBillModal from '../../components/EditBillModal'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
-import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee } from 'lucide-react'
+import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee, Edit3, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 
 export default function OPDQueue() {
   const { user } = useAuth()
-  const canViewBill = ['manager', 'owner', 'doctor', 'cashier', 'admin'].includes(user?.role?.toLowerCase())
+  const canViewBill = ['manager', 'owner', 'doctor', 'cashier', 'admin', 'receptionist', 'reception'].includes(user?.role?.toLowerCase())
   const navigate = useNavigate()
   const [visits, setVisits] = useState([])
   const [patients, setPatients] = useState({})
@@ -22,8 +23,9 @@ export default function OPDQueue() {
   const [search, setSearch] = useState('')
   const [filterDoctor, setFilterDoctor] = useState('')
   
-  // Selected Bill for Letterhead Print Modal
+  // Selected Bill for Letterhead Print Modal or Edit Modal
   const [activeBillModal, setActiveBillModal] = useState(null)
+  const [editingBillModal, setEditingBillModal] = useState(null)
   const [markingPaid, setMarkingPaid] = useState(false)
 
   const fetchQueue = async () => {
@@ -58,7 +60,29 @@ export default function OPDQueue() {
       const patient = patients[visit.patient_id]
       setActiveBillModal({ bill, patient, visit })
     } catch (err) {
-      toast.error('No bill generated yet for this consultation')
+      // If no bill yet, offer to create one
+      handleOpenEditBill(visit)
+    }
+  }
+
+  const handleOpenEditBill = async (visit) => {
+    if (!canViewBill) return
+    const patient = patients[visit.patient_id]
+    try {
+      const { data: bill } = await api.get(`/bills/visit/${visit.visit_id}`)
+      setEditingBillModal({
+        bill,
+        patient,
+        doctor: { staff_id: visit.doctor_id, full_name: 'Dr. Rahul Nirmale', department: 'Emergency & Multispeciality' },
+        visit,
+      })
+    } catch (err) {
+      setEditingBillModal({
+        bill: null,
+        patient,
+        doctor: { staff_id: visit.doctor_id, full_name: 'Dr. Rahul Nirmale', department: 'Emergency & Multispeciality' },
+        visit,
+      })
     }
   }
 
@@ -176,7 +200,18 @@ export default function OPDQueue() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {canViewBill && (
+                    <button
+                      onClick={() => handleOpenEditBill(visit)}
+                      className="btn-secondary btn-sm flex items-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-300 font-semibold shadow-2xs"
+                      title="Edit or Add Bill Particulars for Patient"
+                    >
+                      <Edit3 size={13} className="text-amber-600" />
+                      <span>{visit.status === 'completed' || visit.status === 'admitted' ? 'Edit Bill' : 'Bill / Charges'}</span>
+                    </button>
+                  )}
+
                   {canViewBill && visit.status === 'admitted' && (
                     <button
                       onClick={() => handleOpenBill(visit)}
@@ -213,6 +248,7 @@ export default function OPDQueue() {
             doctor={{ full_name: 'Rahul (MD)', department: 'Emergency & Multispeciality' }}
             visit={activeBillModal.visit}
             onClose={() => setActiveBillModal(null)}
+            onBillUpdated={fetchQueue}
           />
 
           {/* If Pending, Show Quick Collect Payment Bar floating above modal */}
@@ -247,6 +283,21 @@ export default function OPDQueue() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit Bill Modal for Receptionist & Doctor */}
+      {canViewBill && editingBillModal && (
+        <EditBillModal
+          bill={editingBillModal.bill}
+          patient={editingBillModal.patient}
+          doctor={editingBillModal.doctor}
+          visit={editingBillModal.visit}
+          onClose={() => setEditingBillModal(null)}
+          onSaveSuccess={() => {
+            fetchQueue()
+            setEditingBillModal(null)
+          }}
+        />
       )}
     </Layout>
   )

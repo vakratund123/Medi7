@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
 import BillLetterheadModal from '../../components/BillLetterheadModal'
+import EditBillModal from '../../components/EditBillModal'
 import SearchBar from '../../components/SearchBar'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
@@ -20,7 +21,8 @@ import {
   Calendar,
   Stethoscope,
   MessageSquare,
-  X
+  X,
+  Edit3
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
@@ -43,6 +45,7 @@ export default function BillingDesk() {
 
   // Modal states
   const [activeBillModal, setActiveBillModal] = useState(null)
+  const [editingBill, setEditingBill] = useState(null)
   const [collectingBill, setCollectingBill] = useState(null)
   const [collectMode, setCollectMode] = useState('cash')
   const [collectNotes, setCollectNotes] = useState('')
@@ -109,6 +112,27 @@ export default function BillingDesk() {
       diagnosis: bill.diagnosis,
     }
     setActiveBillModal({ bill, patient: patientObj, doctor: doctorObj, visit: visitObj })
+  }
+
+  const handleOpenEditModal = (bill) => {
+    const patientObj = {
+      full_name: bill.patient_name || bill.patient_id,
+      patient_id: bill.patient_id,
+      age: bill.patient_age,
+      gender: bill.patient_gender,
+      mobile_number: bill.patient_mobile,
+    }
+    const doctorObj = {
+      staff_id: bill.doctor_id,
+      full_name: bill.doctor_name || 'Dr. Rahul Nirmale',
+      department: bill.doctor_department || 'Emergency & Multispeciality',
+    }
+    const visitObj = {
+      visit_id: bill.visit_id,
+      visit_type: bill.visit_type || 'OPD',
+      diagnosis: bill.diagnosis,
+    }
+    setEditingBill({ bill, patient: patientObj, doctor: doctorObj, visit: visitObj })
   }
 
   const handleResendWhatsApp = async (b) => {
@@ -445,6 +469,15 @@ export default function BillingDesk() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditModal(b)}
+                        className="px-2.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1 border border-amber-200 transition-colors shadow-2xs"
+                        title="Edit bill items, rates, and discounts"
+                      >
+                        <Edit3 size={13} className="text-amber-700" />
+                        <span>Edit</span>
+                      </button>
+
                       {isPending ? (
                         <button
                           onClick={() => {
@@ -605,6 +638,19 @@ export default function BillingDesk() {
           doctor={activeBillModal.doctor}
           visit={activeBillModal.visit}
           onClose={() => setActiveBillModal(null)}
+          onBillUpdated={fetchData}
+        />
+      )}
+
+      {/* Edit Bill Modal */}
+      {editingBill && (
+        <EditBillModal
+          bill={editingBill.bill}
+          patient={editingBill.patient}
+          doctor={editingBill.doctor}
+          visit={editingBill.visit}
+          onClose={() => setEditingBill(null)}
+          onSaveSuccess={fetchData}
         />
       )}
     </Layout>

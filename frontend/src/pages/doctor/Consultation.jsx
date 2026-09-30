@@ -7,26 +7,38 @@ import { ArrowLeft, Plus, Trash2, CheckCircle, Loader2, FlaskConical, Scan, File
 import BillLetterheadModal from '../../components/BillLetterheadModal'
 import toast from 'react-hot-toast'
 
+import MedicineAutocomplete from '../../components/MedicineAutocomplete'
+import ChargeDropdown from '../../components/ChargeDropdown'
+import { HOSPITAL_TARIFF } from '../../data/hospitalTariffData'
+import { HOSPITAL_LAB_TARIFF } from '../../data/labTariffData'
+
 const FREQUENCIES = ['1-0-0', '0-1-0', '0-0-1', '1-1-0', '1-0-1', '0-1-1', '1-1-1', 'SOS']
 const COMMON_TESTS = ['CBC', 'LFT', 'KFT', 'Lipid Profile', 'HbA1c', 'Thyroid Profile', 'Urine Routine', 'Blood Sugar Fasting', 'Electrolytes', 'CRP', 'D-Dimer']
 const SCAN_TYPES = ['X-Ray', 'CT', 'MRI', 'Ultrasound', 'Mammography']
 
 const PRESET_CHARGES = [
-  { name: 'Consultation Fee', category: 'Consultation', price: 300 },
-  { name: 'Emergency Assessment', category: 'Emergency', price: 500 },
-  { name: 'Routine Follow-up', category: 'Consultation', price: 200 },
-  { name: 'Daily Doctor Round (IPD)', category: 'Consultation', price: 300 },
-  { name: 'General Ward Bed (Daily)', category: 'Bed Charges', price: 800 },
-  { name: 'Special Room Bed (Daily)', category: 'Bed Charges', price: 1500 },
-  { name: 'Nursing Care (Daily)', category: 'Nursing', price: 250 },
-  { name: 'ECG Test & Report', category: 'Diagnostics', price: 300 },
-  { name: 'Wound Dressing / Minor Suture', category: 'Procedure', price: 250 },
-  { name: 'IV Infusion / Injection Charges', category: 'Nursing', price: 150 },
-  { name: 'Nebulization Charges', category: 'Procedure', price: 100 },
+  { name: 'Consulting Fees', category: 'Consultation', price: 200 },
+  { name: 'Follow-up Charges (Up to 1 Month)', category: 'Consultation', price: 100 },
+  { name: 'Injection Charges', category: 'Procedure', price: 100 },
+  { name: 'E.C.G. Test', category: 'Diagnostics', price: 300 },
+  { name: 'Dressing Charges (Minor)', category: 'Procedure', price: 300 },
+  { name: 'Dressing Charges (Major)', category: 'Procedure', price: 500 },
+  { name: 'Nebuliser Charges', category: 'Procedure', price: 100 },
+  { name: 'GRBS Charges (Blood Test)', category: 'Diagnostics', price: 50 },
+  { name: 'Day Care (With Treatment)', category: 'Bed Charges', price: 1200 },
+  { name: 'Treadmill Test (TMT)', category: 'Diagnostics', price: 1000 },
+  { name: '2D ECHO & Color Doppler', category: 'Diagnostics', price: 2200 },
+  { name: 'Bedside USG', category: 'Diagnostics', price: 1800 },
+  { name: 'General Ward (Bed+Nursing+MO+Visit)', category: 'Bed Charges', price: 2750, is_ipd: true },
+  { name: 'Special Room (Single Occupancy)', category: 'Bed Charges', price: 3000, is_ipd: true },
+  { name: 'Special Room (Double Occupancy)', category: 'Bed Charges', price: 3500, is_ipd: true },
+  { name: 'ICU Charges (Bed+Care+Visit)', category: 'Bed Charges', price: 5500, is_ipd: true },
+  { name: 'Ventilator Charges', category: 'Procedure', price: 4000, is_ipd: true },
+  { name: 'Oxygen Charges (Per Hour)', category: 'Procedure', price: 50, is_ipd: true },
+  { name: 'Consultant Specialist Visit', category: 'Consultation', price: 500, is_ipd: true },
+  { name: 'Operation Theatre Charges', category: 'Procedure', price: 2000, is_ipd: true },
+  { name: 'Syringe Pump Charges', category: 'Procedure', price: 600, is_ipd: true },
 ]
-
-import MedicineAutocomplete from '../../components/MedicineAutocomplete'
-import { HOSPITAL_LAB_TARIFF } from '../../data/labTariffData'
 
 function MedicineRow({ med, onChange, onRemove }) {
   const set = (k) => (e) => onChange({ ...med, [k]: e.target.value })
@@ -111,7 +123,7 @@ export default function Consultation() {
   
   // Doctor Billing state
   const [billItems, setBillItems] = useState([
-    { name: 'Doctor Consultation Fee', category: 'Consultation', quantity: 1, unit_price: 300, total: 300 }
+    { name: 'Consulting Fees', category: 'Consultation', quantity: 1, unit_price: 200, total: 200 }
   ])
   const [discount, setDiscount] = useState(0)
   const [paymentStatus, setPaymentStatus] = useState('pending')
@@ -285,9 +297,9 @@ export default function Consultation() {
       setIsDischarged(nextStatus === 'completed')
       setSaved(true)
       if (nextStatus === 'admitted') {
-        toast.success("Day's round saved! Patient remains admitted. Running interim bill updated.")
+        toast.success("Day's round saved! Daily prescription sent to patient WhatsApp. Running bill updated for Cashier.")
       } else {
-        toast.success("Consultation & Final Discharge Bill saved! Sent to patient WhatsApp.")
+        toast.success("Consultation saved! Prescription sent to patient WhatsApp. Bill forwarded to Cashier counter.")
       }
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to save consultation')
@@ -301,12 +313,12 @@ export default function Consultation() {
       <div className="max-w-lg mx-auto card text-center py-10">
         <CheckCircle size={52} className={isDischarged ? "text-emerald-500 mx-auto mb-3" : "text-purple-600 mx-auto mb-3"} />
         <h2 className="text-2xl font-bold text-slate-800 mb-1">
-          {isDischarged ? "Consultation & Discharge Completed!" : "Day's Round & Prescriptions Saved!"}
+          {isDischarged ? "Consultation Completed!" : "Day's Round & Prescriptions Saved!"}
         </h2>
         <p className="text-slate-600 text-sm mb-6">
           {isDischarged
-            ? "Prescription & Final Discharge Bill generated on official Sai Emergency Hospital Letterhead."
-            : "Patient remains admitted in Inpatient Wards. Daily medicines and lab orders dispatched. Running interim bill updated."}
+            ? "Prescription PDF sent to patient's WhatsApp. Bill forwarded to Cashier counter for review and payment collection."
+            : "Patient remains admitted. Daily medicines dispatched to patient's WhatsApp. Running interim bill updated for Cashier."}
         </p>
 
         {createdBill && (
@@ -614,13 +626,27 @@ export default function Consultation() {
             </div>
           </div>
 
-          {/* Quick-add presets */}
-          <div className="mb-4 bg-slate-100/70 p-2.5 rounded-xl">
-            <div className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              ⚡ Quick Add Standard Hospital Charges:
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {PRESET_CHARGES.map((p, idx) => (
+          {/* Master Hospital Charges Dropdown & Presets */}
+          <div className="mb-4 bg-slate-100/80 p-3 rounded-2xl border border-slate-200">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Select &amp; Add Standard Hospital Charges (Dropdown):
+            </label>
+            <ChargeDropdown
+              stayType={stayType}
+              onSelectCharge={(charge) => {
+                const todayTag = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+                const finalName = stayType === 'IPD' && charge.is_ipd ? `${todayTag} ${charge.name}` : charge.name
+                setBillItems(prev => [
+                  ...prev,
+                  { name: finalName, category: charge.category, quantity: 1, unit_price: charge.unit_price, total: charge.unit_price }
+                ])
+                toast.success(`Added ${charge.name} (₹${charge.unit_price}) to bill`)
+              }}
+            />
+
+            <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-bold uppercase text-slate-500">Quick Add:</span>
+              {PRESET_CHARGES.filter(p => stayType === 'IPD' ? true : !p.is_ipd).slice(0, 10).map((p, idx) => (
                 <button
                   key={idx}
                   type="button"
