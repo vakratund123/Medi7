@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.visit import Visit
 from app.models.staff import Staff
 from app.schemas.visit import VisitCreate, VisitUpdate, VisitOut
-from app.middleware.auth_middleware import require_any, require_receptionist, require_doctor
+from app.middleware.auth_middleware import require_any, require_receptionist, require_doctor, require_roles
 
 router = APIRouter(prefix="/api/visits", tags=["Visits"])
 
@@ -43,9 +43,11 @@ async def create_visit(
 async def get_today_queue(
     doctor_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_any),
+    current_staff: Staff = Depends(require_any),
 ):
-    """Returns today's OPD visits PLUS all currently admitted IPD patients."""
+    """Returns today's OPD visits PLUS all currently admitted IPD patients.
+    If a Doctor role calls this, it strictly filters only their own patients.
+    Dr. Vinay's patients are kept exclusively for receptionist and never shown to Dr. Rahul."""
     from sqlalchemy import or_
     stmt = select(Visit).where(
         or_(
@@ -53,8 +55,12 @@ async def get_today_queue(
             Visit.status == "admitted",
         )
     )
-    if doctor_id:
+    if current_staff.role == "doctor":
+        # Strict isolation: doctor only sees their own patients
+        stmt = stmt.where(Visit.doctor_id == current_staff.staff_id)
+    elif doctor_id:
         stmt = stmt.where(Visit.doctor_id == doctor_id)
+
     stmt = stmt.order_by(Visit.created_at.asc())
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -89,7 +95,7 @@ async def update_visit(
     visit_id: uuid.UUID,
     data: VisitUpdate,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_doctor),
+    _: Staff = Depends(require_roles("doctor", "receptionist", "reception", "cashier", "owner", "manager")),
 ):
     result = await db.execute(select(Visit).where(Visit.visit_id == visit_id))
     visit = result.scalar_one_or_none()

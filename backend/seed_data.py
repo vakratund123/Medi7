@@ -29,6 +29,8 @@ STAFF_SEED = [
      "department": "Administration", "login_email": "manager@saihospital.in", "password": "Admin@123"},
     {"full_name": "Dr. Rahul Nirmale", "mobile": "9876543221", "role": "doctor",
      "department": "General Medicine", "login_email": "doctor@saihospital.in", "password": "Doctor@123"},
+    {"full_name": "Dr. Vinay J Nirmale", "mobile": "9876543226", "role": "doctor",
+     "department": "Consultant Physician", "login_email": "dr.vinay@saihospital.in", "password": "Doctor@123"},
     {"full_name": "Sunita Patil", "mobile": "9876543223", "role": "receptionist",
      "department": "Front Desk", "login_email": "reception@saihospital.in", "password": "Recept@123"},
     {"full_name": "Ravi Shinde", "mobile": "9876543224", "role": "lab_technician",
@@ -167,9 +169,14 @@ async def seed():
             if not patient_id:
                 year_str = str(datetime.date.today().year)
                 from sqlalchemy import select
-                stmt = select(Patient.patient_id).where(Patient.patient_id.like(f"SAI-{year_str}-%")).order_by(Patient.patient_id.desc()).limit(1)
+                stmt = select(Patient.patient_id).where(Patient.patient_id.like(f"SEM-{year_str}-%")).order_by(Patient.patient_id.desc()).limit(1)
                 last_id_result = await db.execute(stmt)
                 last_id = last_id_result.scalar_one_or_none()
+                if not last_id:
+                    stmt_sai = select(Patient.patient_id).where(Patient.patient_id.like(f"SAI-{year_str}-%")).order_by(Patient.patient_id.desc()).limit(1)
+                    res_sai = await db.execute(stmt_sai)
+                    last_id = res_sai.scalar_one_or_none()
+
                 if last_id:
                     try:
                         parts = last_id.split("-")
@@ -178,7 +185,7 @@ async def seed():
                         seq = 1
                 else:
                     seq = 1
-                patient_id = f"SAI-{year_str}-{str(seq).zfill(5)}"
+                patient_id = f"SEM-{year_str}-{str(seq).zfill(5)}"
 
             patient = Patient(patient_id=patient_id, **p)
             db.add(patient)

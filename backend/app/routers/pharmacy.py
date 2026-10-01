@@ -24,13 +24,13 @@ async def get_active_prescription(
     # Normalize patient ID (e.g. support lowercase, partial IDs, only sequence number)
     normalized_id = patient_id.strip().upper()
     if normalized_id.isdigit():
-        normalized_id = f"SAI-{datetime.date.today().year}-{normalized_id.zfill(5)}"
+        normalized_id = f"SEM-{datetime.date.today().year}-{normalized_id.zfill(5)}"
     elif "-" in normalized_id:
         parts = normalized_id.split("-")
         if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-            normalized_id = f"SAI-{parts[0]}-{parts[1].zfill(5)}"
-        elif len(parts) == 3 and parts[0] == "SAI":
-            normalized_id = f"SAI-{parts[1]}-{parts[2].zfill(5)}"
+            normalized_id = f"SEM-{parts[0]}-{parts[1].zfill(5)}"
+        elif len(parts) == 3 and parts[0] in ("SEM", "SAI"):
+            normalized_id = f"{parts[0]}-{parts[1]}-{parts[2].zfill(5)}"
 
     result = await db.execute(
         select(Prescription)

@@ -11,7 +11,7 @@ from app.models.patient import Patient
 from app.models.staff import Staff
 from app.models.visit import Visit
 from app.schemas.prescription import PrescriptionCreate, PrescriptionOut
-from app.middleware.auth_middleware import require_doctor, require_any
+from app.middleware.auth_middleware import require_doctor, require_any, require_roles
 from app.services.pdf_service import generate_prescription_pdf
 from app.services.whatsapp_service import send_whatsapp_document, send_whatsapp_message, send_whatsapp_template
 from app.services.ai_service import generate_whatsapp_message
@@ -68,7 +68,7 @@ async def create_prescription(
     data: PrescriptionCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_doctor),
+    _: Staff = Depends(require_roles("doctor", "receptionist", "reception", "cashier", "owner", "manager")),
 ):
     # Fetch related records for PDF generation
     patient_result = await db.execute(select(Patient).where(Patient.patient_id == data.patient_id))
@@ -176,3 +176,39 @@ async def download_prescription_pdf(
         return RedirectResponse(rx.pdf_url)
 
     return {"pdf_url": rx.pdf_url}
+
+
+@router.get("/visit/{visit_id}", response_model=PrescriptionOut)
+async def get_prescription_by_visit(
+    visit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_any),
+):
+    """Retrieve the prescription associated with a specific visit."""
+    result = await db.execute(
+        select(Prescription)
+        .where(Prescription.visit_id == visit_id)
+        .order_by(Prescription.created_at.desc())
+        .limit(1)
+    )
+    rx = result.scalar_one_or_none()
+    if not rx:
+        raise HTTPException(status_code=404, detail="No prescription found for this visit")
+    return rx
+
+
+@router.get("/patient/{patient_id}", response_model=list[PrescriptionOut])
+async def get_prescriptions_by_patient(
+    patient_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: Staff = Depends(require_any),
+):
+    """Retrieve all prescriptions for a patient (supports SEM and SAI prefixes)."""
+    from app.routers.patients import _normalize_patient_id
+    normalized = _normalize_patient_id(patient_id)
+    result = await db.execute(
+        select(Prescription)
+        .where(Prescription.patient_id.ilike(normalized))
+        .order_by(Prescription.created_at.desc())
+    )
+    return result.scalars().all()

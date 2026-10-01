@@ -94,7 +94,7 @@ export default function PharmacyDashboard() {
           <div className="flex gap-2">
             <input
               className="input flex-1"
-              placeholder="Enter Patient ID (e.g. SAI-2026-00001)"
+              placeholder="Enter Patient ID (e.g. SEM-2026-00001)"
               value={patientId}
               onChange={e => setPatientId(e.target.value)}
             />

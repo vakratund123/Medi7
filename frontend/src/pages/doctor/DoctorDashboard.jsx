@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import PatientCard from '../../components/PatientCard'
+import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
 import SearchBar from '../../components/SearchBar'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
@@ -15,6 +16,15 @@ export default function DoctorDashboard() {
   const [patients, setPatients] = useState({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [activeRxModal, setActiveRxModal] = useState(null)
+
+  const handleOpenRx = (visit, p) => {
+    setActiveRxModal({
+      visit,
+      patient: p || patients[visit?.patient_id],
+      doctor: user,
+    })
+  }
 
   const fetchQueue = async () => {
     try {
@@ -89,8 +99,9 @@ export default function DoctorDashboard() {
                         visit={v}
                         patient={patients[v.patient_id]}
                         onClick={() => navigate(`/doctor/consultation/${v.visit_id}`)}
+                        onPrintRx={handleOpenRx}
                       />
-                      <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 pointer-events-none">
+                      <div className="absolute right-28 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-2 pointer-events-none">
                         <span className="px-2.5 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-lg border border-purple-300 shadow-sm">
                           Day {diffDays} Admitted &bull; Click for Daily Round
                         </span>
@@ -115,6 +126,7 @@ export default function DoctorDashboard() {
                     visit={v}
                     patient={patients[v.patient_id]}
                     onClick={() => navigate(`/doctor/patient/${v.patient_id}?visit=${v.visit_id}`)}
+                    onPrintRx={handleOpenRx}
                   />
                 ))}
               </div>
@@ -129,8 +141,13 @@ export default function DoctorDashboard() {
               </h3>
               <div className="space-y-2">
                 {inConsult.map(v => (
-                  <PatientCard key={v.visit_id} visit={v} patient={patients[v.patient_id]}
-                    onClick={() => navigate(`/doctor/patient/${v.patient_id}?visit=${v.visit_id}`)} />
+                  <PatientCard
+                    key={v.visit_id}
+                    visit={v}
+                    patient={patients[v.patient_id]}
+                    onClick={() => navigate(`/doctor/patient/${v.patient_id}?visit=${v.visit_id}`)}
+                    onPrintRx={handleOpenRx}
+                  />
                 ))}
               </div>
             </div>
@@ -144,8 +161,13 @@ export default function DoctorDashboard() {
               </h3>
               <div className="space-y-2">
                 {done.map(v => (
-                  <PatientCard key={v.visit_id} visit={v} patient={patients[v.patient_id]}
-                    onClick={() => navigate(`/doctor/patient/${v.patient_id}`)} />
+                  <PatientCard
+                    key={v.visit_id}
+                    visit={v}
+                    patient={patients[v.patient_id]}
+                    onClick={() => navigate(`/doctor/patient/${v.patient_id}`)}
+                    onPrintRx={handleOpenRx}
+                  />
                 ))}
               </div>
             </div>
@@ -158,6 +180,16 @@ export default function DoctorDashboard() {
             </div>
           )}
         </div>
+      )}
+
+      {activeRxModal && (
+        <PrescriptionLetterheadModal
+          prescription={activeRxModal.prescription}
+          visit={activeRxModal.visit}
+          patient={activeRxModal.patient}
+          doctor={activeRxModal.doctor || user}
+          onClose={() => setActiveRxModal(null)}
+        />
       )}
     </Layout>
   )

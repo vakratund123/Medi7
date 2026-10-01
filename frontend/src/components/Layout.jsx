@@ -97,13 +97,16 @@ export default function Layout({ children, title }) {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
-          <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center">
-            <Heart size={18} className="text-white" />
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-100">
+          <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shrink-0 shadow-xs">
+            <Heart size={20} className="text-white" />
           </div>
-          <div>
-            <div className="font-bold text-slate-900 text-base leading-tight">MEDI7</div>
-            <div className="text-[11px] text-slate-500 font-medium">Sai Hospital · +919180198107</div>
+          <div className="min-w-0">
+            <div className="font-extrabold text-slate-900 text-sm leading-tight tracking-tight">MEDI7</div>
+            <div className="text-[11px] text-primary-700 font-bold leading-tight mt-0.5">
+              Sai Emergency &amp; Multispeciality Hospital
+            </div>
+            <div className="text-[10px] text-slate-400 font-medium">Nipani &bull; +91 9180198107</div>
           </div>
         </div>
 
@@ -145,15 +148,22 @@ export default function Layout({ children, title }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="bg-white border-b border-slate-100 px-4 lg:px-6 py-3.5 flex items-center gap-4 shrink-0">
-          <button className="lg:hidden text-slate-600 hover:text-slate-900" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-          <h1 className="font-semibold text-slate-800 text-base">{title}</h1>
+        <header className="bg-white border-b border-slate-100 px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <button className="lg:hidden text-slate-600 hover:text-slate-900" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+            <div>
+              <h1 className="font-bold text-slate-800 text-base leading-tight">{title}</h1>
+              <div className="text-[11px] text-primary-700 font-bold hidden sm:block">
+                Sai Emergency &amp; Multispeciality Hospital &bull; Nipani
+              </div>
+            </div>
+          </div>
           <div className="ml-auto flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 text-sm text-slate-500">
-              <Activity size={14} className="text-success-500" />
-              <span>System Online</span>
+            <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <Activity size={14} className="text-emerald-500" />
+              <span>24x7 Emergency Care Active &bull; System Online</span>
             </div>
           </div>
         </header>

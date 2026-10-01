@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { User, ChevronRight, AlertTriangle } from 'lucide-react'
+import { User, ChevronRight, AlertTriangle, Printer } from 'lucide-react'
 import StatusBadge from './StatusBadge'
 import { format } from 'date-fns'
 
-export default function PatientCard({ visit, patient, onClick, showHistory = false }) {
+export default function PatientCard({ visit, patient, onClick, showHistory = false, onPrintRx }) {
   const navigate = useNavigate()
 
   const name = patient?.full_name || visit?.patient_id
@@ -13,10 +13,10 @@ export default function PatientCard({ visit, patient, onClick, showHistory = fal
 
   return (
     <div
-      className="patient-card"
+      className="patient-card flex items-center justify-between"
       onClick={() => onClick ? onClick() : navigate(`/doctor/patient/${visit?.patient_id}`)}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 min-w-0 flex-1">
         <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
           <User size={18} className="text-primary-600" />
         </div>
@@ -41,7 +41,24 @@ export default function PatientCard({ visit, patient, onClick, showHistory = fal
             </div>
           )}
         </div>
-        <ChevronRight size={16} className="text-slate-300 shrink-0 mt-1" />
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0 ml-3">
+        {onPrintRx && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onPrintRx(visit, patient)
+            }}
+            className="btn-secondary btn-sm px-2.5 py-1 text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 font-bold text-xs flex items-center gap-1 shadow-2xs"
+            title="Print Official Prescription Letterhead"
+          >
+            <Printer size={13} className="text-blue-600" />
+            <span>Print Rx</span>
+          </button>
+        )}
+        <ChevronRight size={16} className="text-slate-300 shrink-0" />
       </div>
     </div>
   )

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../../components/Layout'
+import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
 import api from '../../api/client'
-import { ArrowLeft, AlertTriangle, Stethoscope, FlaskConical, Scan, FileText, Pill, Loader2, ChevronDown, ChevronUp, Bot, ExternalLink } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Stethoscope, FlaskConical, Scan, FileText, Pill, Loader2, ChevronDown, ChevronUp, Bot, ExternalLink, Printer } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -28,6 +29,7 @@ export default function PatientHistory() {
   const visitId = searchParams.get('visit')
   const [history, setHistory] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [selectedRx, setSelectedRx] = useState(null)
 
   useEffect(() => {
     api.get(`/patients/${patientId}/history`)
@@ -126,7 +128,16 @@ export default function PatientHistory() {
             <div className="space-y-3">
               {prescriptions.map(p => (
                 <div key={p.prescription_id} className="p-3 bg-slate-50 rounded-xl">
-                  <div className="text-xs text-slate-400 mb-2">{format(new Date(p.created_at), 'dd MMM yyyy')}</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-slate-400">{format(new Date(p.created_at), 'dd MMM yyyy')}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRx(p)}
+                      className="btn-secondary btn-sm px-2.5 py-0.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 font-bold text-xs flex items-center gap-1 shadow-2xs"
+                    >
+                      <Printer size={12} className="text-blue-600" /> Print Official Rx
+                    </button>
+                  </div>
                   {p.medicines.map((m, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm py-1 border-b border-slate-100 last:border-0">
                       <Pill size={13} className="text-primary-400 shrink-0" />
@@ -205,6 +216,15 @@ export default function PatientHistory() {
           )}
         </Section>
       </div>
+
+      {selectedRx && (
+        <PrescriptionLetterheadModal
+          prescription={selectedRx}
+          patient={patient}
+          doctor={{ full_name: selectedRx.doctor_name || 'Dr. Rahul Nirmale', designation: 'Consultant Physician' }}
+          onClose={() => setSelectedRx(null)}
+        />
+      )}
     </Layout>
   )
 }

@@ -57,8 +57,8 @@ async def test_all_whatsapp_e2e():
     # 2. Multilingual AI Message Generator tests
     print("2. Testing Multilingual Message Generator (Marathi, Kannada, Hindi, English)...")
     for lang in ["marathi", "kannada", "hindi", "english"]:
-        w_msg = await generate_whatsapp_message("welcome", lang, {"name": "Suresh Patil", "patient_id": "SAI-2026-0001"})
-        assert "SAI-2026-0001" in w_msg, f"Welcome message missing ID in {lang}"
+        w_msg = await generate_whatsapp_message("welcome", lang, {"name": "Suresh Patil", "patient_id": "SEM-2026-0001"})
+        assert "SEM-2026-0001" in w_msg, f"Welcome message missing ID in {lang}"
         rx_msg = await generate_whatsapp_message("prescription", lang, {"name": "Suresh Patil", "follow_up": "5 days"})
         assert "5 days" in rx_msg, f"Rx message missing follow up in {lang}"
         bill_msg = await generate_whatsapp_message("bill", lang, {"name": "Suresh Patil", "bill_number": "SEMH-001", "net_amount": "850.00", "payment_status": "PAID"})

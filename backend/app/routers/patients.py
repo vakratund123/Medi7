@@ -30,9 +30,16 @@ async def _generate_patient_id(db: AsyncSession) -> str:
     # SQLite / general Python fallback
     import datetime
     year_str = str(datetime.date.today().year)
-    stmt = select(Patient.patient_id).where(Patient.patient_id.like(f"SAI-{year_str}-%")).order_by(Patient.patient_id.desc()).limit(1)
+    # Check for latest SEM patient ID first
+    stmt = select(Patient.patient_id).where(Patient.patient_id.like(f"SEM-{year_str}-%")).order_by(Patient.patient_id.desc()).limit(1)
     result = await db.execute(stmt)
     last_id = result.scalar_one_or_none()
+    
+    # Fallback to check SAI IDs if transition just started
+    if not last_id:
+        stmt_sai = select(Patient.patient_id).where(Patient.patient_id.like(f"SAI-{year_str}-%")).order_by(Patient.patient_id.desc()).limit(1)
+        res_sai = await db.execute(stmt_sai)
+        last_id = res_sai.scalar_one_or_none()
     
     if last_id:
         try:
@@ -43,7 +50,7 @@ async def _generate_patient_id(db: AsyncSession) -> str:
     else:
         seq = 1
         
-    return f"SAI-{year_str}-{str(seq).zfill(5)}"
+    return f"SEM-{year_str}-{str(seq).zfill(5)}"
 
 
 @router.post("/", response_model=PatientOut)
@@ -114,13 +121,13 @@ def _normalize_patient_id(patient_id: str) -> str:
     import datetime
     normalized_id = patient_id.strip().upper()
     if normalized_id.isdigit():
-        normalized_id = f"SAI-{datetime.date.today().year}-{normalized_id.zfill(5)}"
+        normalized_id = f"SEM-{datetime.date.today().year}-{normalized_id.zfill(5)}"
     elif "-" in normalized_id:
         parts = normalized_id.split("-")
         if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
-            normalized_id = f"SAI-{parts[0]}-{parts[1].zfill(5)}"
-        elif len(parts) == 3 and parts[0] == "SAI":
-            normalized_id = f"SAI-{parts[1]}-{parts[2].zfill(5)}"
+            normalized_id = f"SEM-{parts[0]}-{parts[1].zfill(5)}"
+        elif len(parts) == 3 and parts[0] in ("SEM", "SAI"):
+            normalized_id = f"{parts[0]}-{parts[1]}-{parts[2].zfill(5)}"
     return normalized_id
 
 

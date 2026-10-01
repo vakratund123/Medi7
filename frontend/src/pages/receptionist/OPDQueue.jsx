@@ -6,9 +6,10 @@ import StatusBadge from '../../components/StatusBadge'
 import SearchBar from '../../components/SearchBar'
 import BillLetterheadModal from '../../components/BillLetterheadModal'
 import EditBillModal from '../../components/EditBillModal'
+import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
-import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee, Edit3, Plus } from 'lucide-react'
+import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee, Edit3, Plus, Banknote, FileText, CheckCircle2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 
@@ -27,6 +28,31 @@ export default function OPDQueue() {
   const [activeBillModal, setActiveBillModal] = useState(null)
   const [editingBillModal, setEditingBillModal] = useState(null)
   const [markingPaid, setMarkingPaid] = useState(false)
+
+  // Prescription Letterhead Modal
+  const [activeRxModal, setActiveRxModal] = useState(null)
+
+  // Quick Cash Collection & Mark Completed Modal (e.g. for Dr. Vinay J Nirmale OPD)
+  const [collectCashModal, setCollectCashModal] = useState(null)
+  const [consultationFee, setConsultationFee] = useState(200)
+  const [collectPaymentMode, setCollectPaymentMode] = useState('cash')
+  const [submittingCash, setSubmittingCash] = useState(false)
+
+  useEffect(() => {
+    // Fetch doctors list for doctor names & filter tabs
+    api.get('/staff/').then(({ data }) => {
+      const docs = data.filter(s => s.role === 'doctor' || s.role === 'owner')
+      setDoctors(docs)
+    }).catch(() => {})
+  }, [])
+
+  const getVisitDoctor = (visit) => {
+    if (visit?.doctor_id) {
+      const found = doctors.find(d => d.staff_id === visit.doctor_id)
+      if (found) return found
+    }
+    return { staff_id: visit?.doctor_id, full_name: 'Dr. Rahul Nirmale', department: 'Emergency & Multispeciality' }
+  }
 
   const fetchQueue = async () => {
     try {
@@ -58,7 +84,8 @@ export default function OPDQueue() {
     try {
       const { data: bill } = await api.get(`/bills/visit/${visit.visit_id}`)
       const patient = patients[visit.patient_id]
-      setActiveBillModal({ bill, patient, visit })
+      const doctor = getVisitDoctor(visit)
+      setActiveBillModal({ bill, patient, visit, doctor })
     } catch (err) {
       // If no bill yet, offer to create one
       handleOpenEditBill(visit)
@@ -68,21 +95,107 @@ export default function OPDQueue() {
   const handleOpenEditBill = async (visit) => {
     if (!canViewBill) return
     const patient = patients[visit.patient_id]
+    const doctor = getVisitDoctor(visit)
     try {
       const { data: bill } = await api.get(`/bills/visit/${visit.visit_id}`)
       setEditingBillModal({
         bill,
         patient,
-        doctor: { staff_id: visit.doctor_id, full_name: 'Dr. Rahul Nirmale', department: 'Emergency & Multispeciality' },
+        doctor,
         visit,
       })
     } catch (err) {
       setEditingBillModal({
         bill: null,
         patient,
-        doctor: { staff_id: visit.doctor_id, full_name: 'Dr. Rahul Nirmale', department: 'Emergency & Multispeciality' },
+        doctor,
         visit,
       })
+    }
+  }
+
+  const handleOpenPrescription = (visit) => {
+    const patient = patients[visit.patient_id]
+    const doctor = getVisitDoctor(visit)
+    setActiveRxModal({ patient, visit, doctor })
+  }
+
+  const handleOpenCollectCash = (visit) => {
+    const patient = patients[visit.patient_id]
+    const doctor = getVisitDoctor(visit)
+    setConsultationFee(200)
+    setCollectPaymentMode('cash')
+    setCollectCashModal({ patient, visit, doctor })
+  }
+
+  const handleConfirmCollectCash = async () => {
+    if (!collectCashModal) return
+    const { patient, visit, doctor } = collectCashModal
+    const fee = Number(consultationFee) || 0
+    setSubmittingCash(true)
+    try {
+      const docTitle = doctor?.full_name?.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`
+      const particularName = `OPD Consultation Charges — ${docTitle}`
+
+      // Check if bill exists
+      let bill = null
+      try {
+        const { data: existing } = await api.get(`/bills/visit/${visit.visit_id}`)
+        bill = existing
+      } catch {}
+
+      if (bill) {
+        await api.put(`/bills/${bill.bill_id}`, {
+          items: [{ name: particularName, quantity: 1, rate: fee, amount: fee }],
+          subtotal: fee,
+          discount: 0,
+          tax: 0,
+          net_amount: fee,
+        })
+        await api.patch(`/bills/${bill.bill_id}/payment`, {
+          payment_status: 'paid',
+          payment_mode: collectPaymentMode,
+          notes: `Consultation fee collected at reception by ${user?.full_name || 'Receptionist'}`
+        })
+      } else {
+        const { data: newBill } = await api.post('/bills/', {
+          patient_id: patient.patient_id,
+          visit_id: visit.visit_id,
+          doctor_id: doctor.staff_id || visit.doctor_id,
+          items: [{ name: particularName, quantity: 1, rate: fee, amount: fee }],
+          subtotal: fee,
+          discount: 0,
+          tax: 0,
+          net_amount: fee,
+        })
+        await api.patch(`/bills/${newBill.bill_id}/payment`, {
+          payment_status: 'paid',
+          payment_mode: collectPaymentMode,
+          notes: `Consultation fee collected at reception by ${user?.full_name || 'Receptionist'}`
+        })
+        bill = newBill
+      }
+
+      // Mark visit completed
+      await api.put(`/visits/${visit.visit_id}`, {
+        status: 'completed',
+      })
+
+      toast.success(`₹${fee} cash fees collected & visit completed for ${patient.full_name}!`)
+      setCollectCashModal(null)
+      fetchQueue()
+
+      // Prompt to view & print bill
+      if (bill) {
+        try {
+          const { data: updatedBill } = await api.get(`/bills/visit/${visit.visit_id}`)
+          setActiveBillModal({ bill: updatedBill, patient, visit, doctor })
+        } catch {}
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to complete cash payment')
+    } finally {
+      setSubmittingCash(false)
     }
   }
 
@@ -145,7 +258,7 @@ export default function OPDQueue() {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search patient..."
+          placeholder="Search patient name, SEM-ID..."
           className="flex-1 min-w-48"
         />
         <button onClick={fetchQueue} className="btn-secondary">
@@ -158,9 +271,56 @@ export default function OPDQueue() {
         </button>
       </div>
 
+      {/* Doctor Filter Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3">
+        <button
+          type="button"
+          onClick={() => setFilterDoctor('')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
+            filterDoctor === ''
+              ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'
+          }`}
+        >
+          All Doctors ({visits.length})
+        </button>
+
+        {doctors.map(d => {
+          const isVinay = d.full_name?.toLowerCase().includes('vinay')
+          const count = visits.filter(v => v.doctor_id === d.staff_id).length
+          const isSelected = filterDoctor === d.staff_id
+          const docLabel = d.full_name?.startsWith('Dr') ? d.full_name : `Dr. ${d.full_name}`
+
+          return (
+            <button
+              key={d.staff_id}
+              type="button"
+              onClick={() => setFilterDoctor(d.staff_id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-1.5 ${
+                isSelected
+                  ? isVinay
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                    : 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : isVinay
+                    ? 'bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 border-emerald-200'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'
+              }`}
+            >
+              <span>{isVinay ? '👨‍⚕️ ' + docLabel + ' (Cash OPD)' : '🩺 ' + docLabel}</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                isSelected ? 'bg-white/20 text-white' : 'bg-slate-200/80 text-slate-700'
+              }`}>
+                {count}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
       {/* Date */}
-      <div className="text-sm text-slate-500 mb-4">
-        📅 {format(new Date(), 'EEEE, d MMMM yyyy')}
+      <div className="text-xs text-slate-500 mb-3 flex items-center justify-between">
+        <span>📅 {format(new Date(), 'EEEE, d MMMM yyyy')}</span>
+        <span className="text-[11px] text-slate-400">Sai Emergency &amp; Multispeciality Hospital &bull; OPD Desk</span>
       </div>
 
       {/* Queue list */}
@@ -178,19 +338,56 @@ export default function OPDQueue() {
         <div className="space-y-2">
           {filtered.map((visit, idx) => {
             const patient = patients[visit.patient_id]
+            const doc = getVisitDoctor(visit)
+            const isVinay = doc?.full_name?.toLowerCase().includes('vinay')
+
             return (
-              <div key={visit.visit_id} className="patient-card flex items-center justify-between gap-3 p-3.5 bg-white border border-slate-200 rounded-xl hover:border-primary-300 transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0">
+              <div
+                key={visit.visit_id}
+                className={`patient-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white border rounded-xl hover:border-primary-300 transition-colors ${
+                  isVinay ? 'border-emerald-200/80 bg-emerald-50/20' : 'border-slate-200'
+                }`}
+              >
+                <div className="flex items-start sm:items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0 mt-0.5 sm:mt-0">
                     {idx + 1}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-slate-900">{patient?.full_name || visit.patient_id}</span>
-                      {patient?.age && <span className="text-xs text-slate-500">{patient.age}Y / {patient.gender?.[0]?.toUpperCase()}</span>}
+                      <span className="font-bold text-slate-900 text-sm sm:text-base">
+                        {patient?.full_name || visit.patient_id}
+                      </span>
+                      {patient?.age && (
+                        <span className="text-xs text-slate-500">
+                          {patient.age}Y / {patient.gender?.[0]?.toUpperCase()}
+                        </span>
+                      )}
                       <StatusBadge status={visit.status} />
+
+                      {/* Doctor Tag */}
+                      {isVinay ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-900 text-[11px] font-bold rounded-md border border-emerald-300">
+                          👨‍⚕️ Dr. Vinay J Nirmale (Direct Cash OPD)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-800 text-[11px] font-semibold rounded-md border border-blue-200">
+                          🩺 {doc?.full_name || 'Dr. Rahul Nirmale'}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5">{visit.patient_id} · {visit.visit_type}</div>
+
+                    <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-bold text-blue-700">{visit.patient_id}</span>
+                      <span>&bull;</span>
+                      <span>{visit.visit_type}</span>
+                      {visit.created_at && (
+                        <>
+                          <span>&bull;</span>
+                          <span>Registered {format(new Date(visit.created_at), 'hh:mm a')}</span>
+                        </>
+                      )}
+                    </div>
+
                     {visit.chief_complaint && (
                       <div className="text-xs text-slate-600 mt-0.5 truncate">📋 {visit.chief_complaint}</div>
                     )}
@@ -200,33 +397,57 @@ export default function OPDQueue() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                  {/* Collect Cash & Complete Button for waiting patients */}
+                  {visit.status === 'waiting' && (
+                    <button
+                      onClick={() => handleOpenCollectCash(visit)}
+                      className="btn-primary btn-sm flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-xs text-xs"
+                      title="Patient returned: Collect consultation fee and mark visit completed"
+                    >
+                      <Banknote size={14} />
+                      <span>Collect Cash &amp; Complete</span>
+                    </button>
+                  )}
+
+                  {/* Prescription Print Option for every patient */}
+                  <button
+                    onClick={() => handleOpenPrescription(visit)}
+                    className="btn-secondary btn-sm flex items-center gap-1 text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 font-bold shadow-2xs text-xs"
+                    title="View &amp; Print Official Prescription Letterhead"
+                  >
+                    <FileText size={13} className="text-blue-600" />
+                    <span>Print Rx</span>
+                  </button>
+
+                  {/* Bill Particulars / Edit Bill */}
                   {canViewBill && (
                     <button
                       onClick={() => handleOpenEditBill(visit)}
-                      className="btn-secondary btn-sm flex items-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-300 font-semibold shadow-2xs"
+                      className="btn-secondary btn-sm flex items-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-300 font-semibold shadow-2xs text-xs"
                       title="Edit or Add Bill Particulars for Patient"
                     >
                       <Edit3 size={13} className="text-amber-600" />
-                      <span>{visit.status === 'completed' || visit.status === 'admitted' ? 'Edit Bill' : 'Bill / Charges'}</span>
+                      <span>{visit.status === 'completed' || visit.status === 'admitted' ? 'Edit Bill' : 'Bill'}</span>
                     </button>
                   )}
 
                   {canViewBill && visit.status === 'admitted' && (
                     <button
                       onClick={() => handleOpenBill(visit)}
-                      className="btn-secondary btn-sm flex items-center gap-1 text-purple-700 hover:text-purple-800 hover:bg-purple-50 border-purple-300 font-semibold shadow-xs"
-                      title="View & Print Current Running Interim Bill"
+                      className="btn-secondary btn-sm flex items-center gap-1 text-purple-700 hover:text-purple-800 hover:bg-purple-50 border-purple-300 font-semibold shadow-xs text-xs"
+                      title="View &amp; Print Current Running Interim Bill"
                     >
                       <Receipt size={14} className="text-purple-600" />
                       <span>Running Bill</span>
                     </button>
                   )}
+
                   {canViewBill && visit.status === 'completed' && (
                     <button
                       onClick={() => handleOpenBill(visit)}
-                      className="btn-secondary btn-sm flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 border-blue-200 font-semibold shadow-xs"
-                      title="View & Print Official Final Bill"
+                      className="btn-secondary btn-sm flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:bg-blue-50 border-blue-200 font-bold shadow-xs text-xs"
+                      title="View &amp; Print Official Final Bill"
                     >
                       <Receipt size={14} className="text-blue-600" />
                       <span>Final Bill</span>
@@ -239,20 +460,165 @@ export default function OPDQueue() {
         </div>
       )}
 
+      {/* Prescription Letterhead Modal for Doctor & Receptionist */}
+      {activeRxModal && (
+        <PrescriptionLetterheadModal
+          patient={activeRxModal.patient}
+          visit={activeRxModal.visit}
+          doctor={activeRxModal.doctor}
+          onClose={() => setActiveRxModal(null)}
+          onPrescriptionSaved={fetchQueue}
+        />
+      )}
+
+      {/* Quick Collect Cash & Mark Completed Modal */}
+      {collectCashModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-scale-up">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <Banknote size={22} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base leading-tight">
+                    Collect Cash &amp; Complete Visit
+                  </h3>
+                  <p className="text-xs text-slate-500">Reception Counter &bull; Instant Cash Receipt</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCollectCashModal(null)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Patient & Doctor Card */}
+            <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 mb-4 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Patient:</span>
+                <span className="font-bold text-slate-900 text-sm">{collectCashModal.patient.full_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Patient ID:</span>
+                <span className="font-mono font-bold text-blue-700">{collectCashModal.patient.patient_id}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Doctor:</span>
+                <span className="font-bold text-emerald-800">
+                  {collectCashModal.doctor?.full_name?.startsWith('Dr')
+                    ? collectCashModal.doctor.full_name
+                    : `Dr. ${collectCashModal.doctor?.full_name || 'Vinay J Nirmale'}`}
+                </span>
+              </div>
+              {collectCashModal.visit.chief_complaint && (
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                  <span className="text-slate-500">Complaint:</span>
+                  <span className="text-slate-700 italic">{collectCashModal.visit.chief_complaint}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Consultation Fee Input */}
+            <div className="mb-4">
+              <label className="label text-xs font-bold text-slate-700">Consultation Fee (₹)</label>
+              <div className="relative">
+                <IndianRupee size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="number"
+                  min="0"
+                  step="10"
+                  value={consultationFee}
+                  onChange={e => setConsultationFee(e.target.value)}
+                  className="input pl-10 text-lg font-bold text-slate-900"
+                  placeholder="200"
+                />
+              </div>
+
+              {/* Quick Amount Chips */}
+              <div className="flex items-center gap-1.5 mt-2">
+                {[100, 200, 300, 500].map(amt => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setConsultationFee(amt)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border ${
+                      Number(consultationFee) === amt
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    ₹{amt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Mode Selection */}
+            <div className="mb-5">
+              <label className="label text-xs font-bold text-slate-700">Payment Mode</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ['cash', '💵 Cash'],
+                  ['upi', '📱 UPI / QR'],
+                  ['card', '💳 Card'],
+                ].map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setCollectPaymentMode(mode)}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all text-center ${
+                      collectPaymentMode === mode
+                        ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-300 shadow-xs'
+                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCollectCashModal(null)}
+                className="btn-secondary w-1/3 justify-center text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCollectCash}
+                disabled={submittingCash}
+                className="btn-primary w-2/3 justify-center bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 shadow-md flex items-center gap-1.5"
+              >
+                {submittingCash ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                <span>Confirm ₹{consultationFee} &amp; Complete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bill Letterhead Modal */}
       {canViewBill && activeBillModal && (
         <div className="relative z-50">
           <BillLetterheadModal
             bill={activeBillModal.bill}
             patient={activeBillModal.patient}
-            doctor={{ full_name: 'Rahul (MD)', department: 'Emergency & Multispeciality' }}
+            doctor={activeBillModal.doctor || { full_name: 'Rahul (MD)', department: 'Emergency & Multispeciality' }}
             visit={activeBillModal.visit}
             onClose={() => setActiveBillModal(null)}
             onBillUpdated={fetchQueue}
           />
 
           {/* If Pending, Show Quick Collect Payment Bar floating above modal */}
-          {activeBillModal.bill.payment_status === 'pending' && (
+          {activeBillModal.bill?.payment_status === 'pending' && (
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-4 print:hidden border border-slate-700">
               <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
                 <AlertCircle size={15} /> Payment Pending: ₹{Number(activeBillModal.bill.net_amount).toFixed(2)}

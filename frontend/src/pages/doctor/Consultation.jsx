@@ -5,6 +5,7 @@ import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
 import { ArrowLeft, Plus, Trash2, CheckCircle, Loader2, FlaskConical, Scan, FileText, Receipt, Printer, IndianRupee } from 'lucide-react'
 import BillLetterheadModal from '../../components/BillLetterheadModal'
+import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
 import toast from 'react-hot-toast'
 
 import MedicineAutocomplete from '../../components/MedicineAutocomplete'
@@ -136,6 +137,8 @@ export default function Consultation() {
   const [isDischarged, setIsDischarged] = useState(false)
   const [createdBill, setCreatedBill] = useState(null)
   const [showBillModal, setShowBillModal] = useState(false)
+  const [showRxModal, setShowRxModal] = useState(false)
+  const [savedRx, setSavedRx] = useState(null)
 
   useEffect(() => {
     api.get(`/visits/${visitId}`).then(async ({ data: v }) => {
@@ -248,12 +251,13 @@ export default function Consultation() {
 
       // Create prescription for today's medicines
       if (validMeds.length > 0) {
-        await api.post('/prescriptions/', {
+        const { data: rxData } = await api.post('/prescriptions/', {
           visit_id: visitId,
           patient_id: visit.patient_id,
           doctor_id: user.staff_id,
           medicines: validMeds.map(m => ({ ...m, duration_days: parseInt(m.duration_days) || 5 })),
         })
+        setSavedRx(rxData)
       }
 
       // Create lab orders
@@ -345,12 +349,19 @@ export default function Consultation() {
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            type="button"
+            onClick={() => setShowRxModal(true)}
+            className="btn-primary flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 font-bold"
+          >
+            <Printer size={16} /> Print Prescription (Letterhead)
+          </button>
           {createdBill && (
             <button
               onClick={() => setShowBillModal(true)}
-              className="btn-primary flex items-center justify-center gap-2"
+              className="btn-secondary flex items-center justify-center gap-2 font-semibold"
             >
-              <Printer size={16} /> {isDischarged ? "Print Final Bill (Letterhead)" : "Print Current Running Bill"}
+              <Receipt size={16} /> {isDischarged ? "Print Final Bill (Letterhead)" : "Print Current Running Bill"}
             </button>
           )}
           {!isDischarged && (
@@ -366,7 +377,7 @@ export default function Consultation() {
           </button>
         </div>
 
-        {/* Modal for viewing & printing letterhead */}
+        {/* Modal for viewing & printing letterhead bill */}
         {showBillModal && createdBill && (
           <BillLetterheadModal
             bill={createdBill}
@@ -374,6 +385,17 @@ export default function Consultation() {
             doctor={user}
             visit={{ ...visit, status: isDischarged ? 'completed' : 'admitted' }}
             onClose={() => setShowBillModal(false)}
+          />
+        )}
+
+        {/* Modal for viewing & printing letterhead prescription */}
+        {showRxModal && (
+          <PrescriptionLetterheadModal
+            patient={patient}
+            visit={{ ...visit, diagnosis, notes, follow_up_date: followUp }}
+            doctor={user}
+            prescription={savedRx || (medicines.filter(m => m.medicine_name.trim().length > 0).length > 0 ? { medicines } : null)}
+            onClose={() => setShowRxModal(false)}
           />
         )}
       </div>
@@ -394,9 +416,20 @@ export default function Consultation() {
                 <div className="font-bold text-slate-900">{patient.full_name}</div>
                 <div className="text-sm text-slate-600">{patient.age}Y · {patient.gender} · {patient.patient_id}</div>
               </div>
-              {patient.known_allergies && (
-                <div className="badge badge-red">⚠️ {patient.known_allergies}</div>
-              )}
+              <div className="flex items-center gap-2">
+                {patient.known_allergies && (
+                  <div className="badge badge-red">⚠️ {patient.known_allergies}</div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowRxModal(true)}
+                  className="btn-secondary btn-sm flex items-center gap-1.5 text-blue-700 bg-white hover:bg-blue-50 border-blue-200 font-bold shadow-2xs text-xs"
+                  title="Preview and print official prescription letterhead for this patient"
+                >
+                  <Printer size={14} className="text-blue-600" />
+                  <span>Print Rx Letterhead</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -848,6 +881,17 @@ export default function Consultation() {
           </div>
         )}
       </div>
+
+      {/* Modal for viewing & printing letterhead prescription during consultation */}
+      {showRxModal && (
+        <PrescriptionLetterheadModal
+          patient={patient}
+          visit={{ ...visit, diagnosis, notes, follow_up_date: followUp }}
+          doctor={user}
+          prescription={savedRx || (medicines.filter(m => m.medicine_name.trim().length > 0).length > 0 ? { medicines } : null)}
+          onClose={() => setShowRxModal(false)}
+        />
+      )}
     </Layout>
   )
 }

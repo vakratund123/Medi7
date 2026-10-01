@@ -52,8 +52,13 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl mb-4 border border-white/20">
             <Heart size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">MEDI7</h1>
-          <p className="text-primary-200 mt-1 text-sm">Sai Hospital · Digital Health System</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">MEDI7</h1>
+          <p className="text-white font-bold text-base tracking-wide mt-1.5 drop-shadow-sm">
+            Sai Emergency &amp; Multispeciality Hospital
+          </p>
+          <p className="text-primary-200 mt-0.5 text-xs font-medium">
+            Old Motor Stand, Nipani &bull; Digital Paperless Health System
+          </p>
         </div>
 
         {/* Card */}

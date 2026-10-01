@@ -248,7 +248,7 @@ CREATE INDEX idx_audit_staff ON audit_logs(staff_id);
 CREATE INDEX idx_audit_created ON audit_logs(created_at);
 
 -- ============================================================
--- PATIENT ID SEQUENCE (for SAI-2026-XXXXX format)
+-- PATIENT ID SEQUENCE (for SEM-2026-XXXXX format)
 -- ============================================================
 CREATE SEQUENCE patient_id_seq START 1;
 
@@ -261,6 +261,6 @@ DECLARE
 BEGIN
     year_part := TO_CHAR(NOW(), 'YYYY');
     seq_part  := LPAD(nextval('patient_id_seq')::TEXT, 5, '0');
-    RETURN 'SAI-' || year_part || '-' || seq_part;
+    RETURN 'SEM-' || year_part || '-' || seq_part;
 END;
 $$ LANGUAGE plpgsql;

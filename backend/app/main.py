@@ -24,6 +24,7 @@ async def lifespan(app: FastAPI):
 
         from app.models.staff import Staff
         from sqlalchemy import select
+        import bcrypt
         async with AsyncSessionLocal() as session:
             check = await session.execute(select(Staff).limit(1))
             if not check.scalar_one_or_none():
@@ -33,6 +34,23 @@ async def lifespan(app: FastAPI):
                 from seed_data import seed
                 await seed()
                 print("[Startup] Hospital database successfully initialized.")
+            else:
+                # Ensure Dr. Vinay J Nirmale exists for direct cash OPD reception workflow
+                vinay_check = await session.execute(select(Staff).where(Staff.login_email == "dr.vinay@saihospital.in"))
+                if not vinay_check.scalar_one_or_none():
+                    print("[Startup] Adding Dr. Vinay J Nirmale staff record...")
+                    doc_vinay = Staff(
+                        full_name="Dr. Vinay J Nirmale",
+                        mobile="9876543226",
+                        role="doctor",
+                        department="Consultant Physician",
+                        login_email="dr.vinay@saihospital.in",
+                        password_hash=bcrypt.hashpw("Doctor@123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
+                        is_active=True,
+                    )
+                    session.add(doc_vinay)
+                    await session.commit()
+                    print("[Startup] Dr. Vinay J Nirmale registered successfully.")
     except Exception as e:
         print(f"[Startup Warning] Auto-seed or table creation failed: {e}")
     yield
@@ -41,7 +59,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MEDI7 API",
-    description="Paperless Hospital Management System — Sai Hospital",
+    description="Paperless Hospital Management System — Sai Emergency & Multispeciality Hospital",
     version="1.0.0",
     lifespan=lifespan,
 )

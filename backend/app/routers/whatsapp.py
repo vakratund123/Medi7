@@ -41,7 +41,7 @@ class TestDocumentRequest(BaseModel):
 class TestTemplateRequest(BaseModel):
     mobile: str = "8618688243"
     template_name: str = "hospital_welcome_update"
-    parameters: list[str] = ["SAI-2026-TEST"]
+    parameters: list[str] = ["SEM-2026-TEST"]
 
 
 @router.get("/status")

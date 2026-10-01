@@ -192,7 +192,14 @@ export default function RegisterPatient() {
                 <label className="label">Doctor</label>
                 <select className="input" value={visitForm.doctor_id} onChange={setV('doctor_id')}>
                   <option value="">Select Doctor</option>
-                  {doctors.map(d => <option key={d.staff_id} value={d.staff_id}>Dr. {d.full_name}</option>)}
+                  {doctors.map(d => {
+                    const docName = d.full_name?.startsWith('Dr') ? d.full_name : `Dr. ${d.full_name}`
+                    return (
+                      <option key={d.staff_id} value={d.staff_id}>
+                        {docName} {d.department ? `— ${d.department}` : ''}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
               <div>
