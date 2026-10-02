@@ -118,15 +118,18 @@ export default function PrescriptionLetterheadModal({
               print-color-adjust: exact !important;
             }
             @page {
-              size: A4 portrait;
-              margin: 6mm;
+              size: A5 portrait;
+              margin: 4mm 5mm;
             }
             #printable-prescription-sheet {
               width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 10px 20px !important;
+              max-width: 138mm !important;
+              margin: 0 auto !important;
+              padding: 2mm 3mm !important;
               position: static !important;
+              box-shadow: none !important;
+              border: none !important;
+              page-break-inside: avoid !important;
             }
           </style>
         </head>
@@ -238,6 +241,9 @@ export default function PrescriptionLetterheadModal({
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 Official Prescription Letterhead
+                <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded">
+                  📄 A5 Paper Format
+                </span>
                 <span className="text-[11px] font-medium bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded">
                   {patient.patient_id}
                 </span>
@@ -314,85 +320,85 @@ export default function PrescriptionLetterheadModal({
           ) : (
             <div
               id="printable-prescription-sheet"
-              className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 sm:p-9 max-w-3xl mx-auto text-slate-800 text-[13px] leading-normal"
+              className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 sm:p-5 max-w-[530px] mx-auto text-slate-800 text-[11px] leading-snug"
             >
-              {/* ================= LETTERHEAD HEADER ================= */}
-              <div className="flex items-center justify-between border-b-2 border-blue-600 pb-3 mb-4 gap-3">
+              {/* ================= LETTERHEAD HEADER (A5 OPTIMIZED) ================= */}
+              <div className="flex items-center justify-between border-b-2 border-blue-600 pb-2 mb-2.5 gap-2">
                 {/* Hospital Logo */}
-                <div className="w-[125px] shrink-0 flex items-center justify-start">
+                <div className="w-[75px] shrink-0 flex items-center justify-start">
                   <img
                     src={SAI_HOSPITAL_LOGO_B64}
                     alt="Sai Emergency & Multispeciality Hospital"
-                    className="w-full max-h-[85px] object-contain"
+                    className="w-full max-h-[60px] object-contain"
                   />
                 </div>
 
                 {/* Hospital Name & Full Address Details */}
                 <div className="flex-1 text-center px-1">
-                  <div className="font-extrabold text-[#1d4ed8] text-[17px] sm:text-[19px] tracking-wide uppercase leading-tight font-serif">
+                  <div className="font-extrabold text-[#1d4ed8] text-[14px] sm:text-[15px] tracking-tight uppercase leading-tight font-serif">
                     SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL
                   </div>
-                  <div className="text-[10px] font-bold text-sky-700 tracking-wider mt-0.5 uppercase">
-                    REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU &bull; NICU &bull; TRAUMA CARE
+                  <div className="text-[8.5px] font-bold text-sky-700 tracking-wider mt-0.5 uppercase">
+                    REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU &bull; NICU
                   </div>
-                  <div className="text-[10px] text-slate-600 font-medium leading-snug mt-0.5">
+                  <div className="text-[8.5px] text-slate-600 font-medium leading-snug mt-0.5">
                     Old Motor Stand, NIPANI - 591 237. Dist. Belgavi
                   </div>
-                  <div className="text-[9.5px] text-blue-900 font-semibold mt-0.5">
+                  <div className="text-[8px] text-blue-900 font-semibold mt-0.5">
                     Mob. : 9180198107, 7204583699 &bull; semhospitalnipani@gmail.com
                   </div>
                 </div>
 
                 {/* Treating Consultant Doctor Details */}
-                <div className="w-[130px] shrink-0 text-right leading-tight border-l border-slate-200 pl-2">
-                  <div className="font-bold text-slate-900 text-xs sm:text-[13px]">
+                <div className="w-[110px] shrink-0 text-right leading-tight border-l border-slate-200 pl-1.5">
+                  <div className="font-bold text-slate-900 text-[11px] truncate">
                     {docName}
                   </div>
-                  <div className="text-[10px] text-slate-600 font-medium mt-0.5">
+                  <div className="text-[8.5px] text-slate-600 font-medium mt-0.5 truncate">
                     {docDept}
                   </div>
-                  <div className="text-[9.5px] text-slate-500 mt-0.5">
+                  <div className="text-[8px] text-slate-500 mt-0.5">
                     Reg: {docReg}
                   </div>
                 </div>
               </div>
 
               {/* ================= PATIENT DETAILS BAR ================= */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-4 text-xs">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 mb-2.5 grid grid-cols-2 sm:grid-cols-4 gap-y-1.5 gap-x-2 text-[10px]">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Patient Name</span>
-                  <span className="font-bold text-slate-900 text-[13px]">{patient.full_name}</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Patient Name</span>
+                  <span className="font-bold text-slate-900 text-[11.5px] truncate block">{patient.full_name}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Patient ID (SEM)</span>
-                  <span className="font-bold text-blue-700 text-[13px] font-mono">{patient.patient_id}</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Patient ID (SEM)</span>
+                  <span className="font-bold text-blue-700 text-[11.5px] font-mono">{patient.patient_id}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Age / Gender</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Age / Gender</span>
                   <span className="font-semibold text-slate-800">
                     {patient.age ? `${patient.age} Yrs` : '—'} / {patient.gender ? (patient.gender[0].toUpperCase() + patient.gender.slice(1).toLowerCase()) : '—'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Date</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Date</span>
                   <span className="font-semibold text-slate-800">{prescriptionDate}</span>
                 </div>
 
                 {(visit?.referred_by || patient.referred_by) && (
                   <div className="col-span-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Referred By</span>
-                    <span className="font-medium text-slate-800">{visit?.referred_by || patient.referred_by}</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Referred By</span>
+                    <span className="font-medium text-slate-800 truncate block">{visit?.referred_by || patient.referred_by}</span>
                   </div>
                 )}
                 {visit?.visit_type && (
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Visit Type</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Visit Type</span>
                     <span className="font-semibold text-slate-800">{visit.visit_type}</span>
                   </div>
                 )}
                 {patient.mobile_number && (
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Contact</span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Contact</span>
                     <span className="font-medium text-slate-800">+91 {patient.mobile_number}</span>
                   </div>
                 )}
@@ -400,16 +406,16 @@ export default function PrescriptionLetterheadModal({
 
               {/* Clinical Observations / Diagnosis */}
               {(visit?.chief_complaint || visit?.diagnosis) && (
-                <div className="mb-4 bg-blue-50/50 border border-blue-100 rounded-lg p-2.5 text-xs grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="mb-2 bg-blue-50/50 border border-blue-100 rounded-lg p-1.5 text-[9.5px] grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {visit.chief_complaint && (
                     <div>
-                      <span className="font-bold text-blue-900 block text-[11px]">Chief Complaint / Symptoms:</span>
+                      <span className="font-bold text-blue-900 block text-[9px]">Chief Complaint:</span>
                       <span className="text-slate-700">{visit.chief_complaint}</span>
                     </div>
                   )}
                   {visit.diagnosis && (
                     <div>
-                      <span className="font-bold text-blue-900 block text-[11px]">Provisional Diagnosis:</span>
+                      <span className="font-bold text-blue-900 block text-[9px]">Diagnosis:</span>
                       <span className="text-slate-800 font-semibold">{visit.diagnosis}</span>
                     </div>
                   )}
@@ -417,15 +423,15 @@ export default function PrescriptionLetterheadModal({
               )}
 
               {/* ================= RX PRESCRIPTION HEADER ================= */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-black text-blue-600 font-serif leading-none">℞</span>
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xl font-black text-blue-600 font-serif leading-none">℞</span>
+                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Medical Prescription (Medicines &amp; Dosage)
                   </span>
                 </div>
                 {activeMedicines.length > 0 && (
-                  <span className="text-[11px] font-semibold text-slate-500">
+                  <span className="text-[9px] font-semibold text-slate-500">
                     {activeMedicines.length} Item{activeMedicines.length > 1 ? 's' : ''} Prescribed
                   </span>
                 )}
@@ -433,17 +439,17 @@ export default function PrescriptionLetterheadModal({
 
               {/* Medicines Table */}
               {isEditingMeds ? (
-                <div className="space-y-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <div className="text-xs font-bold text-slate-700 mb-2">Prescribe Medicines for Patient:</div>
+                <div className="space-y-2 mb-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <div className="text-[10.5px] font-bold text-slate-700 mb-1.5">Prescribe Medicines for Patient:</div>
                   {medsList.map((m, idx) => (
-                    <div key={idx} className="grid grid-cols-12 gap-2 items-center text-xs">
+                    <div key={idx} className="grid grid-cols-12 gap-1.5 items-center text-[10.5px]">
                       <div className="col-span-4">
                         <input
                           type="text"
-                          placeholder="Medicine Name & Strength (e.g. Paracetamol 650mg)"
+                          placeholder="Medicine Name & Strength"
                           value={m.medicine_name}
                           onChange={e => handleUpdateMed(idx, 'medicine_name', e.target.value)}
-                          className="input py-1 text-xs w-full"
+                          className="input py-0.5 text-xs w-full"
                         />
                       </div>
                       <div className="col-span-2">
@@ -452,14 +458,14 @@ export default function PrescriptionLetterheadModal({
                           placeholder="Dosage (e.g. 1 tab)"
                           value={m.dosage}
                           onChange={e => handleUpdateMed(idx, 'dosage', e.target.value)}
-                          className="input py-1 text-xs w-full"
+                          className="input py-0.5 text-xs w-full"
                         />
                       </div>
                       <div className="col-span-2">
                         <select
                           value={m.frequency}
                           onChange={e => handleUpdateMed(idx, 'frequency', e.target.value)}
-                          className="input py-1 text-xs w-full"
+                          className="input py-0.5 text-xs w-full"
                         >
                           <option value="1-0-1">1-0-1 (M-N)</option>
                           <option value="1-1-1">1-1-1 (M-A-N)</option>
@@ -475,44 +481,44 @@ export default function PrescriptionLetterheadModal({
                           placeholder="Days"
                           value={m.duration_days}
                           onChange={e => handleUpdateMed(idx, 'duration_days', parseInt(e.target.value) || 1)}
-                          className="input py-1 text-xs w-full"
+                          className="input py-0.5 text-xs w-full"
                         />
                       </div>
                       <div className="col-span-2">
                         <input
                           type="text"
-                          placeholder="Instructions (e.g. After food)"
+                          placeholder="Instructions (After food)"
                           value={m.instructions}
                           onChange={e => handleUpdateMed(idx, 'instructions', e.target.value)}
-                          className="input py-1 text-xs w-full"
+                          className="input py-0.5 text-xs w-full"
                         />
                       </div>
                       <div className="col-span-1 text-center">
                         <button
                           type="button"
                           onClick={() => handleRemoveMed(idx)}
-                          className="text-danger-500 hover:text-danger-700 p-1"
+                          className="text-danger-500 hover:text-danger-700 p-0.5"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
                   ))}
 
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center justify-between pt-1.5">
                     <button
                       type="button"
                       onClick={handleAddMedicineRow}
-                      className="btn-secondary btn-sm text-xs flex items-center gap-1"
+                      className="btn-secondary btn-sm text-[10px] py-1 flex items-center gap-1"
                     >
-                      <Plus size={13} /> Add Another Medicine
+                      <Plus size={12} /> Add Another Medicine
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setIsEditingMeds(false)}
-                        className="btn-secondary btn-sm text-xs"
+                        className="btn-secondary btn-sm text-[10px] py-1"
                       >
                         Cancel
                       </button>
@@ -520,44 +526,44 @@ export default function PrescriptionLetterheadModal({
                         type="button"
                         onClick={handleSaveMeds}
                         disabled={savingMeds}
-                        className="btn-primary btn-sm text-xs flex items-center gap-1"
+                        className="btn-primary btn-sm text-[10px] py-1 flex items-center gap-1"
                       >
-                        {savingMeds ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                        {savingMeds ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
                         Save &amp; Generate
                       </button>
                     </div>
                   </div>
                 </div>
               ) : activeMedicines.length > 0 ? (
-                <div className="overflow-x-auto mb-6">
-                  <table className="w-full text-left border-collapse text-xs">
+                <div className="overflow-x-auto mb-3">
+                  <table className="w-full text-left border-collapse text-[10.5px]">
                     <thead>
                       <tr className="bg-slate-100/90 text-slate-700 border-y border-slate-200">
-                        <th className="py-2 px-3 font-bold w-8 text-center">#</th>
-                        <th className="py-2 px-3 font-bold">Medicine / Drug Name</th>
-                        <th className="py-2 px-3 font-bold">Dosage</th>
-                        <th className="py-2 px-3 font-bold">Frequency</th>
-                        <th className="py-2 px-3 font-bold w-16 text-center">Duration</th>
-                        <th className="py-2 px-3 font-bold">Timing / Instructions</th>
+                        <th className="py-1 px-1.5 font-bold w-6 text-center">#</th>
+                        <th className="py-1 px-1.5 font-bold">Medicine / Drug Name</th>
+                        <th className="py-1 px-1.5 font-bold w-16">Dosage</th>
+                        <th className="py-1 px-1.5 font-bold w-20">Frequency</th>
+                        <th className="py-1 px-1.5 font-bold w-14 text-center">Duration</th>
+                        <th className="py-1 px-1.5 font-bold">Timing / Instructions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {activeMedicines.map((med, i) => (
                         <tr key={i} className="hover:bg-slate-50/50">
-                          <td className="py-2 px-3 font-medium text-slate-400 text-center">{i + 1}</td>
-                          <td className="py-2 px-3">
+                          <td className="py-1 px-1.5 font-medium text-slate-400 text-center">{i + 1}</td>
+                          <td className="py-1 px-1.5">
                             <span className="font-bold text-slate-900">{med.medicine_name}</span>
                           </td>
-                          <td className="py-2 px-3 text-slate-700">{med.dosage || '—'}</td>
-                          <td className="py-2 px-3">
-                            <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-800 font-bold rounded text-[11px] border border-blue-200">
+                          <td className="py-1 px-1.5 text-slate-700">{med.dosage || '—'}</td>
+                          <td className="py-1 px-1.5">
+                            <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-800 font-bold rounded text-[9.5px] border border-blue-200">
                               {med.frequency || '1-0-1'}
                             </span>
                           </td>
-                          <td className="py-2 px-3 text-slate-700 text-center font-medium">
-                            {med.duration_days ? `${med.duration_days} Days` : '—'}
+                          <td className="py-1 px-1.5 text-slate-700 text-center font-medium">
+                            {med.duration_days ? `${med.duration_days}d` : '—'}
                           </td>
-                          <td className="py-2 px-3 text-slate-600 italic">
+                          <td className="py-1 px-1.5 text-slate-600 italic text-[10px]">
                             {med.instructions || 'After food'}
                           </td>
                         </tr>
@@ -567,62 +573,61 @@ export default function PrescriptionLetterheadModal({
                 </div>
               ) : (
                 /* Blank Clean Ruled Clinical Pad Area for Doctor's handwritten Rx or notes */
-                <div className="my-6 py-12 px-4 border border-dashed border-slate-200 rounded-xl text-center bg-slate-50/40 relative">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-4 pointer-events-none text-4xl font-extrabold uppercase tracking-widest text-slate-900">
+                <div className="my-3 py-8 px-4 border border-dashed border-slate-200 rounded-xl text-center bg-slate-50/40 relative">
+                  <div className="absolute inset-0 flex items-center justify-center opacity-4 pointer-events-none text-2xl font-extrabold uppercase tracking-widest text-slate-900">
                     Sai Emergency Hospital
                   </div>
-                  <div className="space-y-4">
-                    <p className="text-xs text-slate-500 font-medium">
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-slate-500 font-medium">
                       No digital medicines entered for this consultation yet.
                     </p>
                     <div className="flex items-center justify-center gap-2 print:hidden">
                       <button
                         type="button"
                         onClick={handleAddMedicineRow}
-                        className="btn-secondary btn-sm text-xs bg-white text-blue-700 border-blue-200 hover:bg-blue-50 font-semibold"
+                        className="btn-secondary btn-sm text-[10px] bg-white text-blue-700 border-blue-200 hover:bg-blue-50 font-semibold py-1"
                       >
-                        <Plus size={13} /> Prescribe Digital Medicines
+                        <Plus size={12} /> Prescribe Digital Medicines
                       </button>
                     </div>
-                    <div className="hidden print:block h-44 border-b border-slate-200"></div>
+                    <div className="hidden print:block h-32 border-b border-slate-200"></div>
                   </div>
                 </div>
               )}
 
               {/* Special Advice / Follow-up */}
-              <div className="border border-slate-200 rounded-lg p-3 mb-6 bg-slate-50/60 text-xs">
-                <div className="font-bold text-slate-800 mb-1">General Instructions &amp; Dietary Advice:</div>
-                <ul className="list-disc pl-4 text-slate-600 space-y-0.5 text-[11px]">
+              <div className="border border-slate-200 rounded-lg p-2 mb-3 bg-slate-50/60 text-[9.5px]">
+                <div className="font-bold text-slate-800 mb-0.5">General Instructions &amp; Dietary Advice:</div>
+                <ul className="list-disc pl-4 text-slate-600 space-y-0.5 text-[9px]">
                   <li>Take medications on time with warm water as advised.</li>
                   <li>In case of allergy, rash or unusual reaction, contact hospital immediately.</li>
-                  <li>Adequate rest and hydration recommended.</li>
                   {visit?.follow_up_date && (
                     <li className="font-semibold text-blue-800">
-                      Follow up visit scheduled on: {new Date(visit.follow_up_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      Follow up visit: {new Date(visit.follow_up_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </li>
                   )}
                 </ul>
               </div>
 
-              {/* ================= SIGNATURE & FOOTER ================= */}
-              <div className="pt-4 border-t border-slate-200 mt-6">
+              {/* ================= SIGNATURE & FOOTER (A5 OPTIMIZED) ================= */}
+              <div className="pt-2 border-t border-slate-200 mt-2">
                 <div className="flex items-end justify-between">
-                  <div className="text-[10px] text-slate-400 space-y-0.5">
+                  <div className="text-[8px] text-slate-400 space-y-0.5">
                     <div>* Emergency 24x7 Helpline: 9180198107, 7204583699</div>
-                    <div>* MEDI7 Paperless Healthcare System &bull; DPDP Act 2023 Compliant</div>
+                    <div>* MEDI7 Paperless Health System &bull; A5 Format</div>
                   </div>
 
-                  <div className="text-center w-52">
-                    <div className="h-10 border-b border-slate-400 border-dashed mb-1.5 flex items-end justify-center">
-                      <span className="text-[10px] text-slate-400 italic">Signature of Consultant</span>
+                  <div className="text-center w-40">
+                    <div className="h-8 border-b border-slate-400 border-dashed mb-1 flex items-end justify-center">
+                      <span className="text-[8px] text-slate-400 italic">Signature of Doctor</span>
                     </div>
-                    <div className="text-xs font-bold text-slate-900">{docName}</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Treating Consultant / Doctor</div>
-                    <div className="text-[9px] text-slate-400">Reg: {docReg}</div>
+                    <div className="text-[11px] font-bold text-slate-900">{docName}</div>
+                    <div className="text-[8.5px] text-slate-500 font-medium">Treating Consultant</div>
+                    <div className="text-[8px] text-slate-400">Reg: {docReg}</div>
                   </div>
                 </div>
 
-                <div className="text-center text-[9.5px] text-slate-400 pt-3 border-t border-slate-100 mt-3">
+                <div className="text-center text-[8px] text-slate-400 pt-1.5 border-t border-slate-100 mt-2">
                   Sai Emergency &amp; Multispeciality Hospital &bull; Old Motor Stand, NIPANI - 591 237. Dist. Belgavi &bull; Ph: 9180198107
                 </div>
               </div>

@@ -9,24 +9,28 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 12px;
+      font-size: 9.5px;
       color: #1e293b;
       background: #ffffff;
-      line-height: 1.4;
+      line-height: 1.35;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     @page {
-      size: A4;
-      margin: 12mm 15mm;
+      size: A5 portrait;
+      margin: 5mm 6mm;
     }
 
     .page {
       width: 100%;
-      max-width: 210mm;
-      min-height: 275mm;
+      max-width: 148mm;
+      min-height: 198mm;
       margin: 0 auto;
+      padding: 4mm 5mm;
       position: relative;
       background: #ffffff;
+      box-sizing: border-box;
     }
 
     /* Watermark */
@@ -35,25 +39,25 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -40%);
-      opacity: 0.045;
+      opacity: 0.04;
       pointer-events: none;
       z-index: 0;
       text-align: center;
       width: 100%;
     }
     .watermark-cross {
-      font-size: 140px;
+      font-size: 90px;
       line-height: 1;
       color: #1e40af;
       font-weight: 900;
     }
     .watermark-name {
-      font-size: 32px;
+      font-size: 20px;
       font-weight: 800;
       color: #1e40af;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-top: 10px;
+      letter-spacing: 1.5px;
+      margin-top: 6px;
     }
 
     .content-wrapper {
@@ -66,70 +70,70 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
     }
 
     .logo-container {
-      width: 28%;
+      width: 22%;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
     }
 
     .logo-img {
-      width: 120px;
-      max-height: 90px;
+      width: 75px;
+      max-height: 55px;
       height: auto;
       object-fit: contain;
     }
 
     .hospital-title-block {
-      width: 72%;
+      width: 78%;
       text-align: center;
     }
 
     .hospital-title {
-      font-size: 21px;
+      font-size: 13.5px;
       font-weight: 800;
       color: #1d4ed8;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       line-height: 1.2;
       text-transform: uppercase;
     }
 
     .reg-no-badge {
-      font-size: 11px;
+      font-size: 8.5px;
       font-weight: 700;
       color: #0284c7;
-      letter-spacing: 0.8px;
-      margin-top: 3px;
+      letter-spacing: 0.6px;
+      margin-top: 2px;
     }
 
     .hospital-address {
-      font-size: 11px;
+      font-size: 8.5px;
       color: #334155;
       font-weight: 500;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .hospital-contact {
-      font-size: 10.5px;
+      font-size: 8px;
       color: #1e3a8a;
       font-weight: 600;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     /* Accent Bars */
     .accent-bar-top {
-      height: 3px;
+      height: 2.5px;
       background: linear-gradient(90deg, #0284c7 0%, #1d4ed8 100%);
-      margin-top: 6px;
+      margin-top: 4px;
       border-radius: 2px;
     }
     .accent-bar-bottom {
       height: 1px;
       background: #0284c7;
-      margin-top: 2px;
+      margin-top: 1.5px;
     }
 
     /* Reference & Date Line */
@@ -137,12 +141,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 4px 10px 4px;
-      font-size: 11px;
+      padding: 4px 2px 5px 2px;
+      font-size: 9px;
       font-weight: 600;
       color: #1e293b;
       border-bottom: 1px dashed #cbd5e1;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
     }
     .ref-no span, .date-val span {
       font-weight: 700;
@@ -152,29 +156,29 @@
     /* Bill Title Banner */
     .bill-banner {
       background: #f1f5f9;
-      border-left: 4px solid #1d4ed8;
-      padding: 6px 14px;
+      border-left: 3px solid #1d4ed8;
+      padding: 4px 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      border-radius: 0 6px 6px 0;
+      margin-bottom: 6px;
+      border-radius: 0 4px 4px 0;
     }
     .bill-banner-title {
-      font-size: 13px;
+      font-size: 9.5px;
       font-weight: 800;
       color: #1e40af;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       text-transform: uppercase;
     }
     .status-badge {
       display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 8.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
     .status-paid {
       background: #dcfce7;
@@ -191,24 +195,24 @@
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
+      gap: 6px;
+      margin-bottom: 6px;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 10px 14px;
+      border-radius: 4px;
+      padding: 6px 8px;
     }
     .info-col {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
     .info-row {
       display: flex;
-      font-size: 11px;
+      font-size: 9px;
     }
     .info-label {
-      width: 110px;
+      width: 85px;
       color: #64748b;
       font-weight: 500;
     }
@@ -220,22 +224,22 @@
 
     /* Billing Items Table */
     .table-container {
-      margin-bottom: 14px;
+      margin-bottom: 6px;
     }
     table.billing-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
+      font-size: 9px;
     }
     table.billing-table thead th {
       background: #1e40af;
       color: #ffffff;
-      padding: 7px 10px;
+      padding: 5px 6px;
       font-weight: 700;
       text-align: left;
-      font-size: 10.5px;
+      font-size: 8.5px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
     table.billing-table thead th.text-right {
       text-align: right;
@@ -250,7 +254,7 @@
       background: #f8fafc;
     }
     table.billing-table tbody td {
-      padding: 8px 10px;
+      padding: 5px 6px;
       color: #1e293b;
       vertical-align: middle;
     }
@@ -266,13 +270,13 @@
     }
     .item-cat {
       display: inline-block;
-      font-size: 9.5px;
+      font-size: 8px;
       color: #0284c7;
       background: #e0f2fe;
-      padding: 1px 6px;
-      border-radius: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
       font-weight: 600;
-      margin-left: 6px;
+      margin-left: 4px;
     }
 
     /* Total Summary Box */
@@ -280,93 +284,90 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-top: 8px;
-      padding-top: 8px;
+      margin-top: 4px;
+      padding-top: 6px;
       border-top: 1px solid #cbd5e1;
     }
     .words-box {
       width: 58%;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      padding: 8px 12px;
-      border-radius: 6px;
+      padding: 6px 8px;
+      border-radius: 4px;
     }
     .words-label {
-      font-size: 9.5px;
+      font-size: 8px;
       color: #64748b;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
     .words-val {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
       color: #1e40af;
       margin-top: 2px;
       text-transform: capitalize;
     }
     .payment-note {
-      font-size: 10px;
+      font-size: 8px;
       color: #475569;
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
     .totals-box {
       width: 38%;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
     .total-line {
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
-      padding: 2px 4px;
+      font-size: 9px;
+      padding: 1px 2px;
     }
     .total-line.net {
-      border-top: 2px solid #1e40af;
-      padding-top: 6px;
-      margin-top: 4px;
-      font-size: 13px;
+      border-top: 1.5px solid #1e40af;
+      padding-top: 4px;
+      margin-top: 2px;
+      font-size: 10.5px;
       font-weight: 800;
       color: #1e40af;
     }
 
     /* Footer & Signatures */
     .signatures-section {
-      margin-top: 36px;
+      margin-top: 14px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      padding: 0 10px;
+      padding: 0 4px;
     }
     .sig-block {
       text-align: center;
-      width: 200px;
+      width: 140px;
     }
     .sig-line {
       border-top: 1px solid #64748b;
-      margin-bottom: 5px;
+      margin-bottom: 3px;
     }
     .sig-title {
-      font-size: 11px;
+      font-size: 8.5px;
       font-weight: 700;
       color: #0f172a;
     }
     .sig-sub {
-      font-size: 9.5px;
+      font-size: 7.5px;
       color: #64748b;
     }
 
     .letterhead-footer {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      margin-top: 8px;
       text-align: center;
       border-top: 1px solid #e2e8f0;
-      padding-top: 8px;
-      font-size: 9.5px;
+      padding-top: 4px;
+      font-size: 7.5px;
       color: #64748b;
     }
   </style>

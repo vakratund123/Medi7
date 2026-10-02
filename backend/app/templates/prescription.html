@@ -6,54 +6,59 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; font-size: 13px; color: #1a1a1a; background: white; }
+    body { font-family: 'Inter', sans-serif; font-size: 10.5px; color: #1a1a1a; background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    .page { width: 210mm; min-height: 297mm; padding: 20mm 18mm; }
+    @page {
+      size: A5 portrait;
+      margin: 5mm 6mm;
+    }
+
+    .page { width: 100%; max-width: 148mm; min-height: 198mm; padding: 4mm 5mm; margin: 0 auto; box-sizing: border-box; }
 
     /* Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a56db; padding-bottom: 14px; margin-bottom: 16px; }
-    .hospital-name { font-size: 22px; font-weight: 700; color: #1a56db; }
-    .hospital-sub { font-size: 11px; color: #555; margin-top: 3px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 8px; margin-bottom: 8px; }
+    .hospital-name { font-size: 13.5px; font-weight: 800; color: #1d4ed8; }
+    .hospital-sub { font-size: 8.5px; color: #555; margin-top: 2px; }
     .doctor-block { text-align: right; }
-    .doctor-name { font-size: 15px; font-weight: 600; }
-    .doctor-qual { font-size: 11px; color: #555; }
-    .reg-no { font-size: 11px; color: #777; }
+    .doctor-name { font-size: 11.5px; font-weight: 600; }
+    .doctor-qual { font-size: 8.5px; color: #555; }
+    .reg-no { font-size: 8.5px; color: #777; }
 
     /* Patient info box */
-    .patient-info { background: #f0f7ff; border: 1px solid #c3d9f8; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; display: flex; gap: 30px; flex-wrap: wrap; }
-    .info-item label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-    .info-item span { display: block; font-weight: 600; font-size: 13px; margin-top: 2px; }
+    .patient-info { background: #f0f7ff; border: 1px solid #c3d9f8; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .info-item label { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-item span { display: block; font-weight: 600; font-size: 10.5px; margin-top: 1px; }
 
     /* Rx symbol */
-    .rx-header { font-size: 28px; color: #1a56db; font-weight: 700; margin-bottom: 10px; }
+    .rx-header { font-size: 18px; color: #1a56db; font-weight: 700; margin-bottom: 4px; line-height: 1; }
 
     /* Medicines table */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    thead th { background: #1a56db; color: white; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    thead th { background: #1a56db; color: white; padding: 5px 6px; text-align: left; font-size: 9px; font-weight: 600; }
     tbody tr:nth-child(even) { background: #f8f9fc; }
-    tbody td { padding: 9px 10px; font-size: 12px; border-bottom: 1px solid #e8eaf0; vertical-align: top; }
-    .med-name { font-weight: 600; color: #1a1a1a; }
-    .med-instructions { font-size: 11px; color: #666; margin-top: 3px; }
+    tbody td { padding: 5px 6px; font-size: 9.5px; border-bottom: 1px solid #e8eaf0; vertical-align: top; }
+    .med-name { font-weight: 600; color: #1a1a1a; font-size: 9.5px; }
+    .med-instructions { font-size: 8.5px; color: #666; margin-top: 2px; }
 
     /* Frequency badge */
-    .freq-badge { background: #e0eaff; color: #1a56db; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .freq-badge { background: #e0eaff; color: #1a56db; padding: 1px 5px; border-radius: 3px; font-size: 8.5px; font-weight: 600; }
 
     /* Follow up */
-    .followup-box { border: 1px dashed #1a56db; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; }
+    .followup-box { border: 1px dashed #1a56db; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; font-size: 9.5px; }
     .followup-box span { color: #1a56db; font-weight: 600; }
 
     /* Signature */
-    .signature-area { display: flex; justify-content: flex-end; margin-top: 30px; }
+    .signature-area { display: flex; justify-content: flex-end; margin-top: 14px; }
     .sig-box { text-align: center; }
-    .sig-line { border-top: 1px solid #333; width: 180px; margin-bottom: 6px; }
-    .sig-label { font-size: 11px; color: #555; }
-    .sig-name { font-weight: 600; font-size: 13px; }
+    .sig-line { border-top: 1px solid #333; width: 140px; margin-bottom: 4px; }
+    .sig-label { font-size: 8.5px; color: #555; }
+    .sig-name { font-weight: 600; font-size: 10.5px; }
 
     /* Footer */
-    .footer { border-top: 1px solid #e0e0e0; margin-top: 20px; padding-top: 10px; font-size: 10px; color: #999; text-align: center; }
+    .footer { border-top: 1px solid #e0e0e0; margin-top: 10px; padding-top: 6px; font-size: 8px; color: #999; text-align: center; }
 
     /* Watermark */
-    .watermark { position: fixed; bottom: 40mm; left: 50%; transform: translateX(-50%) rotate(-30deg); font-size: 60px; color: rgba(26, 86, 219, 0.04); font-weight: 900; white-space: nowrap; pointer-events: none; }
+    .watermark { position: fixed; bottom: 30mm; left: 50%; transform: translateX(-50%) rotate(-30deg); font-size: 38px; color: rgba(26, 86, 219, 0.04); font-weight: 900; white-space: nowrap; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -61,20 +66,20 @@
 <div class="page">
 
   <!-- Header matching official Sai Hospital letterhead -->
-  <div class="header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 12px; margin-bottom: 14px;">
-    <div style="width: 25%;">
-      <img src="{{ hospital_logo_b64 }}" alt="Sai Emergency &amp; Multispeciality Hospital" style="width: 105px; max-height: 80px; height: auto; object-fit: contain;" />
+  <div class="header">
+    <div style="width: 22%;">
+      <img src="{{ hospital_logo_b64 }}" alt="Sai Emergency &amp; Multispeciality Hospital" style="width: 75px; max-height: 55px; height: auto; object-fit: contain;" />
     </div>
-    <div style="width: 50%; text-align: center;">
-      <div class="hospital-name" style="font-size: 17px; font-weight: 800; color: #1d4ed8; text-transform: uppercase;">SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL</div>
-      <div style="font-size: 10px; font-weight: 700; color: #0284c7;">REG. NO. : BLG03043ALHL3</div>
-      <div class="hospital-sub" style="font-size: 10px; color: #334155; margin-top: 2px;">Old Motor Stand, NIPANI - 591 237. Dist. Belgavi</div>
-      <div style="font-size: 9.5px; color: #1e3a8a; font-weight: 600; margin-top: 1px;">Mob. : 9180198107, 7204583699 • semhospitalnipani@gmail.com</div>
+    <div style="width: 54%; text-align: center;">
+      <div class="hospital-name">SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL</div>
+      <div style="font-size: 8.5px; font-weight: 700; color: #0284c7;">REG. NO. : BLG03043ALHL3</div>
+      <div class="hospital-sub">Old Motor Stand, NIPANI - 591 237. Dist. Belgavi</div>
+      <div style="font-size: 8px; color: #1e3a8a; font-weight: 600; margin-top: 1px;">Mob. : 9180198107, 7204583699 • semhospitalnipani@gmail.com</div>
     </div>
-    <div class="doctor-block" style="width: 25%; text-align: right;">
+    <div class="doctor-block" style="width: 24%; text-align: right;">
       <div class="doctor-name">Dr. {{ doctor.full_name }}</div>
       <div class="doctor-qual">{{ doctor.department or 'General Medicine' }}</div>
-      <div class="reg-no">Reg No: {{ doctor.get('reg_no', 'BLG03043ALHL3') }}</div>
+      <div class="reg-no">Reg: {{ doctor.get('reg_no', 'BLG03043ALHL3') }}</div>
     </div>
   </div>
 

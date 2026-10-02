@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from PIL import Image as PILImage
 
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A5, A4
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -76,8 +76,8 @@ def number_to_words_inr(amount: float) -> str:
         return f"Rupees {amount:.2f} Only"
 
 
-def _get_logo_flowable(max_width=105, max_height=80):
-    """Decode authentic Sai Hospital base64 logo into a ReportLab Flowable Image."""
+def _get_logo_flowable(max_width=75, max_height=60):
+    """Decode authentic Sai Hospital base64 logo into a ReportLab Flowable Image scaled for A5."""
     try:
         raw_b64 = SAI_HOSPITAL_LOGO_B64
         if "base64," in raw_b64:
@@ -100,53 +100,60 @@ def _get_logo_flowable(max_width=105, max_height=80):
 
 
 def _add_hospital_header(elements, styles):
-    """Add authentic Sai Hospital Letterhead Header with Logo & Details."""
-    logo = _get_logo_flowable()
+    """Add authentic Sai Hospital Letterhead Header with Logo & Details for A5 format."""
+    logo = _get_logo_flowable(max_width=75, max_height=60)
     title_p = Paragraph(
         "SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL",
-        ParagraphStyle("HospitalTitle", fontName="Helvetica-Bold", fontSize=14.5, leading=17, textColor=colors.HexColor("#1d4ed8"), alignment=1)
+        ParagraphStyle("HospitalTitle", fontName="Helvetica-Bold", fontSize=11.5, leading=13.5, textColor=colors.HexColor("#1d4ed8"), alignment=1)
     )
     reg_p = Paragraph(
-        "REG. NO. : BLG03043ALHL3",
-        ParagraphStyle("RegNo", fontName="Helvetica-Bold", fontSize=8.5, leading=11, textColor=colors.HexColor("#0284c7"), alignment=1)
+        "REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU &bull; NICU",
+        ParagraphStyle("RegNo", fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.HexColor("#0284c7"), alignment=1)
     )
     addr_p = Paragraph(
         "Old Motor Stand, NIPANI - 591 237. Dist. Belgavi",
-        ParagraphStyle("Addr", fontName="Helvetica", fontSize=8, leading=10, textColor=colors.HexColor("#334155"), alignment=1)
+        ParagraphStyle("Addr", fontName="Helvetica", fontSize=7, leading=8.5, textColor=colors.HexColor("#334155"), alignment=1)
     )
     contact_p = Paragraph(
         "Mob. : 9180198107, 7204583699 &bull; Email : semhospitalnipani@gmail.com",
-        ParagraphStyle("Contact", fontName="Helvetica-Bold", fontSize=8, leading=10, textColor=colors.HexColor("#1e3a8a"), alignment=1)
+        ParagraphStyle("Contact", fontName="Helvetica-Bold", fontSize=7, leading=8.5, textColor=colors.HexColor("#1e3a8a"), alignment=1)
     )
 
-    right_col = [title_p, Spacer(1, 2), reg_p, Spacer(1, 2), addr_p, Spacer(1, 2), contact_p]
+    right_col = [title_p, Spacer(1, 1), reg_p, Spacer(1, 1), addr_p, Spacer(1, 1), contact_p]
 
     if logo:
-        header_table = Table([[logo, right_col]], colWidths=[110, 425])
+        # A5 printable width: 380pt -> logo: 75pt, text: 305pt
+        header_table = Table([[logo, right_col]], colWidths=[75, 305])
         header_table.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         elements.append(header_table)
     else:
         elements.extend(right_col)
 
-    elements.append(Spacer(1, 5))
-    elements.append(HRFlowable(width="100%", thickness=2.5, color=colors.HexColor("#0284c7"), spaceAfter=1))
-    elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#1e3a8a"), spaceAfter=8))
+    elements.append(Spacer(1, 3))
+    elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#0284c7"), spaceAfter=1))
+    elements.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#1e3a8a"), spaceAfter=5))
 
 
 def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict, prescription: dict, visit: dict):
-    """Generate a high-fidelity binary PDF prescription using ReportLab."""
+    """Generate a high-fidelity binary PDF prescription in official A5 format using ReportLab."""
     doc = SimpleDocTemplate(
         str(output_path),
-        pagesize=A4,
-        leftMargin=30,
-        rightMargin=30,
-        topMargin=25,
-        bottomMargin=25,
+        pagesize=A5,
+        leftMargin=20,
+        rightMargin=20,
+        topMargin=15,
+        bottomMargin=15,
     )
     styles = getSampleStyleSheet()
+    p_style = ParagraphStyle("NormSmall", fontName="Helvetica", fontSize=7.5, leading=9.5, textColor=colors.HexColor("#1e293b"))
+    p_bold = ParagraphStyle("NormBold", fontName="Helvetica-Bold", fontSize=7.5, leading=9.5, textColor=colors.HexColor("#0f172a"))
     elements = []
 
     # 1. Header
@@ -155,62 +162,62 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
     # 2. Document Title Banner
     banner_p = Paragraph(
         "OUTPATIENT MEDICAL PRESCRIPTION",
-        ParagraphStyle("DocBanner", fontName="Helvetica-Bold", fontSize=11, leading=13, textColor=colors.HexColor("#1e3a8a"), alignment=1)
+        ParagraphStyle("DocBanner", fontName="Helvetica-Bold", fontSize=9.5, leading=11.5, textColor=colors.HexColor("#1e3a8a"), alignment=1)
     )
-    banner_table = Table([[banner_p]], colWidths=[535])
+    banner_table = Table([[banner_p]], colWidths=[380])
     banner_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#eff6ff")),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#bfdbfe")),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#bfdbfe")),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
     elements.append(banner_table)
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 4))
 
-    # 3. Patient & Doctor Info Grid
+    # 3. Patient & Doctor Info Grid (Total: 380pt)
     date_str = datetime.now().strftime("%d/%m/%Y")
     patient_info = [
         [
-            Paragraph(f"<b>Patient Name:</b> {patient.get('full_name', 'Patient')}", styles['Normal']),
-            Paragraph(f"<b>Date:</b> {date_str}", styles['Normal']),
+            Paragraph(f"<b>Patient Name:</b> {patient.get('full_name', 'Patient')}", p_style),
+            Paragraph(f"<b>Date:</b> {date_str}", p_style),
         ],
         [
-            Paragraph(f"<b>Patient ID:</b> {patient.get('patient_id', '-')}", styles['Normal']),
-            Paragraph(f"<b>Age / Sex:</b> {patient.get('age', '-')} yrs / {patient.get('gender', '-')}", styles['Normal']),
+            Paragraph(f"<b>Patient ID:</b> {patient.get('patient_id', '-')}", p_style),
+            Paragraph(f"<b>Age / Sex:</b> {patient.get('age', '-')} yrs / {patient.get('gender', '-')}", p_style),
         ],
         [
-            Paragraph(f"<b>Mobile:</b> {patient.get('phone', patient.get('mobile_number', '-'))}", styles['Normal']),
-            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul Nirmale')}", styles['Normal']),
+            Paragraph(f"<b>Mobile:</b> {patient.get('phone', patient.get('mobile_number', '-'))}", p_style),
+            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul Nirmale')}", p_style),
         ],
     ]
     diag = visit.get('diagnosis')
     if diag:
         patient_info.append([
-            Paragraph(f"<b>Diagnosis / Clinical Notes:</b> {diag}", styles['Normal']),
-            Paragraph(f"<b>Department:</b> {doctor.get('department', 'General Medicine')}", styles['Normal']),
+            Paragraph(f"<b>Diagnosis:</b> {diag}", p_style),
+            Paragraph(f"<b>Dept:</b> {doctor.get('department', 'General Medicine')}", p_style),
         ])
 
-    info_table = Table(patient_info, colWidths=[310, 225])
+    info_table = Table(patient_info, colWidths=[205, 175])
     info_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
         ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
     ]))
     elements.append(info_table)
-    elements.append(Spacer(1, 12))
+    elements.append(Spacer(1, 5))
 
     # 4. Rx Symbol & Medicines Table
-    rx_p = Paragraph("<b>Rx &mdash; Prescribed Medicines:</b>", ParagraphStyle("RxTitle", fontName="Helvetica-Bold", fontSize=10, textColor=colors.HexColor("#0f172a")))
+    rx_p = Paragraph("<b>Rx &mdash; Prescribed Medicines:</b>", ParagraphStyle("RxTitle", fontName="Helvetica-Bold", fontSize=8.5, leading=10, textColor=colors.HexColor("#0f172a")))
     elements.append(rx_p)
-    elements.append(Spacer(1, 5))
+    elements.append(Spacer(1, 3))
 
     med_header = ["#", "Medicine / Tablet Name", "Dosage", "Frequency", "Days", "Instructions"]
     med_rows = [[
-        Paragraph(f"<b>{h}</b>", ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=8.5, textColor=colors.HexColor("#0f172a")))
+        Paragraph(f"<b>{h}</b>", ParagraphStyle("TH", fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.HexColor("#0f172a")))
         for h in med_header
     ]]
 
@@ -228,30 +235,31 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
                 dosage, freq, days, instr = "", "", "", ""
             
             med_rows.append([
-                Paragraph(str(idx), styles['Normal']),
-                Paragraph(f"<b>{name}</b>", styles['Normal']),
-                Paragraph(dosage, styles['Normal']),
-                Paragraph(freq, styles['Normal']),
-                Paragraph(days, styles['Normal']),
-                Paragraph(instr, styles['Normal']),
+                Paragraph(str(idx), p_style),
+                Paragraph(f"<b>{name}</b>", p_bold),
+                Paragraph(dosage, p_style),
+                Paragraph(freq, p_style),
+                Paragraph(days, p_style),
+                Paragraph(instr, p_style),
             ])
 
     if len(med_rows) == 1:
-        med_rows.append([Paragraph("1", styles['Normal']), Paragraph("No medicines prescribed.", styles['Normal']), "", "", "", ""])
+        med_rows.append([Paragraph("1", p_style), Paragraph("No medicines prescribed.", p_style), "", "", "", ""])
 
-    med_table = Table(med_rows, colWidths=[25, 195, 65, 75, 45, 130])
+    # Total width: 18 + 145 + 52 + 55 + 30 + 80 = 380 pt
+    med_table = Table(med_rows, colWidths=[18, 145, 52, 55, 30, 80])
     med_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#f1f5f9")),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#cbd5e1")),
+        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     elements.append(med_table)
-    elements.append(Spacer(1, 14))
+    elements.append(Spacer(1, 5))
 
     # 5. Follow up / Advice
     fu_date = visit.get('follow_up_date') or prescription.get('follow_up_date')
@@ -262,32 +270,34 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
     if notes:
         advice_items.append(f"<b>Special Advice:</b> {notes}")
     if advice_items:
-        advice_p = Paragraph("<br/>".join(advice_items), ParagraphStyle("Advice", fontName="Helvetica", fontSize=9, leading=13, textColor=colors.HexColor("#334155")))
+        advice_p = Paragraph("<br/>".join(advice_items), ParagraphStyle("Advice", fontName="Helvetica", fontSize=7.5, leading=10, textColor=colors.HexColor("#334155")))
         elements.append(advice_p)
-        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 6))
 
-    # 6. Doctor Signature Area
+    # 6. Doctor Signature Area (Total: 380pt)
     doc_name = doctor.get('full_name', 'Rahul Nirmale')
     if not doc_name.startswith('Dr'):
         doc_name = f"Dr. {doc_name}"
 
     sig_data = [
-        ["", Paragraph(f"<b>{doc_name}</b><br/>Treating Consultant &bull; Reg. BLG03043ALHL3<br/>Sai Emergency &amp; Multispeciality Hospital", ParagraphStyle("Sig", fontName="Helvetica", fontSize=8.5, leading=11, alignment=2))]
+        ["", Paragraph(f"<b>{doc_name}</b><br/>Treating Consultant &bull; Reg. BLG03043ALHL3<br/>Sai Emergency &amp; Multispeciality Hospital", ParagraphStyle("Sig", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=2))]
     ]
-    sig_table = Table(sig_data, colWidths=[280, 255])
+    sig_table = Table(sig_data, colWidths=[190, 190])
     sig_table.setStyle(TableStyle([
         ('LINEBEFORE', (1, 0), (1, 0), 0, colors.transparent),
         ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    elements.append(Spacer(1, 25))
+    elements.append(Spacer(1, 10))
     elements.append(sig_table)
 
     # 7. Footnote
-    elements.append(Spacer(1, 15))
-    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=5))
+    elements.append(Spacer(1, 6))
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=3))
     foot_p = Paragraph(
         "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699",
-        ParagraphStyle("Foot", fontName="Helvetica", fontSize=7.5, leading=9, textColor=colors.HexColor("#64748b"), alignment=1)
+        ParagraphStyle("Foot", fontName="Helvetica", fontSize=6.5, leading=8, textColor=colors.HexColor("#64748b"), alignment=1)
     )
     elements.append(foot_p)
 
@@ -295,16 +305,18 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
 
 
 def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: dict, visit: dict):
-    """Generate a high-fidelity binary PDF letterhead bill using ReportLab."""
+    """Generate a high-fidelity binary PDF letterhead bill using ReportLab in A5 format."""
     doc = SimpleDocTemplate(
         str(output_path),
-        pagesize=A4,
-        leftMargin=30,
-        rightMargin=30,
-        topMargin=25,
-        bottomMargin=25,
+        pagesize=A5,
+        leftMargin=20,
+        rightMargin=20,
+        topMargin=15,
+        bottomMargin=15,
     )
     styles = getSampleStyleSheet()
+    p_style = ParagraphStyle("BillNorm", fontName="Helvetica", fontSize=7.5, leading=9.5, textColor=colors.HexColor("#1e293b"))
+    p_bold = ParagraphStyle("BillNormB", fontName="Helvetica-Bold", fontSize=7.5, leading=9.5, textColor=colors.HexColor("#0f172a"))
     elements = []
 
     # 1. Header
@@ -312,63 +324,63 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
 
     # 2. Dynamic Banner (Interim vs Final)
     is_admitted = visit.get('status') == 'admitted'
-    banner_title = "INTERIM INPATIENT BILL / RUNNING HOSPITAL STATEMENT (ACTIVE IPD)" if is_admitted else "PATIENT FINAL BILL / DISCHARGE SUMMARY BILL"
+    banner_title = "INTERIM INPATIENT BILL / RUNNING STATEMENT (ACTIVE IPD)" if is_admitted else "PATIENT FINAL BILL / DISCHARGE STATEMENT"
     banner_bg = "#f3e8ff" if is_admitted else "#eff6ff"
     banner_border = "#d8b4fe" if is_admitted else "#bfdbfe"
     banner_color = "#581c87" if is_admitted else "#1e3a8a"
 
     banner_p = Paragraph(
         banner_title,
-        ParagraphStyle("BillBanner", fontName="Helvetica-Bold", fontSize=10.5, leading=12, textColor=colors.HexColor(banner_color), alignment=1)
+        ParagraphStyle("BillBanner", fontName="Helvetica-Bold", fontSize=8.5, leading=10.5, textColor=colors.HexColor(banner_color), alignment=1)
     )
-    banner_table = Table([[banner_p]], colWidths=[535])
+    banner_table = Table([[banner_p]], colWidths=[380])
     banner_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor(banner_bg)),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor(banner_border)),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor(banner_border)),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
     ]))
     elements.append(banner_table)
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 4))
 
     # 3. Bill & Patient Meta Information
     date_str = datetime.now().strftime("%d/%m/%Y")
     patient_info = [
         [
-            Paragraph(f"<b>Bill Ref:</b> {bill.get('bill_number', 'SEMH-B26-0001')}", styles['Normal']),
-            Paragraph(f"<b>Date:</b> {date_str}", styles['Normal']),
+            Paragraph(f"<b>Bill Ref:</b> {bill.get('bill_number', 'SEMH-B26-0001')}", p_style),
+            Paragraph(f"<b>Date:</b> {date_str}", p_style),
         ],
         [
-            Paragraph(f"<b>Patient Name:</b> {patient.get('full_name', 'Patient')}", styles['Normal']),
-            Paragraph(f"<b>Patient ID:</b> {patient.get('patient_id', '-')}", styles['Normal']),
+            Paragraph(f"<b>Patient Name:</b> {patient.get('full_name', 'Patient')}", p_style),
+            Paragraph(f"<b>Patient ID:</b> {patient.get('patient_id', '-')}", p_style),
         ],
         [
-            Paragraph(f"<b>Age / Sex:</b> {patient.get('age', '-')} yrs / {patient.get('gender', '-')}", styles['Normal']),
-            Paragraph(f"<b>Contact:</b> {patient.get('phone', patient.get('mobile_number', '-'))}", styles['Normal']),
+            Paragraph(f"<b>Age / Sex:</b> {patient.get('age', '-')} yrs / {patient.get('gender', '-')}", p_style),
+            Paragraph(f"<b>Contact:</b> {patient.get('phone', patient.get('mobile_number', '-'))}", p_style),
         ],
         [
-            Paragraph(f"<b>Treating Doctor:</b> Dr. {doctor.get('full_name', 'Rahul Nirmale')}", styles['Normal']),
-            Paragraph(f"<b>Status:</b> <b>{bill.get('payment_status', 'PAID').upper()}</b> ({bill.get('payment_mode', 'Cash').upper()})", styles['Normal']),
+            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul Nirmale')}", p_style),
+            Paragraph(f"<b>Status:</b> <b>{bill.get('payment_status', 'PAID').upper()}</b> ({bill.get('payment_mode', 'Cash').upper()})", p_style),
         ],
     ]
 
-    info_table = Table(patient_info, colWidths=[290, 245])
+    info_table = Table(patient_info, colWidths=[205, 175])
     info_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
         ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 3.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 2.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
     ]))
     elements.append(info_table)
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 5))
 
-    # 4. Bill Particulars Table
+    # 4. Bill Particulars Table (Total width: 18 + 152 + 65 + 25 + 60 + 60 = 380 pt)
     bill_header = ["#", "Service / Particulars", "Category", "Qty", "Rate (₹)", "Total (₹)"]
     bill_rows = [[
-        Paragraph(f"<b>{h}</b>", ParagraphStyle("BTH", fontName="Helvetica-Bold", fontSize=8.5, textColor=colors.HexColor("#0f172a")))
+        Paragraph(f"<b>{h}</b>", ParagraphStyle("BTH", fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.HexColor("#0f172a")))
         for h in bill_header
     ]]
 
@@ -385,87 +397,99 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
                 name, cat, qty, rate, tot = str(it), "Service", "1", "₹0.00", "₹0.00"
 
             bill_rows.append([
-                Paragraph(str(idx), styles['Normal']),
-                Paragraph(name, styles['Normal']),
-                Paragraph(cat, styles['Normal']),
-                Paragraph(qty, styles['Normal']),
-                Paragraph(rate, styles['Normal']),
-                Paragraph(tot, styles['Normal']),
+                Paragraph(str(idx), p_style),
+                Paragraph(name, p_bold),
+                Paragraph(cat, p_style),
+                Paragraph(qty, p_style),
+                Paragraph(rate, p_style),
+                Paragraph(tot, p_style),
             ])
 
     if len(bill_rows) == 1:
-        bill_rows.append([Paragraph("1", styles['Normal']), Paragraph("Consultation & Treatment", styles['Normal']), "Consultation", "1", f"₹{bill.get('net_amount', 0):.2f}", f"₹{bill.get('net_amount', 0):.2f}"])
+        bill_rows.append([
+            Paragraph("1", p_style),
+            Paragraph("Consultation & Treatment", p_bold),
+            Paragraph("Consultation", p_style),
+            Paragraph("1", p_style),
+            Paragraph(f"₹{bill.get('net_amount', 0):.2f}", p_style),
+            Paragraph(f"₹{bill.get('net_amount', 0):.2f}", p_style),
+        ])
 
-    bill_table = Table(bill_rows, colWidths=[25, 210, 100, 40, 80, 80])
+    bill_table = Table(bill_rows, colWidths=[18, 152, 65, 25, 60, 60])
     bill_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#f1f5f9")),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#cbd5e1")),
+        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
-        ('TOPPADDING', (0, 0), (-1, -1), 4.5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     elements.append(bill_table)
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 5))
 
-    # 5. Financial Summary Grid
+    # 5. Financial Summary Grid (Total width: 220 + 160 = 380 pt)
     amt_words = number_to_words_inr(bill.get("net_amount", 0.0))
-    words_p = Paragraph(f"<b>Amount in Words:</b><br/>{amt_words}", ParagraphStyle("Words", fontName="Helvetica-Oblique", fontSize=8.5, leading=11, textColor=colors.HexColor("#1e3a8a")))
+    words_p = Paragraph(f"<b>Amount in Words:</b><br/>{amt_words}", ParagraphStyle("Words", fontName="Helvetica-Oblique", fontSize=7.5, leading=9.5, textColor=colors.HexColor("#1e3a8a")))
 
     totals_data = [
-        [Paragraph("Subtotal:", styles['Normal']), Paragraph(f"₹{bill.get('subtotal', bill.get('net_amount', 0)):.2f}", styles['Normal'])],
+        [Paragraph("Subtotal:", p_style), Paragraph(f"₹{bill.get('subtotal', bill.get('net_amount', 0)):.2f}", p_style)],
     ]
     if bill.get('discount', 0) > 0:
-        totals_data.append([Paragraph("Discount:", styles['Normal']), Paragraph(f"- ₹{bill.get('discount', 0):.2f}", styles['Normal'])])
+        totals_data.append([Paragraph("Discount:", p_style), Paragraph(f"- ₹{bill.get('discount', 0):.2f}", p_style)])
     if bill.get('tax', 0) > 0:
-        totals_data.append([Paragraph("Tax:", styles['Normal']), Paragraph(f"+ ₹{bill.get('tax', 0):.2f}", styles['Normal'])])
+        totals_data.append([Paragraph("Tax:", p_style), Paragraph(f"+ ₹{bill.get('tax', 0):.2f}", p_style)])
     totals_data.append([
-        Paragraph("<b>Net Payable:</b>", ParagraphStyle("NetH", fontName="Helvetica-Bold", fontSize=10, textColor=colors.HexColor("#1e3a8a"))),
-        Paragraph(f"<b>₹{bill.get('net_amount', 0):.2f}</b>", ParagraphStyle("NetV", fontName="Helvetica-Bold", fontSize=10, textColor=colors.HexColor("#1e3a8a"))),
+        Paragraph("<b>Net Payable:</b>", ParagraphStyle("NetH", fontName="Helvetica-Bold", fontSize=8.5, leading=10.5, textColor=colors.HexColor("#1e3a8a"))),
+        Paragraph(f"<b>₹{bill.get('net_amount', 0):.2f}</b>", ParagraphStyle("NetV", fontName="Helvetica-Bold", fontSize=8.5, leading=10.5, textColor=colors.HexColor("#1e3a8a"))),
     ])
 
-    totals_table = Table(totals_data, colWidths=[100, 110])
+    totals_table = Table(totals_data, colWidths=[85, 75])
     totals_table.setStyle(TableStyle([
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 1.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
     ]))
 
-    summary_table = Table([[words_p, totals_table]], colWidths=[315, 220])
+    summary_table = Table([[words_p, totals_table]], colWidths=[220, 160])
     summary_table.setStyle(TableStyle([
         ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
         ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
     elements.append(summary_table)
-    elements.append(Spacer(1, 25))
+    elements.append(Spacer(1, 12))
 
-    # 6. Dual Authorized Signatories
+    # 6. Dual Authorized Signatories (Total: 190 + 190 = 380 pt)
     doc_name = doctor.get('full_name', 'Rahul Nirmale')
     if not doc_name.startswith('Dr'):
         doc_name = f"Dr. {doc_name}"
 
     sig_data = [
         [
-            Paragraph("____________________________<br/><b>Billing Executive / Cashier</b><br/>Sai Emergency Hospital", ParagraphStyle("Sig1", fontName="Helvetica", fontSize=8, leading=11, alignment=1)),
-            Paragraph(f"____________________________<br/><b>{doc_name}</b><br/>Treating Consultant &bull; Reg. BLG03043ALHL3", ParagraphStyle("Sig2", fontName="Helvetica", fontSize=8, leading=11, alignment=1)),
+            Paragraph("____________________________<br/><b>Billing Executive / Cashier</b><br/>Sai Emergency Hospital", ParagraphStyle("Sig1", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=1)),
+            Paragraph(f"____________________________<br/><b>{doc_name}</b><br/>Treating Consultant &bull; Reg. BLG03043ALHL3", ParagraphStyle("Sig2", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=1)),
         ]
     ]
-    sig_table = Table(sig_data, colWidths=[267, 268])
+    sig_table = Table(sig_data, colWidths=[190, 190])
+    sig_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
     elements.append(sig_table)
 
     # 7. Footnote
-    elements.append(Spacer(1, 15))
-    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=5))
+    elements.append(Spacer(1, 6))
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=3))
     foot_p = Paragraph(
         "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699",
-        ParagraphStyle("Foot", fontName="Helvetica", fontSize=7.5, leading=9, textColor=colors.HexColor("#64748b"), alignment=1)
+        ParagraphStyle("Foot", fontName="Helvetica", fontSize=6.5, leading=8, textColor=colors.HexColor("#64748b"), alignment=1)
     )
     elements.append(foot_p)
 
@@ -498,20 +522,20 @@ def generate_prescription_pdf(
         # Secondary fallback using simple canvas to ensure valid PDF binary
         try:
             from reportlab.pdfgen import canvas
-            c = canvas.Canvas(str(output_path), pagesize=A4)
-            c.setFont("Helvetica-Bold", 16)
-            c.drawString(50, 800, "SAI EMERGENCY & MULTISPECIALITY HOSPITAL")
-            c.setFont("Helvetica", 10)
-            c.drawString(50, 780, "REG. NO. : BLG03043ALHL3 | Mob: 9180198107")
-            c.drawString(50, 750, f"Patient: {patient.get('full_name', '')} ({patient.get('patient_id', '')})")
-            c.drawString(50, 730, f"Doctor: Dr. {doctor.get('full_name', '')}")
-            c.drawString(50, 700, "Prescription Details:")
-            y = 680
+            c = canvas.Canvas(str(output_path), pagesize=A5)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(25, 565, "SAI EMERGENCY & MULTISPECIALITY HOSPITAL")
+            c.setFont("Helvetica", 8)
+            c.drawString(25, 550, "REG. NO. : BLG03043ALHL3 | Mob: 9180198107")
+            c.drawString(25, 530, f"Patient: {patient.get('full_name', '')} ({patient.get('patient_id', '')})")
+            c.drawString(25, 515, f"Doctor: Dr. {doctor.get('full_name', '')}")
+            c.drawString(25, 495, "Prescription Details:")
+            y = 475
             for med in prescription.get('medicines', []):
                 med_txt = med.get('medicine_name', str(med)) if isinstance(med, dict) else str(med)
-                c.drawString(60, y, f"- {med_txt}")
-                y -= 20
-                if y < 100:
+                c.drawString(35, y, f"- {med_txt}")
+                y -= 16
+                if y < 60:
                     break
             c.save()
         except Exception as ex2:
@@ -547,14 +571,14 @@ def generate_bill_pdf(
         print(f"[ReportLab Error] Failed to generate bill PDF: {e}")
         try:
             from reportlab.pdfgen import canvas
-            c = canvas.Canvas(str(output_path), pagesize=A4)
-            c.setFont("Helvetica-Bold", 16)
-            c.drawString(50, 800, "SAI EMERGENCY & MULTISPECIALITY HOSPITAL")
-            c.setFont("Helvetica", 10)
-            c.drawString(50, 780, "REG. NO. : BLG03043ALHL3 | Mob: 9180198107")
-            c.drawString(50, 750, f"Bill No: {bill.get('bill_number')} | Date: {datetime.now().strftime('%d/%m/%Y')}")
-            c.drawString(50, 730, f"Patient: {patient.get('full_name')} ({patient.get('patient_id')})")
-            c.drawString(50, 710, f"Net Amount: Rs. {bill.get('net_amount', 0):.2f}")
+            c = canvas.Canvas(str(output_path), pagesize=A5)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(25, 565, "SAI EMERGENCY & MULTISPECIALITY HOSPITAL")
+            c.setFont("Helvetica", 8)
+            c.drawString(25, 550, "REG. NO. : BLG03043ALHL3 | Mob: 9180198107")
+            c.drawString(25, 530, f"Bill No: {bill.get('bill_number')} | Date: {datetime.now().strftime('%d/%m/%Y')}")
+            c.drawString(25, 515, f"Patient: {patient.get('full_name')} ({patient.get('patient_id')})")
+            c.drawString(25, 500, f"Net Amount: Rs. {bill.get('net_amount', 0):.2f}")
             c.save()
         except Exception as ex2:
             print(f"[Critical PDF Error] Canvas bill fallback failed: {ex2}")
