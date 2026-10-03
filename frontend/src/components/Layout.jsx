@@ -4,31 +4,37 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Users, ClipboardList, FlaskConical,
   Scan, Pill, BarChart3, LogOut, Menu, X, ChevronRight,
-  Activity, Heart, Receipt
+  Activity, Heart, Receipt, Search
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const NAV_BY_ROLE = {
   receptionist: [
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
     { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
     { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
   ],
   doctor: [
     { label: 'My Queue', icon: ClipboardList, path: '/doctor/queue' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
   ],
   lab_technician: [
     { label: 'Lab Orders', icon: FlaskConical, path: '/lab/orders' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
   ],
   radiologist: [
     { label: 'Radiology Orders', icon: Scan, path: '/radiology/orders' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
   ],
   pharmacist: [
     { label: 'Dispense', icon: Pill, path: '/pharmacy/dashboard' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
     { label: 'Inventory', icon: BarChart3, path: '/pharmacy/inventory' },
   ],
   owner: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/owner/dashboard' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
     { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
     { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
@@ -39,6 +45,7 @@ const NAV_BY_ROLE = {
   ],
   manager: [
     { label: 'Dashboard & Referrals', icon: LayoutDashboard, path: '/owner/dashboard' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
     { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
     { label: 'Register Patient', icon: Users, path: '/receptionist/register' },
@@ -49,6 +56,7 @@ const NAV_BY_ROLE = {
   ],
   cashier: [
     { label: 'Billing Desk', icon: Receipt, path: '/billing/desk' },
+    { label: 'Search Patients', icon: Search, path: '/patients' },
     { label: 'OPD Queue', icon: ClipboardList, path: '/receptionist/queue' },
   ],
 }
@@ -160,10 +168,22 @@ export default function Layout({ children, title }) {
               </div>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2.5">
+            <button
+              onClick={() => navigate('/patients')}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 rounded-xl transition-all border border-slate-200 shadow-2xs"
+              title="Search all previous patients by name, phone, or ID"
+            >
+              <Search size={14} className="text-slate-400" />
+              <span className="hidden sm:inline font-medium">Search previous patients...</span>
+              <span className="sm:hidden font-medium">Search</span>
+              <kbd className="hidden lg:inline text-[10px] bg-white text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 font-mono">
+                Name
+              </kbd>
+            </button>
             <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
               <Activity size={14} className="text-emerald-500" />
-              <span>24x7 Emergency Care Active &bull; System Online</span>
+              <span>24x7 Care Active</span>
             </div>
           </div>
         </header>

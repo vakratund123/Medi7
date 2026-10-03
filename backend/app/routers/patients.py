@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, text
+from sqlalchemy import select, func, text, delete
 
 from app.database import get_db
 from app.models.patient import Patient
@@ -8,8 +8,10 @@ from app.models.visit import Visit
 from app.models.prescription import Prescription
 from app.models.lab import LabOrder, LabReport
 from app.models.radiology import Radiology
+from app.models.bill import Bill
+from app.models.audit import WhatsAppLog
 from app.schemas.patient import PatientCreate, PatientOut
-from app.middleware.auth_middleware import require_any, require_doctor, get_current_staff, require_receptionist
+from app.middleware.auth_middleware import require_any, require_doctor, get_current_staff, require_receptionist, require_roles
 from app.services.audit_service import log_action
 from app.services.whatsapp_service import send_whatsapp_message, send_whatsapp_template
 from app.services.ai_service import generate_whatsapp_message, generate_patient_summary
@@ -100,13 +102,13 @@ async def register_patient(
 @router.get("/", response_model=list[PatientOut])
 async def search_patients(
     q: str | None = Query(None, description="Name, mobile, or patient ID"),
-    limit: int = Query(20, le=100),
+    limit: int = Query(30, le=100),
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(require_any),
 ):
     stmt = select(Patient)
     if q:
-        like = f"%{q}%"
+        like = f"%{q.strip()}%"
         stmt = stmt.where(
             Patient.full_name.ilike(like)
             | Patient.mobile_number.ilike(like)
@@ -114,7 +116,42 @@ async def search_patients(
         )
     stmt = stmt.order_by(Patient.created_at.desc()).limit(limit)
     result = await db.execute(stmt)
-    return result.scalars().all()
+    patients_list = result.scalars().all()
+    if not patients_list:
+        return []
+
+    # Batch fetch visit count and last visit date for found patients
+    patient_ids = [p.patient_id for p in patients_list]
+    v_stats_stmt = (
+        select(Visit.patient_id, func.count(Visit.visit_id), func.max(Visit.visit_date))
+        .where(Visit.patient_id.in_(patient_ids))
+        .group_by(Visit.patient_id)
+    )
+    v_stats_res = await db.execute(v_stats_stmt)
+    v_map = {row[0]: (row[1], row[2]) for row in v_stats_res.all()}
+
+    output = []
+    for p in patients_list:
+        v_count, last_date = v_map.get(p.patient_id, (0, None))
+        p_dict = {
+            "patient_id": p.patient_id,
+            "full_name": p.full_name,
+            "mobile_number": p.mobile_number,
+            "date_of_birth": p.date_of_birth,
+            "age": p.age,
+            "gender": p.gender,
+            "address": p.address,
+            "blood_group": p.blood_group,
+            "known_allergies": p.known_allergies,
+            "chronic_conditions": p.chronic_conditions,
+            "language_preference": p.language_preference,
+            "referred_by": p.referred_by,
+            "created_at": p.created_at,
+            "total_visits": v_count,
+            "last_visit_date": last_date,
+        }
+        output.append(p_dict)
+    return output
 
 
 def _normalize_patient_id(patient_id: str) -> str:
@@ -149,7 +186,7 @@ async def get_patient(
 async def get_patient_history(
     patient_id: str,
     db: AsyncSession = Depends(get_db),
-    _: Staff = Depends(require_doctor),
+    _: Staff = Depends(require_roles("doctor", "owner", "manager", "receptionist", "reception", "cashier", "admin", "pharmacist", "lab_technician", "radiologist")),
 ):
     # Patient
     normalized_id = _normalize_patient_id(patient_id)
@@ -241,4 +278,69 @@ async def resend_welcome_whatsapp(
         "mobile": patient.mobile_number,
         "delivered": sent,
     }
+
+
+@router.delete("/{patient_id}")
+async def delete_patient(
+    patient_id: str,
+    reason: str = Query("Duplicate entry", description="Reason for deleting patient"),
+    request: Request = None,
+    db: AsyncSession = Depends(get_db),
+    current_staff: Staff = Depends(require_roles("receptionist", "reception", "owner", "manager", "admin")),
+):
+    """Allows deleting a duplicate or accidentally registered patient and associated unbilled entries."""
+    normalized_id = _normalize_patient_id(patient_id)
+    res = await db.execute(select(Patient).where(Patient.patient_id.ilike(normalized_id)))
+    patient = res.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Check if patient has any paid bills
+    paid_bill_res = await db.execute(
+        select(Bill).where(Bill.patient_id == patient.patient_id, Bill.payment_status == "paid")
+    )
+    if paid_bill_res.scalars().first():
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete patient: Paid bills exist for this patient. Please consult manager/owner."
+        )
+
+    # Check for completed lab reports
+    lab_reports = await db.execute(select(LabReport).where(LabReport.patient_id == patient.patient_id))
+    if lab_reports.scalars().first() and current_staff.role not in ("owner", "manager", "admin"):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete patient: Completed lab reports exist for this patient."
+        )
+
+    # Clean up associated records safely
+    await db.execute(delete(WhatsAppLog).where(WhatsAppLog.patient_id == patient.patient_id))
+    await db.execute(delete(LabReport).where(LabReport.patient_id == patient.patient_id))
+    await db.execute(delete(LabOrder).where(LabOrder.patient_id == patient.patient_id))
+    await db.execute(delete(Radiology).where(Radiology.patient_id == patient.patient_id))
+    await db.execute(delete(Prescription).where(Prescription.patient_id == patient.patient_id))
+    await db.execute(delete(Bill).where(Bill.patient_id == patient.patient_id))
+    await db.execute(delete(Visit).where(Visit.patient_id == patient.patient_id))
+
+    await db.delete(patient)
+    await db.commit()
+
+    # Audit log
+    client_ip = request.client.host if request and request.client else None
+    await log_action(
+        db,
+        current_staff.staff_id,
+        "delete_patient",
+        "patient",
+        patient.patient_id,
+        details={"reason": reason, "patient_name": patient.full_name},
+        ip_address=client_ip,
+    )
+
+    return {
+        "status": "success",
+        "message": f"Patient record {patient.patient_id} ({patient.full_name}) and associated entries deleted successfully.",
+        "patient_id": patient.patient_id,
+    }
+
 

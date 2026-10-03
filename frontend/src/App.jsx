@@ -15,6 +15,7 @@ import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard'
 import Inventory from './pages/pharmacy/Inventory'
 import OwnerDashboard from './pages/owner/OwnerDashboard'
 import BillingDesk from './pages/cashier/BillingDesk'
+import PatientSearch from './pages/common/PatientSearch'
 
 const ROLE_HOME = {
   receptionist: '/receptionist/queue',
@@ -112,6 +113,18 @@ export default function App() {
             <Routes>
               <Route path="desk" element={<BillingDesk />} />
             </Routes>
+          </ProtectedRoute>
+        } />
+
+        {/* Universal Patient Search & Master Directory (Accessible to all hospital staff) */}
+        <Route path="/patients" element={
+          <ProtectedRoute>
+            <PatientSearch />
+          </ProtectedRoute>
+        } />
+        <Route path="/patient/:patientId" element={
+          <ProtectedRoute>
+            <PatientHistory />
           </ProtectedRoute>
         } />
 

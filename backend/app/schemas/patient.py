@@ -23,6 +23,8 @@ class PatientCreate(PatientBase):
 class PatientOut(PatientBase):
     patient_id: str
     created_at: datetime
+    total_visits: int | None = 0
+    last_visit_date: date | None = None
 
     model_config = {"from_attributes": True}
 

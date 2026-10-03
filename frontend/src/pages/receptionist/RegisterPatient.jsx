@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
-import { UserPlus, ChevronRight, Loader2, ArrowLeft } from 'lucide-react'
+import { UserPlus, ChevronRight, Loader2, ArrowLeft, AlertTriangle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const LANGUAGES = ['english', 'marathi', 'kannada', 'hindi']
@@ -14,7 +14,14 @@ export default function RegisterPatient() {
   const navigate = useNavigate()
   const [doctors, setDoctors] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
   const [registered, setRegistered] = useState(null)
+  const [deletingRegistered, setDeletingRegistered] = useState(false)
+
+  // Existing patient duplicate detection
+  const [existingPatients, setExistingPatients] = useState([])
+  const [checkingMobile, setCheckingMobile] = useState(false)
+  const [addingVisitExisting, setAddingVisitExisting] = useState(false)
 
   const [form, setForm] = useState({
     full_name: '', mobile_number: '', age: '', gender: 'male',
@@ -27,14 +34,75 @@ export default function RegisterPatient() {
     api.get('/staff/').then(({ data }) => setDoctors(data.filter(s => s.role === 'doctor'))).catch(() => {})
   }, [])
 
+  // Auto-check for existing patients by 10-digit mobile number to prevent duplicate registrations
+  useEffect(() => {
+    const mobile = form.mobile_number?.trim()
+    if (mobile && mobile.length >= 10) {
+      setCheckingMobile(true)
+      const timer = setTimeout(async () => {
+        try {
+          const { data } = await api.get(`/patients/?q=${mobile}`)
+          setExistingPatients(data || [])
+        } catch {
+          setExistingPatients([])
+        } finally {
+          setCheckingMobile(false)
+        }
+      }, 350)
+      return () => clearTimeout(timer)
+    } else {
+      setExistingPatients([])
+    }
+  }, [form.mobile_number])
+
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
   const setV = (k) => (e) => setVisitForm(f => ({ ...f, [k]: e.target.value }))
 
+  const handleAddVisitForExisting = async (p) => {
+    setAddingVisitExisting(true)
+    try {
+      await api.post('/visits/', {
+        patient_id: p.patient_id,
+        doctor_id: visitForm.doctor_id || null,
+        visit_type: visitForm.visit_type || 'OPD',
+        chief_complaint: visitForm.chief_complaint || 'General OPD Consultation',
+        referred_by: form.referred_by || p.referred_by || null,
+      })
+      toast.success(`OPD Visit created for ${p.full_name} (${p.patient_id})!`)
+      navigate('/receptionist/queue')
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to add visit')
+    } finally {
+      setAddingVisitExisting(false)
+    }
+  }
+
+  const handleDeleteRegistered = async (patientId) => {
+    if (!window.confirm(`Delete registration for ${registered.full_name} (${patientId})? This will completely remove this accidental entry.`)) return
+    setDeletingRegistered(true)
+    try {
+      await api.delete(`/patients/${patientId}?reason=Accidental+duplicate+registration`)
+      toast.success('Registration removed successfully!')
+      setRegistered(null)
+      setForm({
+        full_name: '', mobile_number: '', age: '', gender: 'male',
+        address: '', blood_group: '', known_allergies: '', chronic_conditions: '',
+        language_preference: 'marathi', date_of_birth: '', referred_by: '',
+      })
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to delete registration')
+    } finally {
+      setDeletingRegistered(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submitting || submittingRef.current) return
     if (!form.full_name || !form.mobile_number || !form.age || !form.gender) {
       return toast.error('Name, mobile, age, and gender are required')
     }
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const { data: patient } = await api.post('/patients/', {
@@ -58,6 +126,7 @@ export default function RegisterPatient() {
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Registration failed')
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
@@ -66,7 +135,7 @@ export default function RegisterPatient() {
     return (
       <Layout title="Patient Registered">
         <div className="max-w-lg mx-auto">
-          <div className="card text-center py-10">
+          <div className="card text-center py-10 shadow-lg border border-slate-200">
             <div className="w-16 h-16 bg-success-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <UserPlus size={28} className="text-success-600" />
             </div>
@@ -85,6 +154,19 @@ export default function RegisterPatient() {
               </button>
               <button onClick={() => navigate('/receptionist/queue')} className="btn-secondary">
                 Go to Queue
+              </button>
+            </div>
+
+            {/* Quick delete if registered by mistake */}
+            <div className="mt-6 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={deletingRegistered}
+                onClick={() => handleDeleteRegistered(registered.patient_id)}
+                className="text-xs text-rose-600 hover:text-rose-800 flex items-center justify-center gap-1 mx-auto font-medium transition-colors"
+              >
+                {deletingRegistered ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                <span>Registered by mistake? Delete this entry</span>
               </button>
             </div>
           </div>
@@ -112,9 +194,46 @@ export default function RegisterPatient() {
                 <input className="input" placeholder="e.g. Ramesh Patil" value={form.full_name} onChange={set('full_name')} required />
               </div>
               <div>
-                <label className="label">Mobile Number *</label>
+                <label className="label flex items-center justify-between">
+                  <span>Mobile Number *</span>
+                  {checkingMobile && <span className="text-[11px] text-slate-400 flex items-center gap-1"><Loader2 size={10} className="animate-spin" /> Checking...</span>}
+                </label>
                 <input className="input" placeholder="10-digit mobile" value={form.mobile_number} onChange={set('mobile_number')} required maxLength={10} />
               </div>
+
+              {/* Existing Patient Found Warning to prevent duplicate registrations */}
+              {existingPatients.length > 0 && (
+                <div className="sm:col-span-2 p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2 animate-fade-in shadow-xs">
+                  <div className="font-bold text-amber-900 flex items-center gap-1.5">
+                    <AlertTriangle size={15} className="text-amber-600 shrink-0" />
+                    <span>Existing Patient(s) Found with Mobile {form.mobile_number}:</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {existingPatients.map(ep => (
+                      <div key={ep.patient_id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white p-2.5 rounded-lg border border-amber-200">
+                        <div>
+                          <span className="font-bold text-slate-800 text-sm">{ep.full_name}</span>
+                          <span className="ml-2 font-mono font-bold text-blue-700">{ep.patient_id}</span>
+                          <span className="text-slate-500 ml-2">({ep.age}Y, {ep.gender})</span>
+                          {ep.address && <span className="text-slate-400 ml-2 truncate max-w-[140px] inline-block align-bottom">&bull; {ep.address}</span>}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={addingVisitExisting}
+                          onClick={() => handleAddVisitForExisting(ep)}
+                          className="btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 flex items-center gap-1 shadow-xs"
+                        >
+                          {addingVisitExisting ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}
+                          <span>+ Add to Queue (No Duplicate)</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-amber-800 text-[11px] leading-tight">
+                    💡 <strong>Avoid double entries:</strong> Click <strong>"+ Add to Queue"</strong> above if this is the same patient returning, instead of creating a duplicate registration.
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="label">Age *</label>
                 <input className="input" type="number" placeholder="Age in years" value={form.age} onChange={set('age')} required min={0} max={150} />

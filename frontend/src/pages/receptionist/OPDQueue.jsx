@@ -9,13 +9,14 @@ import EditBillModal from '../../components/EditBillModal'
 import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
-import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee, Edit3, Plus, Banknote, FileText, CheckCircle2, X } from 'lucide-react'
+import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee, Edit3, Plus, Banknote, FileText, CheckCircle2, X, Trash2, AlertTriangle, Search, PlusCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 
 export default function OPDQueue() {
   const { user } = useAuth()
   const canViewBill = ['manager', 'owner', 'doctor', 'cashier', 'admin', 'receptionist', 'reception'].includes(user?.role?.toLowerCase())
+  const canDelete = ['manager', 'owner', 'doctor', 'cashier', 'admin', 'receptionist', 'reception'].includes(user?.role?.toLowerCase())
   const navigate = useNavigate()
   const [visits, setVisits] = useState([])
   const [patients, setPatients] = useState({})
@@ -37,6 +38,21 @@ export default function OPDQueue() {
   const [consultationFee, setConsultationFee] = useState(200)
   const [collectPaymentMode, setCollectPaymentMode] = useState('cash')
   const [submittingCash, setSubmittingCash] = useState(false)
+
+  // Delete Duplicate / Mistake Entry Modal
+  const [deleteModal, setDeleteModal] = useState(null)
+  const [deleteReason, setDeleteReason] = useState('Duplicate entry by mistake')
+  const [deletePatientRecord, setDeletePatientRecord] = useState(true)
+  const [deleting, setDeleting] = useState(false)
+
+  // Previous patients search state
+  const [previousPatients, setPreviousPatients] = useState([])
+  const [searchingPrevious, setSearchingPrevious] = useState(false)
+  const [addQueueModal, setAddQueueModal] = useState(null)
+  const [selectedQueueDoctor, setSelectedQueueDoctor] = useState('')
+  const [queueVisitType, setQueueVisitType] = useState('OPD')
+  const [queueComplaint, setQueueComplaint] = useState('General OPD Consultation')
+  const [submittingAddQueue, setSubmittingAddQueue] = useState(false)
 
   useEffect(() => {
     // Fetch doctors list for doctor names & filter tabs
@@ -215,16 +231,120 @@ export default function OPDQueue() {
     }
   }
 
+  // Helper to detect if a visit is a duplicate entry in today's queue
+  const getDuplicateVisits = (visit) => {
+    const p = patients[visit.patient_id]
+    return visits.filter(other => {
+      if (other.visit_id === visit.visit_id) return false
+      if (other.patient_id === visit.patient_id) return true
+      const otherP = patients[other.patient_id]
+      if (p?.mobile_number && otherP?.mobile_number && p.mobile_number === otherP.mobile_number) return true
+      if (p?.full_name && otherP?.full_name && p.full_name.trim().toLowerCase() === otherP.full_name.trim().toLowerCase()) return true
+      return false
+    })
+  }
+
+  const handleOpenDeleteModal = (visit, dups) => {
+    const patient = patients[visit.patient_id]
+    const doctor = getVisitDoctor(visit)
+    const detectedDups = dups && dups.length > 0 ? dups : getDuplicateVisits(visit)
+    setDeleteReason('Duplicate entry by mistake')
+    setDeletePatientRecord(true)
+    setDeleteModal({
+      visit,
+      patient,
+      doctor,
+      duplicates: detectedDups,
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal) return
+    const { visit, patient } = deleteModal
+    setDeleting(true)
+    try {
+      const { data } = await api.delete(`/visits/${visit.visit_id}`, {
+        params: {
+          delete_patient: deletePatientRecord,
+          reason: deleteReason,
+        }
+      })
+      toast.success(data.message || `Deleted entry for ${patient?.full_name || 'patient'}`)
+      setDeleteModal(null)
+      await fetchQueue()
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to delete entry')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   useEffect(() => {
     fetchQueue()
     const interval = setInterval(fetchQueue, 30000) // auto-refresh every 30s
     return () => clearInterval(interval)
   }, [filterDoctor])
 
+  // Debounced search for previous patients across the hospital
+  useEffect(() => {
+    const q = search.trim()
+    if (q.length < 2) {
+      setPreviousPatients([])
+      setSearchingPrevious(false)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchingPrevious(true)
+      try {
+        const { data } = await api.get(`/patients/?q=${encodeURIComponent(q)}&limit=10`)
+        // Filter out patients who are already in today's active queue
+        const todayPatientIds = new Set(visits.map(v => v.patient_id))
+        setPreviousPatients(data.filter(p => !todayPatientIds.has(p.patient_id)))
+      } catch (err) {
+        console.error('Failed to search previous patients', err)
+      } finally {
+        setSearchingPrevious(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [search, visits])
+
+  const handleOpenAddQueue = (patient) => {
+    setSelectedQueueDoctor(filterDoctor || doctors[0]?.staff_id || '')
+    setQueueVisitType('OPD')
+    setQueueComplaint('General OPD Consultation')
+    setAddQueueModal(patient)
+  }
+
+  const handleConfirmAddQueue = async () => {
+    if (!addQueueModal) return
+    setSubmittingAddQueue(true)
+    try {
+      await api.post('/visits/', {
+        patient_id: addQueueModal.patient_id,
+        doctor_id: selectedQueueDoctor || null,
+        visit_type: queueVisitType,
+        chief_complaint: queueComplaint || 'General OPD Consultation',
+      })
+      toast.success(`${addQueueModal.full_name} added to OPD queue!`)
+      setAddQueueModal(null)
+      setSearch('')
+      await fetchQueue()
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to add patient to queue')
+    } finally {
+      setSubmittingAddQueue(false)
+    }
+  }
+
   const filtered = visits.filter(v => {
     const p = patients[v.patient_id]
     return !search || (p?.full_name?.toLowerCase().includes(search.toLowerCase()) || v.patient_id.includes(search))
   })
+
+  const duplicateVisitsCount = visits.filter(v => getDuplicateVisits(v).length > 0).length
 
   const stats = {
     total: visits.length,
@@ -253,6 +373,23 @@ export default function OPDQueue() {
         ))}
       </div>
 
+      {/* Duplicate Entries Detected Banner */}
+      {duplicateVisitsCount > 0 && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2.5 font-medium">
+            <span className="w-7 h-7 rounded-lg bg-amber-200/80 flex items-center justify-center shrink-0 text-amber-800">
+              <AlertTriangle size={16} />
+            </span>
+            <span>
+              <strong>Attention Receptionist:</strong> Found <strong>{duplicateVisitsCount} duplicate queue {duplicateVisitsCount === 1 ? 'entry' : 'entries'}</strong> today. Look for rows highlighted in pink with the <strong>"Duplicate Entry"</strong> badge and click <strong>"Delete Duplicate"</strong> to clean them up.
+            </span>
+          </div>
+          <span className="text-[11px] px-2.5 py-1 bg-amber-200/90 font-bold rounded-lg text-amber-800 shrink-0">
+            {duplicateVisitsCount} {duplicateVisitsCount === 1 ? 'Duplicate' : 'Duplicates'}
+          </span>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <SearchBar
@@ -264,6 +401,10 @@ export default function OPDQueue() {
         <button onClick={fetchQueue} className="btn-secondary">
           <RefreshCw size={15} />
           Refresh
+        </button>
+        <button onClick={() => navigate('/patients')} className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm">
+          <Search size={15} className="text-primary-600" />
+          <span>Patient Directory</span>
         </button>
         <button onClick={() => navigate('/receptionist/register')} className="btn-primary">
           <UserPlus size={15} />
@@ -340,16 +481,24 @@ export default function OPDQueue() {
             const patient = patients[visit.patient_id]
             const doc = getVisitDoctor(visit)
             const isVinay = doc?.full_name?.toLowerCase().includes('vinay')
+            const duplicates = getDuplicateVisits(visit)
+            const isDuplicate = duplicates.length > 0
 
             return (
               <div
                 key={visit.visit_id}
                 className={`patient-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white border rounded-xl hover:border-primary-300 transition-colors ${
-                  isVinay ? 'border-emerald-200/80 bg-emerald-50/20' : 'border-slate-200'
+                  isDuplicate
+                    ? 'border-rose-300 bg-rose-50/30 ring-1 ring-rose-200'
+                    : isVinay
+                      ? 'border-emerald-200/80 bg-emerald-50/20'
+                      : 'border-slate-200'
                 }`}
               >
                 <div className="flex items-start sm:items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0 mt-0.5 sm:mt-0">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 sm:mt-0 ${
+                    isDuplicate ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'
+                  }`}>
                     {idx + 1}
                   </div>
                   <div className="min-w-0">
@@ -363,6 +512,17 @@ export default function OPDQueue() {
                         </span>
                       )}
                       <StatusBadge status={visit.status} />
+
+                      {/* Duplicate Badge */}
+                      {isDuplicate && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-100 text-rose-800 text-[11px] font-bold rounded-md border border-rose-300 animate-pulse"
+                          title="Accidental double entry detected for this patient"
+                        >
+                          <AlertTriangle size={11} className="text-rose-600 shrink-0" />
+                          <span>Duplicate Entry</span>
+                        </span>
+                      )}
 
                       {/* Doctor Tag */}
                       {isVinay ? (
@@ -453,12 +613,106 @@ export default function OPDQueue() {
                       <span>Final Bill</span>
                     </button>
                   )}
+
+                  {/* Delete Button for Receptionist / Authorized Staff */}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleOpenDeleteModal(visit, duplicates)}
+                      className={`btn-sm flex items-center gap-1 font-bold shadow-2xs text-xs rounded-lg px-2.5 py-1.5 transition-all ${
+                        isDuplicate
+                          ? 'text-white bg-rose-600 hover:bg-rose-700 border border-rose-600 shadow-xs'
+                          : 'text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200'
+                      }`}
+                      title={isDuplicate ? 'Delete duplicate entry' : 'Delete mistake entry from queue'}
+                    >
+                      <Trash2 size={13} className={isDuplicate ? 'text-white' : 'text-rose-600'} />
+                      <span>{isDuplicate ? 'Delete Duplicate' : 'Delete'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )
           })}
         </div>
       )}
+
+      {/* Search Previous Hospital Patients matching query */}
+      {search.trim().length >= 2 && (
+        <div className="mt-8 border-t-2 border-dashed border-slate-200 pt-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs">
+                <Search size={14} />
+              </span>
+              <h3 className="text-sm font-bold text-slate-800">
+                Previous Hospital Patients matching "{search.trim()}"
+              </h3>
+              {searchingPrevious && <Loader2 size={14} className="animate-spin text-primary-600 ml-1" />}
+            </div>
+            <button
+              onClick={() => navigate(`/patients?q=${encodeURIComponent(search.trim())}`)}
+              className="text-xs text-primary-600 hover:text-primary-800 font-semibold flex items-center gap-1 hover:underline"
+            >
+              Open Full Directory &rarr;
+            </button>
+          </div>
+
+          {previousPatients.length === 0 ? (
+            !searchingPrevious && (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 text-center">
+                No previous patients found matching "{search}". If this is a new patient, click <strong>"Register Patient"</strong> above.
+              </div>
+            )
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {previousPatients.map((p) => (
+                <div
+                  key={p.patient_id}
+                  className="p-3.5 bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-primary-300 rounded-xl flex items-center justify-between gap-3 transition-shadow shadow-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 text-sm truncate">{p.full_name}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                        {p.patient_id}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                      <span>{p.age ? `${p.age}y` : ''} {p.gender ? `• ${p.gender}` : ''}</span>
+                      {p.mobile_number && <span>• 📞 {p.mobile_number}</span>}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
+                      <span>Visits: <strong className="text-slate-700">{p.total_visits || 1}</strong></span>
+                      {p.last_visit_date && <span>• Last: {p.last_visit_date}</span>}
+                      {p.blood_group && <span>• {p.blood_group}</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/patient/${p.patient_id}`)}
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                      title="View medical history"
+                    >
+                      History
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAddQueue(p)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
+                    >
+                      <PlusCircle size={14} />
+                      <span>+ Add to Queue</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Prescription Letterhead Modal for Doctor & Receptionist */}
       {activeRxModal && (
@@ -664,6 +918,265 @@ export default function OPDQueue() {
             setEditingBillModal(null)
           }}
         />
+      )}
+
+      {/* Delete Duplicate / Mistake Entry Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-scale-up">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700">
+                  <Trash2 size={22} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base leading-tight">
+                    Delete Queue Entry
+                  </h3>
+                  <p className="text-xs text-slate-500">Remove accidental duplicate or mistake entry</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* If duplicate detected, show informative alert */}
+            {deleteModal.duplicates?.length > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl mb-4 text-xs text-amber-900 flex items-start gap-2">
+                <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Double Entry Detected!</p>
+                  <p className="text-amber-800 mt-0.5">
+                    Another entry for this patient is in today's queue. Deleting this entry will leave the original entry active.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Patient Details Card */}
+            <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 mb-4 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Patient:</span>
+                <span className="font-bold text-slate-900 text-sm">
+                  {deleteModal.patient?.full_name || 'Patient'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Patient ID:</span>
+                <span className="font-mono font-bold text-blue-700">
+                  {deleteModal.visit.patient_id}
+                </span>
+              </div>
+              {deleteModal.patient?.mobile_number && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Mobile:</span>
+                  <span className="font-medium text-slate-800">
+                    +91 {deleteModal.patient.mobile_number}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Doctor / Desk:</span>
+                <span className="font-semibold text-slate-800">
+                  {deleteModal.doctor?.full_name || 'OPD Desk'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Status:</span>
+                <StatusBadge status={deleteModal.visit.status} />
+              </div>
+              {deleteModal.visit.chief_complaint && (
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                  <span className="text-slate-500">Complaint:</span>
+                  <span className="text-slate-700 italic truncate max-w-[220px]">
+                    {deleteModal.visit.chief_complaint}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Deletion Reason */}
+            <div className="mb-4">
+              <label className="label text-xs font-semibold text-slate-700">Reason for Deletion</label>
+              <select
+                className="input text-xs"
+                value={deleteReason}
+                onChange={e => setDeleteReason(e.target.value)}
+              >
+                <option value="Duplicate entry by mistake">Duplicate entry by mistake</option>
+                <option value="Accidentally registered twice">Accidentally registered twice</option>
+                <option value="Wrong patient or doctor selected">Wrong patient or doctor selected</option>
+                <option value="Patient cancelled / left hospital">Patient cancelled / left hospital</option>
+                <option value="Test / demo entry">Test / demo entry</option>
+              </select>
+            </div>
+
+            {/* Also Delete Duplicate Patient Record Checkbox */}
+            <div className="mb-4">
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50/50 border border-rose-200 cursor-pointer hover:bg-rose-50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={deletePatientRecord}
+                  onChange={e => setDeletePatientRecord(e.target.checked)}
+                  className="mt-0.5 rounded text-rose-600 focus:ring-rose-500"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-slate-800">
+                    Also delete duplicate patient profile ({deleteModal.visit.patient_id})
+                  </span>
+                  <p className="text-slate-500 text-[11px] mt-0.5 leading-snug">
+                    Recommended when the receptionist created a duplicate patient record. If this patient has other historical visits or paid bills, the profile will be safely preserved.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                disabled={deleting}
+                className="btn-secondary w-1/3 justify-center text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="btn-primary w-2/3 justify-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 shadow-md flex items-center gap-1.5"
+              >
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                <span>{deleting ? 'Deleting Entry...' : 'Confirm Delete Entry'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Returning Patient to Today's OPD Queue Modal */}
+      {addQueueModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-scale-up">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <PlusCircle size={22} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base leading-tight">
+                    Add to Today's OPD Queue
+                  </h3>
+                  <p className="text-xs text-slate-500">Fast check-in for returning patient</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddQueueModal(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Patient card */}
+            <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 mb-4 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Patient Name:</span>
+                <span className="font-bold text-slate-900 text-sm">{addQueueModal.full_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Patient ID:</span>
+                <span className="font-mono font-bold text-blue-700">{addQueueModal.patient_id}</span>
+              </div>
+              {addQueueModal.mobile_number && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Mobile:</span>
+                  <span className="font-medium text-slate-800">+91 {addQueueModal.mobile_number}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Demographics:</span>
+                <span className="text-slate-700 font-medium">
+                  {addQueueModal.age ? `${addQueueModal.age} yrs` : 'N/A'} • {addQueueModal.gender || 'N/A'} • {addQueueModal.blood_group || 'No BG'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Total Previous Visits:</span>
+                <span className="font-bold text-emerald-700">{addQueueModal.total_visits || 1} visits</span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="label text-xs font-semibold text-slate-700">Assign Doctor</label>
+                <select
+                  className="input text-xs"
+                  value={selectedQueueDoctor}
+                  onChange={e => setSelectedQueueDoctor(e.target.value)}
+                >
+                  <option value="">Any Available Doctor</option>
+                  {doctors.map(d => (
+                    <option key={d.staff_id} value={d.staff_id}>
+                      {d.full_name?.startsWith('Dr') ? d.full_name : `Dr. ${d.full_name}`} ({d.department || 'Consultant'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label text-xs font-semibold text-slate-700">Visit Type</label>
+                <select
+                  className="input text-xs"
+                  value={queueVisitType}
+                  onChange={e => setQueueVisitType(e.target.value)}
+                >
+                  <option value="OPD">OPD Consultation</option>
+                  <option value="follow_up">Follow Up</option>
+                  <option value="emergency">Emergency</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="label text-xs font-semibold text-slate-700">Chief Complaint / Notes</label>
+                <input
+                  type="text"
+                  className="input text-xs"
+                  value={queueComplaint}
+                  onChange={e => setQueueComplaint(e.target.value)}
+                  placeholder="e.g. Fever, Cough, Follow up check"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAddQueueModal(null)}
+                disabled={submittingAddQueue}
+                className="btn-secondary w-1/3 justify-center text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAddQueue}
+                disabled={submittingAddQueue}
+                className="btn-primary w-2/3 justify-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 shadow-md flex items-center gap-1.5"
+              >
+                {submittingAddQueue ? <Loader2 size={16} className="animate-spin" /> : <PlusCircle size={16} />}
+                <span>{submittingAddQueue ? 'Adding to Queue...' : 'Confirm Add to OPD'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   )
