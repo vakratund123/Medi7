@@ -117,12 +117,13 @@ async def update_visit(
 async def delete_visit(
     visit_id: uuid.UUID,
     delete_patient: bool = Query(False, description="Also delete patient if no other visits/records exist"),
-    reason: str = Query("Duplicate entry", description="Reason for deletion"),
+    force: bool = Query(False, description="Force delete including test bills and reports"),
+    reason: str = Query("Duplicate entry or test entry", description="Reason for deletion"),
     request: Request = None,
     db: AsyncSession = Depends(get_db),
     current_staff: Staff = Depends(require_roles("receptionist", "reception", "owner", "manager", "admin", "cashier", "doctor")),
 ):
-    """Allows receptionist or authorized staff to safely delete accidental double entries or cancelled visits."""
+    """Allows receptionist or authorized staff to safely delete accidental double entries, test visits, or cancelled visits."""
     result = await db.execute(select(Visit).where(Visit.visit_id == visit_id))
     visit = result.scalar_one_or_none()
     if not visit:
@@ -134,29 +135,30 @@ async def delete_visit(
     from app.models.radiology import Radiology
     from app.models.patient import Patient
     from app.models.audit import WhatsAppLog
+    from app.models.pharmacy import PharmacyDispensing
     from app.services.audit_service import log_action
 
-    # 1. Check for paid bills (prevent financial corruption)
+    # 1. Check for paid bills
     bills_res = await db.execute(select(Bill).where(Bill.visit_id == visit_id))
     bills = bills_res.scalars().all()
     paid_bills = [b for b in bills if b.payment_status == "paid"]
-    if paid_bills:
+    if paid_bills and not force:
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot delete entry: A paid bill ({paid_bills[0].bill_number}) exists for this visit. Please refund or consult management."
+            detail=f"Cannot delete entry: A paid bill ({paid_bills[0].bill_number}) exists for this visit. Enable 'Force delete' to purge test records or refund first."
         )
 
-    # 2. Check for completed lab reports unless supervisor
+    # 2. Check for completed lab reports unless supervisor or force
     lab_res = await db.execute(select(LabOrder).where(LabOrder.visit_id == visit_id))
     lab_orders = lab_res.scalars().all()
     lab_order_ids = [lo.order_id for lo in lab_orders]
     if lab_order_ids:
         rep_res = await db.execute(select(LabReport).where(LabReport.order_id.in_(lab_order_ids)))
         lab_reports = rep_res.scalars().all()
-        if lab_reports and current_staff.role not in ("owner", "manager", "admin"):
+        if lab_reports and not force and current_staff.role not in ("owner", "manager", "admin"):
             raise HTTPException(
                 status_code=400,
-                detail="Cannot delete entry: Lab reports have already been completed for this visit."
+                detail="Cannot delete entry: Lab reports have already been completed for this visit. Enable 'Force delete' to purge test records."
             )
         for rep in lab_reports:
             await db.delete(rep)
@@ -168,12 +170,16 @@ async def delete_visit(
     for scan in rad_res.scalars().all():
         await db.delete(scan)
 
-    # 4. Clean up prescriptions for this visit
+    # 4. Clean up pharmacy dispensations and prescriptions for this visit
     px_res = await db.execute(select(Prescription).where(Prescription.visit_id == visit_id))
-    for px in px_res.scalars().all():
+    prescriptions = px_res.scalars().all()
+    px_ids = [px.prescription_id for px in prescriptions]
+    if px_ids:
+        await db.execute(delete(PharmacyDispensing).where(PharmacyDispensing.prescription_id.in_(px_ids)))
+    for px in prescriptions:
         await db.delete(px)
 
-    # 5. Clean up unpaid bills for this visit
+    # 5. Clean up bills for this visit
     for b in bills:
         await db.delete(b)
 
@@ -191,9 +197,10 @@ async def delete_visit(
         if other_visits_count == 0:
             # Check for any remaining paid bills across any records
             p_paid_bills = await db.execute(select(Bill).where(Bill.patient_id == patient_id, Bill.payment_status == "paid"))
-            if not p_paid_bills.scalars().first():
+            if not p_paid_bills.scalars().first() or force:
                 # Clean up any remaining records linked to patient
                 await db.execute(delete(WhatsAppLog).where(WhatsAppLog.patient_id == patient_id))
+                await db.execute(delete(PharmacyDispensing).where(PharmacyDispensing.patient_id == patient_id))
                 await db.execute(delete(LabReport).where(LabReport.patient_id == patient_id))
                 await db.execute(delete(LabOrder).where(LabOrder.patient_id == patient_id))
                 await db.execute(delete(Radiology).where(Radiology.patient_id == patient_id))

@@ -283,12 +283,13 @@ async def resend_welcome_whatsapp(
 @router.delete("/{patient_id}")
 async def delete_patient(
     patient_id: str,
-    reason: str = Query("Duplicate entry", description="Reason for deleting patient"),
+    reason: str = Query("Test / dummy entry created during testing", description="Reason for deleting patient"),
+    force: bool = Query(False, description="Force delete including test bills and reports for testing cleanup"),
     request: Request = None,
     db: AsyncSession = Depends(get_db),
-    current_staff: Staff = Depends(require_roles("receptionist", "reception", "owner", "manager", "admin")),
+    current_staff: Staff = Depends(require_roles("receptionist", "reception", "owner", "manager", "admin", "doctor")),
 ):
-    """Allows deleting a duplicate or accidentally registered patient and associated unbilled entries."""
+    """Allows deleting a duplicate, test, or accidentally registered patient and associated records."""
     normalized_id = _normalize_patient_id(patient_id)
     res = await db.execute(select(Patient).where(Patient.patient_id.ilike(normalized_id)))
     patient = res.scalar_one_or_none()
@@ -299,22 +300,26 @@ async def delete_patient(
     paid_bill_res = await db.execute(
         select(Bill).where(Bill.patient_id == patient.patient_id, Bill.payment_status == "paid")
     )
-    if paid_bill_res.scalars().first():
+    paid_bills = paid_bill_res.scalars().all()
+    if paid_bills and not force:
         raise HTTPException(
             status_code=400,
-            detail="Cannot delete patient: Paid bills exist for this patient. Please consult manager/owner."
+            detail=f"Cannot delete patient: Paid bills exist ({paid_bills[0].bill_number}). To delete test data, enable 'Force delete' or consult management."
         )
 
     # Check for completed lab reports
     lab_reports = await db.execute(select(LabReport).where(LabReport.patient_id == patient.patient_id))
-    if lab_reports.scalars().first() and current_staff.role not in ("owner", "manager", "admin"):
+    if lab_reports.scalars().first() and not force and current_staff.role not in ("owner", "manager", "admin"):
         raise HTTPException(
             status_code=400,
-            detail="Cannot delete patient: Completed lab reports exist for this patient."
+            detail="Cannot delete patient: Completed lab reports exist for this patient. Enable 'Force delete' to purge test records."
         )
 
-    # Clean up associated records safely
+    from app.models.pharmacy import PharmacyDispensing
+
+    # Clean up associated records safely in correct dependency order
     await db.execute(delete(WhatsAppLog).where(WhatsAppLog.patient_id == patient.patient_id))
+    await db.execute(delete(PharmacyDispensing).where(PharmacyDispensing.patient_id == patient.patient_id))
     await db.execute(delete(LabReport).where(LabReport.patient_id == patient.patient_id))
     await db.execute(delete(LabOrder).where(LabOrder.patient_id == patient.patient_id))
     await db.execute(delete(Radiology).where(Radiology.patient_id == patient.patient_id))
@@ -333,13 +338,13 @@ async def delete_patient(
         "delete_patient",
         "patient",
         patient.patient_id,
-        details={"reason": reason, "patient_name": patient.full_name},
+        details={"reason": reason, "patient_name": patient.full_name, "force": force},
         ip_address=client_ip,
     )
 
     return {
         "status": "success",
-        "message": f"Patient record {patient.patient_id} ({patient.full_name}) and associated entries deleted successfully.",
+        "message": f"Patient record {patient.patient_id} ({patient.full_name}) and all associated records deleted successfully.",
         "patient_id": patient.patient_id,
     }
 

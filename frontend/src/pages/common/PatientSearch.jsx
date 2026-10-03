@@ -20,7 +20,8 @@ import {
   X,
   CheckCircle2,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
@@ -39,6 +40,14 @@ export default function PatientSearch() {
   const [visitType, setVisitType] = useState('OPD')
   const [complaint, setComplaint] = useState('')
   const [submittingVisit, setSubmittingVisit] = useState(false)
+
+  // Delete Patient Modal State (for cleaning up old test patients or duplicates)
+  const [deleteModal, setDeleteModal] = useState(null)
+  const [deleteReason, setDeleteReason] = useState('Test / dummy entry created during testing')
+  const [forceDelete, setForceDelete] = useState(true)
+  const [deleting, setDeleting] = useState(false)
+
+  const canDelete = ['receptionist', 'reception', 'owner', 'manager', 'admin', 'doctor', 'cashier'].includes(user?.role?.toLowerCase())
 
   // Fetch doctors for the Add to Queue modal
   useEffect(() => {
@@ -103,6 +112,32 @@ export default function PatientSearch() {
       toast.error(err?.response?.data?.detail || 'Failed to add visit to queue')
     } finally {
       setSubmittingVisit(false)
+    }
+  }
+
+  const handleOpenDeleteModal = (patient) => {
+    setDeleteReason('Test / dummy entry created during testing')
+    setForceDelete(true)
+    setDeleteModal(patient)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal) return
+    setDeleting(true)
+    try {
+      const { data } = await api.delete(`/patients/${deleteModal.patient_id}`, {
+        params: {
+          reason: deleteReason,
+          force: forceDelete,
+        }
+      })
+      toast.success(data.message || `Deleted patient record ${deleteModal.full_name}`)
+      setDeleteModal(null)
+      fetchPatients(query)
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to delete patient record')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -325,6 +360,18 @@ export default function PatientSearch() {
                     <FileText size={13} className="text-blue-600" />
                     <span>View History</span>
                   </button>
+
+                  {/* Delete Patient Record (for test cleanup or duplicates) */}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleOpenDeleteModal(p)}
+                      className="btn-secondary btn-sm flex items-center gap-1 text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200 font-bold text-xs"
+                      title="Delete this test or duplicate patient record"
+                    >
+                      <Trash2 size={13} className="text-rose-600" />
+                      <span>Delete</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -443,6 +490,112 @@ export default function PatientSearch() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Modal: Delete Patient & All Historical Records */}
+        {deleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-scale-up">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700">
+                    <Trash2 size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base leading-tight">
+                      Delete Patient &amp; Records
+                    </h3>
+                    <p className="text-xs text-slate-500">Purge test patient or duplicate entry</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDeleteModal(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Patient details */}
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 mb-4 space-y-1.5 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Patient Name:</span>
+                  <span className="font-bold text-slate-900 text-sm">{deleteModal.full_name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Patient ID:</span>
+                  <span className="font-mono font-bold text-blue-700">{deleteModal.patient_id}</span>
+                </div>
+                {deleteModal.mobile_number && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Mobile:</span>
+                    <span className="font-medium text-slate-800">+91 {deleteModal.mobile_number}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Total Visits:</span>
+                  <span className="font-semibold text-slate-700">{deleteModal.total_visits || 1} recorded visits</span>
+                </div>
+              </div>
+
+              {/* Reason */}
+              <div className="mb-4">
+                <label className="label text-xs font-semibold text-slate-700">Reason for Deletion</label>
+                <select
+                  className="input text-xs"
+                  value={deleteReason}
+                  onChange={e => setDeleteReason(e.target.value)}
+                >
+                  <option value="Test / dummy entry created during testing">Test / dummy entry created during testing</option>
+                  <option value="Accidental duplicate registration">Accidental duplicate registration</option>
+                  <option value="Wrong patient name or data entered">Wrong patient name or data entered</option>
+                  <option value="Patient cancelled consultation">Patient cancelled consultation</option>
+                  <option value="Data cleanup requested by management">Data cleanup requested by management</option>
+                </select>
+              </div>
+
+              {/* Force Purge Checkbox */}
+              <div className="mb-5">
+                <label className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50/60 border border-rose-200 cursor-pointer hover:bg-rose-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={forceDelete}
+                    onChange={e => setForceDelete(e.target.checked)}
+                    className="mt-0.5 rounded text-rose-600 focus:ring-rose-500"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-800">
+                      Force delete all associated test records
+                    </span>
+                    <p className="text-slate-500 text-[11px] mt-0.5 leading-snug">
+                      Permanently wipes all visits, prescriptions, bills, and lab orders created under this patient ID. Ideal for clearing out dummy test entries.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModal(null)}
+                  disabled={deleting}
+                  className="btn-secondary w-1/3 justify-center text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={deleting}
+                  className="btn-primary w-2/3 justify-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 shadow-md flex items-center gap-1.5"
+                >
+                  {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                  <span>{deleting ? 'Deleting Patient...' : 'Confirm Delete Record'}</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
