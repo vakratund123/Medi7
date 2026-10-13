@@ -20,6 +20,20 @@ class PatientCreate(PatientBase):
     pass
 
 
+class PatientUpdate(BaseModel):
+    full_name: str | None = None
+    mobile_number: str | None = None
+    date_of_birth: date | None = None
+    age: int | None = None
+    gender: str | None = None
+    address: str | None = None
+    blood_group: str | None = None
+    known_allergies: str | None = None
+    chronic_conditions: str | None = None
+    language_preference: str | None = None
+    referred_by: str | None = None
+
+
 class PatientOut(PatientBase):
     patient_id: str
     created_at: datetime

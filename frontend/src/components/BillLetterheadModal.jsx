@@ -278,7 +278,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
                   SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL
                 </h1>
                 <div className="text-[8.5px] font-bold text-[#0284c7] tracking-wider mt-0.5">
-                  REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU &bull; NICU
+                  REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU
                 </div>
                 <div className="text-[8.5px] font-medium text-slate-700 mt-0.5">
                   Old Motor Stand, NIPANI - 591 237. Dist. Belgavi
@@ -442,17 +442,13 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
               </div>
             </div>
 
-            {/* Authorized Signatories */}
+            {/* Authorized Signatory */}
             <div className="grid grid-cols-2 gap-4 pt-3 mt-2">
+              <div></div>
               <div className="text-center">
                 <div className="w-32 border-t border-slate-400 mx-auto mb-1"></div>
                 <div className="text-[10px] font-bold text-slate-900">Billing Executive / Cashier</div>
                 <div className="text-[8.5px] text-slate-500">Sai Emergency Hospital</div>
-              </div>
-              <div className="text-center">
-                <div className="w-32 border-t border-slate-400 mx-auto mb-1"></div>
-                <div className="text-[10px] font-bold text-slate-900">{doctor?.full_name ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`) : 'Dr. Rahul Nirmale'}</div>
-                <div className="text-[8.5px] text-slate-500">Treating Doctor &bull; Reg. BLG03043ALHL3</div>
               </div>
             </div>
 

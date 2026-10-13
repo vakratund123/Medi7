@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../../components/Layout'
 import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
+import EditPatientModal from '../../components/EditPatientModal'
 import api from '../../api/client'
-import { ArrowLeft, AlertTriangle, Stethoscope, FlaskConical, Scan, FileText, Pill, Loader2, ChevronDown, ChevronUp, Bot, ExternalLink, Printer, Trash2, X } from 'lucide-react'
+import { ArrowLeft, AlertTriangle, Stethoscope, FlaskConical, Scan, FileText, Pill, Loader2, ChevronDown, ChevronUp, Bot, ExternalLink, Printer, Trash2, X, Edit3 } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
@@ -44,6 +45,20 @@ export default function PatientHistory() {
   const [deleteVisitReason, setDeleteVisitReason] = useState('Test entry created during testing')
   const [forceDeleteVisit, setForceDeleteVisit] = useState(true)
   const [deletingVisit, setDeletingVisit] = useState(false)
+
+  // Edit Patient Modal State
+  const [editingPatientModal, setEditingPatientModal] = useState(false)
+
+  const handlePatientUpdated = (updated) => {
+    if (!updated) return
+    setHistory(prev => prev ? {
+      ...prev,
+      patient: {
+        ...prev.patient,
+        ...updated,
+      }
+    } : null)
+  }
 
   useEffect(() => {
     api.get(`/patients/${patientId}/history`)
@@ -128,16 +143,26 @@ export default function PatientHistory() {
             )}
           </div>
 
-          {canDelete && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setDeletePatientModal(true)}
-              className="btn-secondary btn-sm text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
-              title="Delete entire test patient record"
+              onClick={() => setEditingPatientModal(true)}
+              className="btn-secondary btn-sm text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+              title="Edit patient profile details"
             >
-              <Trash2 size={13} className="text-rose-600" />
-              <span>Delete Patient Record</span>
+              <Edit3 size={13} className="text-blue-600" />
+              <span>Edit Patient</span>
             </button>
-          )}
+            {canDelete && (
+              <button
+                onClick={() => setDeletePatientModal(true)}
+                className="btn-secondary btn-sm text-rose-700 bg-rose-50 hover:bg-rose-100 border-rose-200 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+                title="Delete entire test patient record"
+              >
+                <Trash2 size={13} className="text-rose-600" />
+                <span>Delete Patient Record</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Patient summary card */}
@@ -509,6 +534,15 @@ export default function PatientHistory() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Patient Modal */}
+      {editingPatientModal && history?.patient && (
+        <EditPatientModal
+          patient={history.patient}
+          onClose={() => setEditingPatientModal(false)}
+          onSaved={handlePatientUpdated}
+        />
       )}
     </Layout>
   )

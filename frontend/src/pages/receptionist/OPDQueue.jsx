@@ -7,6 +7,7 @@ import SearchBar from '../../components/SearchBar'
 import BillLetterheadModal from '../../components/BillLetterheadModal'
 import EditBillModal from '../../components/EditBillModal'
 import PrescriptionLetterheadModal from '../../components/PrescriptionLetterheadModal'
+import EditPatientModal from '../../components/EditPatientModal'
 import api from '../../api/client'
 import { useAuth } from '../../contexts/AuthContext'
 import { RefreshCw, UserPlus, Clock, CheckCircle, AlertCircle, Loader2, Receipt, Printer, IndianRupee, Edit3, Plus, Banknote, FileText, CheckCircle2, X, Trash2, AlertTriangle, Search, PlusCircle } from 'lucide-react'
@@ -32,6 +33,9 @@ export default function OPDQueue() {
 
   // Prescription Letterhead Modal
   const [activeRxModal, setActiveRxModal] = useState(null)
+
+  // Edit Patient Modal for Receptionist
+  const [editingPatientModal, setEditingPatientModal] = useState(null)
 
   // Quick Cash Collection & Mark Completed Modal (e.g. for Dr. Vinay J Nirmale OPD)
   const [collectCashModal, setCollectCashModal] = useState(null)
@@ -229,6 +233,20 @@ export default function OPDQueue() {
     } finally {
       setMarkingPaid(false)
     }
+  }
+
+  const handlePatientUpdated = (updated) => {
+    if (!updated || !updated.patient_id) return
+    setPatients((prev) => ({
+      ...prev,
+      [updated.patient_id]: {
+        ...(prev[updated.patient_id] || {}),
+        ...updated,
+      },
+    }))
+    setPreviousPatients((prev) =>
+      prev.map((p) => (p.patient_id === updated.patient_id ? { ...p, ...updated } : p))
+    )
   }
 
   // Helper to detect if a visit is a duplicate entry in today's queue
@@ -506,6 +524,17 @@ export default function OPDQueue() {
                       <span className="font-bold text-slate-900 text-sm sm:text-base">
                         {patient?.full_name || visit.patient_id}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingPatientModal(patient || { patient_id: visit.patient_id, full_name: '' })
+                        }}
+                        className="p-1 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center"
+                        title="Edit patient profile details"
+                      >
+                        <Edit3 size={13} />
+                      </button>
                       {patient?.age && (
                         <span className="text-xs text-slate-500">
                           {patient.age}Y / {patient.gender?.[0]?.toUpperCase()}
@@ -569,6 +598,16 @@ export default function OPDQueue() {
                       <span>Collect Cash &amp; Complete</span>
                     </button>
                   )}
+
+                  {/* Edit Patient Demographics Option */}
+                  <button
+                    onClick={() => setEditingPatientModal(patient || { patient_id: visit.patient_id, full_name: '' })}
+                    className="btn-secondary btn-sm flex items-center gap-1 text-slate-700 bg-slate-50 hover:bg-slate-100 border-slate-300 font-semibold shadow-2xs text-xs"
+                    title="Edit Patient Details (Name, Phone, Age, Address, Allergies)"
+                  >
+                    <Edit3 size={13} className="text-slate-500" />
+                    <span>Edit Patient</span>
+                  </button>
 
                   {/* Prescription Print Option for every patient */}
                   <button
@@ -689,6 +728,15 @@ export default function OPDQueue() {
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setEditingPatientModal(p)}
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center gap-1 transition-colors"
+                      title="Edit patient profile details"
+                    >
+                      <Edit3 size={12} />
+                      <span>Edit</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => navigate(`/patient/${p.patient_id}`)}
@@ -1177,6 +1225,15 @@ export default function OPDQueue() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Patient Profile Modal for Receptionist */}
+      {editingPatientModal && (
+        <EditPatientModal
+          patient={editingPatientModal}
+          onClose={() => setEditingPatientModal(null)}
+          onSaved={handlePatientUpdated}
+        />
       )}
     </Layout>
   )

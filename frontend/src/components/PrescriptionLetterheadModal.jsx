@@ -339,7 +339,7 @@ export default function PrescriptionLetterheadModal({
                     SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL
                   </div>
                   <div className="text-[8.5px] font-bold text-sky-700 tracking-wider mt-0.5 uppercase">
-                    REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU &bull; NICU
+                    REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU
                   </div>
                   <div className="text-[8.5px] text-slate-600 font-medium leading-snug mt-0.5">
                     Old Motor Stand, NIPANI - 591 237. Dist. Belgavi

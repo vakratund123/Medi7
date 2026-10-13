@@ -21,10 +21,12 @@ import {
   CheckCircle2,
   ExternalLink,
   MessageSquare,
-  Trash2
+  Trash2,
+  Edit3
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
+import EditPatientModal from '../../components/EditPatientModal'
 
 export default function PatientSearch() {
   const { user } = useAuth()
@@ -46,6 +48,14 @@ export default function PatientSearch() {
   const [deleteReason, setDeleteReason] = useState('Test / dummy entry created during testing')
   const [forceDelete, setForceDelete] = useState(true)
   const [deleting, setDeleting] = useState(false)
+
+  // Edit Patient Modal State for Receptionist & Staff
+  const [editingPatient, setEditingPatient] = useState(null)
+
+  const handlePatientUpdated = (updated) => {
+    if (!updated || !updated.patient_id) return
+    setPatients(prev => prev.map(p => p.patient_id === updated.patient_id ? { ...p, ...updated } : p))
+  }
 
   const canDelete = ['receptionist', 'reception', 'owner', 'manager', 'admin', 'doctor', 'cashier'].includes(user?.role?.toLowerCase())
 
@@ -351,6 +361,16 @@ export default function PatientSearch() {
                     <span>+ Add to Queue</span>
                   </button>
 
+                  {/* Edit Patient Record */}
+                  <button
+                    onClick={() => setEditingPatient(p)}
+                    className="btn-secondary btn-sm flex items-center gap-1 text-slate-700 bg-slate-50 hover:bg-slate-100 border-slate-300 font-semibold text-xs"
+                    title="Edit patient details (Name, Mobile, Age, Address, Allergies)"
+                  >
+                    <Edit3 size={13} className="text-slate-500" />
+                    <span>Edit</span>
+                  </button>
+
                   {/* View Medical History */}
                   <button
                     onClick={() => navigate(`/patient/${p.patient_id}`)}
@@ -598,6 +618,15 @@ export default function PatientSearch() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Edit Patient Profile Modal for Receptionist & Staff */}
+        {editingPatient && (
+          <EditPatientModal
+            patient={editingPatient}
+            onClose={() => setEditingPatient(null)}
+            onSaved={handlePatientUpdated}
+          />
         )}
       </div>
     </Layout>

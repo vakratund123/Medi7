@@ -10,7 +10,7 @@ from app.models.lab import LabOrder, LabReport
 from app.models.radiology import Radiology
 from app.models.bill import Bill
 from app.models.audit import WhatsAppLog
-from app.schemas.patient import PatientCreate, PatientOut
+from app.schemas.patient import PatientCreate, PatientUpdate, PatientOut
 from app.middleware.auth_middleware import require_any, require_doctor, get_current_staff, require_receptionist, require_roles
 from app.services.audit_service import log_action
 from app.services.whatsapp_service import send_whatsapp_message, send_whatsapp_template
@@ -179,6 +179,43 @@ async def get_patient(
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    return patient
+
+
+@router.put("/{patient_id}", response_model=PatientOut)
+async def update_patient(
+    patient_id: str,
+    data: PatientUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_staff: Staff = Depends(require_roles("receptionist", "reception", "cashier", "owner", "manager", "admin", "doctor")),
+):
+    """Update patient demographic and medical profile details (receptionist, cashier, doctor, admin)."""
+    normalized_id = _normalize_patient_id(patient_id)
+    result = await db.execute(select(Patient).where(Patient.patient_id.ilike(normalized_id)))
+    patient = result.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    update_dict = data.model_dump(exclude_unset=True)
+    for field, val in update_dict.items():
+        setattr(patient, field, val)
+
+    await db.commit()
+    await db.refresh(patient)
+
+    # Audit log
+    client_ip = request.client.host if request and request.client else None
+    await log_action(
+        db,
+        current_staff.staff_id,
+        "update_patient",
+        "patient",
+        patient.patient_id,
+        details={"updated_fields": list(update_dict.keys()), "patient_name": patient.full_name},
+        ip_address=client_ip,
+    )
+
     return patient
 
 

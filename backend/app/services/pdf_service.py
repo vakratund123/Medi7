@@ -107,7 +107,7 @@ def _add_hospital_header(elements, styles):
         ParagraphStyle("HospitalTitle", fontName="Helvetica-Bold", fontSize=11.5, leading=13.5, textColor=colors.HexColor("#1d4ed8"), alignment=1)
     )
     reg_p = Paragraph(
-        "REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU &bull; NICU",
+        "REG. NO. : BLG03043ALHL3 &bull; 24x7 EMERGENCY &bull; ICU",
         ParagraphStyle("RegNo", fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.HexColor("#0284c7"), alignment=1)
     )
     addr_p = Paragraph(
@@ -465,15 +465,11 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
     elements.append(summary_table)
     elements.append(Spacer(1, 12))
 
-    # 6. Dual Authorized Signatories (Total: 190 + 190 = 380 pt)
-    doc_name = doctor.get('full_name', 'Rahul Nirmale')
-    if not doc_name.startswith('Dr'):
-        doc_name = f"Dr. {doc_name}"
-
+    # 6. Authorized Signatory (Total: 190 + 190 = 380 pt)
     sig_data = [
         [
+            "",
             Paragraph("____________________________<br/><b>Billing Executive / Cashier</b><br/>Sai Emergency Hospital", ParagraphStyle("Sig1", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=1)),
-            Paragraph(f"____________________________<br/><b>{doc_name}</b><br/>Treating Consultant &bull; Reg. BLG03043ALHL3", ParagraphStyle("Sig2", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=1)),
         ]
     ]
     sig_table = Table(sig_data, colWidths=[190, 190])
