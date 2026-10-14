@@ -157,10 +157,10 @@ async def generate_whatsapp_message(message_type: str, language: str, context: d
             "english": "Hello {name} 🙏\nYour {test_name} lab report is ready. 🧪\nSai Hospital: +919180198107",
         },
         "bill": {
-            "marathi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital चे आपले बिल तयार आहे.\nबिल क्रमांक: {bill_number}\nएकूण रक्कम: ₹{net_amount}\nस्थिती: {payment_status}\nहेल्पलाइन: 9180198107 / 7204583699\nलवकर बरे व्हा!",
-            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Emergency & Multispeciality Hospital ನ ನಿಮ್ಮ ಬಿಲ್ ಸಿದ್ಧವಾಗಿದೆ.\nಬಿಲ್ ಸಂಖ್ಯೆ: {bill_number}\nಒಟ್ಟು ಮೊತ್ತ: ₹{net_amount}\nಸ್ಥಿತಿ: {payment_status}\nಸಂಪರ್ಕ: 9180198107 / 7204583699\nಬೇಗ ಗುಣಮುಖರಾಗಿ!",
-            "hindi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital का आपका बिल तैयार है।\nबिल नंबर: {bill_number}\nकुल राशि: ₹{net_amount}\nस्थिति: {payment_status}\nहेल्पलाइन: 9180198107 / 7204583699\nजल्द स्वस्थ हों!",
-            "english": "Dear {name} 🙏\nYour bill for Sai Emergency & Multispeciality Hospital is ready.\nBill No: {bill_number}\nTotal Amount: ₹{net_amount}\nStatus: {payment_status}\nHelpline: 9180198107 / 7204583699\nGet well soon!",
+            "marathi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital चे आपले बिल तयार आहे.\nबिल क्रमांक: {bill_number}\nएकूण रक्कम: ₹{net_amount}\nस्थिती: {payment_status}\nहेल्पलाइन: 9180198107 / 9632219690\nलवकर बरे व्हा!",
+            "kannada": "ನಮಸ್ಕಾರ {name} ಜಿ 🙏\nSai Emergency & Multispeciality Hospital ನ ನಿಮ್ಮ ಬಿಲ್ ಸಿದ್ಧವಾಗಿದೆ.\nಬಿಲ್ ಸಂಖ್ಯೆ: {bill_number}\nಒಟ್ಟು ಮೊತ್ತ: ₹{net_amount}\nಸ್ಥಿತಿ: {payment_status}\nಸಂಪರ್ಕ: 9180198107 / 9632219690\nಬೇಗ ಗುಣಮುಖರಾಗಿ!",
+            "hindi": "नमस्कार {name} जी 🙏\nSai Emergency & Multispeciality Hospital का आपका बिल तैयार है।\nबिल नंबर: {bill_number}\nकुल राशि: ₹{net_amount}\nस्थिति: {payment_status}\nहेल्पलाइन: 9180198107 / 9632219690\nजल्द स्वस्थ हों!",
+            "english": "Dear {name} 🙏\nYour bill for Sai Emergency & Multispeciality Hospital is ready.\nBill No: {bill_number}\nTotal Amount: ₹{net_amount}\nStatus: {payment_status}\nHelpline: 9180198107 / 9632219690\nGet well soon!",
         },
         "reminder": {
             "marathi": "नमस्कार {name} जी 🙏\nउद्या आपली Sai Hospital मध्ये भेट आहे\nडॉक्टर: Dr. {doctor} ({time})\nखात्री करण्यासाठी YES reply करा.\nहेल्पलाइन: +919180198107",

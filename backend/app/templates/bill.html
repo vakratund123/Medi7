@@ -396,7 +396,7 @@
         <div class="hospital-title">SAI EMERGENCY &amp; MULTISPECIALITY HOSPITAL</div>
         <div class="reg-no-badge">REG. NO. : BLG03043ALHL3</div>
         <div class="hospital-address">Old Motor Stand, NIPANI - 591 237. Dist. Belgavi</div>
-        <div class="hospital-contact">Mob. : 9180198107, 7204583699, Email : semhospitalnipani@gmail.com</div>
+        <div class="hospital-contact">Mob. : 9180198107, 9632219690, Email : semhospitalnipani@gmail.com</div>
       </div>
     </div>
 
@@ -460,8 +460,12 @@
           <span class="info-value">Dr. {{ doctor.full_name }}</span>
         </div>
         <div class="info-row">
+          <span class="info-label">KMC Reg. No.:</span>
+          <span class="info-value" style="color: #1e3a8a; font-weight: 700;">149536</span>
+        </div>
+        <div class="info-row">
           <span class="info-label">Department:</span>
-          <span class="info-value">{{ doctor.department or 'Emergency & Medicine' }}</span>
+          <span class="info-value">{{ doctor.department or 'Emergency Physician & Intensivist' }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Diagnosis:</span>
@@ -551,7 +555,12 @@
 
     <!-- Signatures Section -->
     <div class="signatures-section">
-      <div class="sig-block" style="visibility: hidden;"></div>
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-title">Dr. {{ doctor.full_name }}</div>
+        <div style="font-size: 7.5px; color: #1e3a8a; font-weight: 700;">KMC Reg. No. 149536</div>
+        <div class="sig-sub">Treating Consultant</div>
+      </div>
       <div class="sig-block">
         <div class="sig-line"></div>
         <div class="sig-title">Billing Executive / Cashier</div>
@@ -561,7 +570,7 @@
 
     <!-- Bottom Letterhead Footer -->
     <div class="letterhead-footer">
-      Sai Emergency &amp; Multispeciality Hospital • Old Motor Stand, NIPANI - 591 237. Dist. Belgavi • 24x7 Emergency Care • Ph: 9180198107, 7204583699
+      Sai Emergency &amp; Multispeciality Hospital • Old Motor Stand, NIPANI - 591 237. Dist. Belgavi • 24x7 Emergency Care • Ph: 9180198107, 9632219690
     </div>
 
   </div>

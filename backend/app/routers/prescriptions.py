@@ -95,7 +95,7 @@ async def create_prescription(
     pdf_path = generate_prescription_pdf(
         patient={"full_name": patient.full_name, "patient_id": patient.patient_id,
                  "age": patient.age, "gender": patient.gender, "known_allergies": patient.known_allergies},
-        doctor={"full_name": doctor.full_name, "department": doctor.department},
+        doctor={"full_name": doctor.full_name, "department": doctor.department, "reg_no": getattr(doctor, "reg_no", None) or "KMC Reg. No. 149536", "kmc_reg_no": "149536"},
         prescription={"prescription_id": str(rx.prescription_id), "medicines": [m.model_dump() for m in data.medicines]},
         visit={"diagnosis": visit.diagnosis, "follow_up_date": str(visit.follow_up_date) if visit.follow_up_date else None},
     )

@@ -284,7 +284,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
                   Old Motor Stand, NIPANI - 591 237. Dist. Belgavi
                 </div>
                 <div className="text-[8px] font-semibold text-[#1e3a8a] mt-0.5">
-                  Mob. : 9180198107, 7204583699 &bull; Email : semhospitalnipani@gmail.com
+                  Mob. : 9180198107, 9632219690 &bull; Email : semhospitalnipani@gmail.com
                 </div>
               </div>
             </div>
@@ -343,13 +343,20 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
               </div>
 
               <div className="space-y-1">
-                <div className="flex">
+                <div className="flex items-start">
                   <span className="w-24 text-slate-500 font-medium text-[9.5px]">Treating Doctor:</span>
-                  <span className="font-bold text-slate-900 truncate">{doctor?.full_name ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`) : 'Dr. Rahul Nirmale'}</span>
+                  <div>
+                    <span className="font-bold text-slate-900 truncate block">
+                      {doctor?.full_name ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`) : 'Dr. Rahul V. Nirmale'}
+                    </span>
+                    <span className="text-[8.5px] font-bold text-blue-800 block">
+                      KMC Reg. No. 149536
+                    </span>
+                  </div>
                 </div>
                 <div className="flex">
                   <span className="w-24 text-slate-500 font-medium text-[9.5px]">Department:</span>
-                  <span className="font-semibold text-slate-800 truncate">{doctor?.department || 'Emergency & Multispeciality'}</span>
+                  <span className="font-semibold text-slate-800 truncate">{doctor?.department || 'Emergency Physician & Intensivist'}</span>
                 </div>
                 <div className="flex">
                   <span className="w-24 text-slate-500 font-medium text-[9.5px]">Diagnosis:</span>
@@ -444,7 +451,16 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
 
             {/* Authorized Signatory */}
             <div className="grid grid-cols-2 gap-4 pt-3 mt-2">
-              <div></div>
+              <div className="text-center">
+                <div className="w-36 border-t border-slate-400 mx-auto mb-1"></div>
+                <div className="text-[10px] font-bold text-slate-900">
+                  {doctor?.full_name ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`) : 'Dr. Rahul V. Nirmale'}
+                </div>
+                <div className="text-[8.5px] font-bold text-blue-900">
+                  KMC Reg. No. 149536
+                </div>
+                <div className="text-[8px] text-slate-500">Treating Doctor / Consultant</div>
+              </div>
               <div className="text-center">
                 <div className="w-32 border-t border-slate-400 mx-auto mb-1"></div>
                 <div className="text-[10px] font-bold text-slate-900">Billing Executive / Cashier</div>
@@ -454,7 +470,7 @@ export default function BillLetterheadModal({ bill, patient, doctor, visit, onCl
 
             {/* Bottom Letterhead Footnote */}
             <div className="mt-3 pt-1.5 border-t border-slate-200 text-center text-[8px] text-slate-500">
-              Sai Emergency &amp; Multispeciality Hospital &bull; Old Motor Stand, NIPANI - 591 237. Dist. Belgavi &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699
+              Sai Emergency &amp; Multispeciality Hospital &bull; Old Motor Stand, NIPANI - 591 237. Dist. Belgavi &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 9632219690
             </div>
 
           </div>

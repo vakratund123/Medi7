@@ -115,7 +115,7 @@ def _add_hospital_header(elements, styles):
         ParagraphStyle("Addr", fontName="Helvetica", fontSize=7, leading=8.5, textColor=colors.HexColor("#334155"), alignment=1)
     )
     contact_p = Paragraph(
-        "Mob. : 9180198107, 7204583699 &bull; Email : semhospitalnipani@gmail.com",
+        "Mob. : 9180198107, 9632219690 &bull; Email : semhospitalnipani@gmail.com",
         ParagraphStyle("Contact", fontName="Helvetica-Bold", fontSize=7, leading=8.5, textColor=colors.HexColor("#1e3a8a"), alignment=1)
     )
 
@@ -187,7 +187,7 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
         ],
         [
             Paragraph(f"<b>Mobile:</b> {patient.get('phone', patient.get('mobile_number', '-'))}", p_style),
-            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul Nirmale')}", p_style),
+            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul V. Nirmale')}<br/><font size='6.5' color='#1e3a8a'><b>KMC Reg. No. 149536</b></font>", p_style),
         ],
     ]
     diag = visit.get('diagnosis')
@@ -275,12 +275,12 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
         elements.append(Spacer(1, 6))
 
     # 6. Doctor Signature Area (Total: 380pt)
-    doc_name = doctor.get('full_name', 'Rahul Nirmale')
+    doc_name = doctor.get('full_name', 'Rahul V. Nirmale')
     if not doc_name.startswith('Dr'):
         doc_name = f"Dr. {doc_name}"
 
     sig_data = [
-        ["", Paragraph(f"<b>{doc_name}</b><br/>Treating Consultant &bull; Reg. BLG03043ALHL3<br/>Sai Emergency &amp; Multispeciality Hospital", ParagraphStyle("Sig", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=2))]
+        ["", Paragraph(f"<b>{doc_name}</b><br/>MBBS, MEM(SEMI), FCCS<br/>Emergency Physician &amp; Intensivist<br/><b>KMC Reg. No. 149536</b><br/>Sai Emergency &amp; Multispeciality Hospital", ParagraphStyle("Sig", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=2))]
     ]
     sig_table = Table(sig_data, colWidths=[190, 190])
     sig_table.setStyle(TableStyle([
@@ -296,7 +296,7 @@ def _build_prescription_reportlab(output_path: Path, patient: dict, doctor: dict
     elements.append(Spacer(1, 6))
     elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=3))
     foot_p = Paragraph(
-        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699",
+        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 9632219690",
         ParagraphStyle("Foot", fontName="Helvetica", fontSize=6.5, leading=8, textColor=colors.HexColor("#64748b"), alignment=1)
     )
     elements.append(foot_p)
@@ -359,7 +359,7 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
             Paragraph(f"<b>Contact:</b> {patient.get('phone', patient.get('mobile_number', '-'))}", p_style),
         ],
         [
-            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul Nirmale')}", p_style),
+            Paragraph(f"<b>Doctor:</b> Dr. {doctor.get('full_name', 'Rahul V. Nirmale')}<br/><font size='6.5' color='#1e3a8a'><b>KMC Reg. No. 149536</b></font>", p_style),
             Paragraph(f"<b>Status:</b> <b>{bill.get('payment_status', 'PAID').upper()}</b> ({bill.get('payment_mode', 'Cash').upper()})", p_style),
         ],
     ]
@@ -466,9 +466,13 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
     elements.append(Spacer(1, 12))
 
     # 6. Authorized Signatory (Total: 190 + 190 = 380 pt)
+    doc_disp = doctor.get('full_name', 'Rahul V. Nirmale')
+    if not doc_disp.startswith('Dr'):
+        doc_disp = f"Dr. {doc_disp}"
+
     sig_data = [
         [
-            "",
+            Paragraph(f"____________________________<br/><b>{doc_disp}</b><br/><font size='6.5' color='#1e3a8a'><b>KMC Reg. No. 149536</b></font><br/>Treating Consultant", ParagraphStyle("SigDoc", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=1)),
             Paragraph("____________________________<br/><b>Billing Executive / Cashier</b><br/>Sai Emergency Hospital", ParagraphStyle("Sig1", fontName="Helvetica", fontSize=7.5, leading=9.5, alignment=1)),
         ]
     ]
@@ -484,7 +488,7 @@ def _build_bill_reportlab(output_path: Path, patient: dict, doctor: dict, bill: 
     elements.append(Spacer(1, 6))
     elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#cbd5e1"), spaceAfter=3))
     foot_p = Paragraph(
-        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 7204583699",
+        "Sai Emergency &amp; Multispeciality Hospital &bull; 24x7 Emergency Services &bull; Ph: 9180198107, 9632219690",
         ParagraphStyle("Foot", fontName="Helvetica", fontSize=6.5, leading=8, textColor=colors.HexColor("#64748b"), alignment=1)
     )
     elements.append(foot_p)

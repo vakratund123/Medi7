@@ -71,7 +71,7 @@ export default function OPDQueue() {
       const found = doctors.find(d => d.staff_id === visit.doctor_id)
       if (found) return found
     }
-    return { staff_id: visit?.doctor_id, full_name: 'Dr. Rahul Nirmale', department: 'Emergency & Multispeciality' }
+    return { staff_id: visit?.doctor_id, full_name: 'Dr. Rahul V. Nirmale', department: 'Emergency Physician & Intensivist', reg_no: 'KMC Reg. No. 149536', kmc_reg_no: '149536' }
   }
 
   const fetchQueue = async () => {
@@ -913,7 +913,7 @@ export default function OPDQueue() {
           <BillLetterheadModal
             bill={activeBillModal.bill}
             patient={activeBillModal.patient}
-            doctor={activeBillModal.doctor || { full_name: 'Rahul (MD)', department: 'Emergency & Multispeciality' }}
+            doctor={activeBillModal.doctor || { full_name: 'Dr. Rahul V. Nirmale', department: 'Emergency Physician & Intensivist', reg_no: 'KMC Reg. No. 149536', kmc_reg_no: '149536' }}
             visit={activeBillModal.visit}
             onClose={() => setActiveBillModal(null)}
             onBillUpdated={fetchQueue}

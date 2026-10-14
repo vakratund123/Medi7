@@ -27,9 +27,10 @@ export default function PrescriptionLetterheadModal({
   // Resolve Doctor Details
   const docName = doctor?.full_name
     ? (doctor.full_name.startsWith('Dr') ? doctor.full_name : `Dr. ${doctor.full_name}`)
-    : 'Dr. Rahul Nirmale'
-  const docDept = doctor?.department || 'Emergency & Multispeciality'
-  const docReg = doctor?.reg_no || 'BLG03043ALHL3'
+    : 'Dr. Rahul V. Nirmale'
+  const docDept = doctor?.department || 'Emergency Physician & Intensivist'
+  const isDocRahul = !doctor?.full_name || docName.toLowerCase().includes('rahul')
+  const docReg = isDocRahul ? 'KMC Reg. No. 149536' : (doctor?.reg_no || 'KMC Reg. No. 149536')
 
   // Fetch prescription if not passed
   useEffect(() => {
@@ -345,20 +346,20 @@ export default function PrescriptionLetterheadModal({
                     Old Motor Stand, NIPANI - 591 237. Dist. Belgavi
                   </div>
                   <div className="text-[8px] text-blue-900 font-semibold mt-0.5">
-                    Mob. : 9180198107, 7204583699 &bull; semhospitalnipani@gmail.com
+                    Mob. : 9180198107, 9632219690 &bull; semhospitalnipani@gmail.com
                   </div>
                 </div>
 
                 {/* Treating Consultant Doctor Details */}
-                <div className="w-[110px] shrink-0 text-right leading-tight border-l border-slate-200 pl-1.5">
+                <div className="w-[125px] shrink-0 text-right leading-tight border-l border-slate-200 pl-1.5">
                   <div className="font-bold text-slate-900 text-[11px] truncate">
                     {docName}
                   </div>
-                  <div className="text-[8.5px] text-slate-600 font-medium mt-0.5 truncate">
-                    {docDept}
+                  <div className="text-[8px] font-bold text-blue-900 mt-0.5">
+                    {docReg}
                   </div>
-                  <div className="text-[8px] text-slate-500 mt-0.5">
-                    Reg: {docReg}
+                  <div className="text-[8px] text-slate-600 font-medium mt-0.5 truncate">
+                    {docDept}
                   </div>
                 </div>
               </div>
@@ -613,17 +614,17 @@ export default function PrescriptionLetterheadModal({
               <div className="pt-2 border-t border-slate-200 mt-2">
                 <div className="flex items-end justify-between">
                   <div className="text-[8px] text-slate-400 space-y-0.5">
-                    <div>* Emergency 24x7 Helpline: 9180198107, 7204583699</div>
+                    <div>* Emergency 24x7 Helpline: 9180198107, 9632219690</div>
                     <div>* MEDI7 Paperless Health System &bull; A5 Format</div>
                   </div>
 
-                  <div className="text-center w-40">
+                  <div className="text-center w-44">
                     <div className="h-8 border-b border-slate-400 border-dashed mb-1 flex items-end justify-center">
                       <span className="text-[8px] text-slate-400 italic">Signature of Doctor</span>
                     </div>
                     <div className="text-[11px] font-bold text-slate-900">{docName}</div>
-                    <div className="text-[8.5px] text-slate-500 font-medium">Treating Consultant</div>
-                    <div className="text-[8px] text-slate-400">Reg: {docReg}</div>
+                    <div className="text-[8.5px] text-blue-900 font-bold">{docReg}</div>
+                    <div className="text-[8px] text-slate-500 font-medium">Treating Consultant</div>
                   </div>
                 </div>
 

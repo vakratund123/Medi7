@@ -144,7 +144,8 @@ async def create_or_update_bill(
     doctor_dict = {
         "full_name": doctor.full_name,
         "department": doctor.department,
-        "reg_no": getattr(doctor, "reg_no", "BLG03043ALHL3") or "BLG03043ALHL3",
+        "reg_no": getattr(doctor, "reg_no", None) or "KMC Reg. No. 149536",
+        "kmc_reg_no": "149536",
     }
     patient_dict = {
         "full_name": patient.full_name,
@@ -396,7 +397,8 @@ async def update_bill(
         doctor_dict = {
             "full_name": doctor.full_name,
             "department": doctor.department,
-            "reg_no": getattr(doctor, "reg_no", "BLG03043ALHL3") or "BLG03043ALHL3",
+            "reg_no": getattr(doctor, "reg_no", None) or "KMC Reg. No. 149536",
+            "kmc_reg_no": "149536",
         }
         patient_dict = {
             "full_name": patient.full_name,

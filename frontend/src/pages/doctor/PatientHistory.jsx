@@ -330,7 +330,7 @@ export default function PatientHistory() {
         <PrescriptionLetterheadModal
           prescription={selectedRx}
           patient={patient}
-          doctor={{ full_name: selectedRx.doctor_name || 'Dr. Rahul Nirmale', designation: 'Consultant Physician' }}
+          doctor={{ full_name: selectedRx.doctor_name || 'Dr. Rahul V. Nirmale', department: 'Emergency Physician & Intensivist', reg_no: 'KMC Reg. No. 149536', kmc_reg_no: '149536' }}
           onClose={() => setSelectedRx(null)}
         />
       )}

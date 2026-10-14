@@ -102,9 +102,10 @@ export default function BillingDesk() {
       mobile_number: bill.patient_mobile,
     }
     const doctorObj = {
-      full_name: bill.doctor_name || 'Dr. Rahul Nirmale',
-      department: bill.doctor_department || 'Emergency & Multispeciality',
-      reg_no: 'BLG03043ALHL3',
+      full_name: bill.doctor_name || 'Dr. Rahul V. Nirmale',
+      department: bill.doctor_department || 'Emergency Physician & Intensivist',
+      reg_no: 'KMC Reg. No. 149536',
+      kmc_reg_no: '149536',
     }
     const visitObj = {
       visit_id: bill.visit_id,
@@ -124,8 +125,10 @@ export default function BillingDesk() {
     }
     const doctorObj = {
       staff_id: bill.doctor_id,
-      full_name: bill.doctor_name || 'Dr. Rahul Nirmale',
-      department: bill.doctor_department || 'Emergency & Multispeciality',
+      full_name: bill.doctor_name || 'Dr. Rahul V. Nirmale',
+      department: bill.doctor_department || 'Emergency Physician & Intensivist',
+      reg_no: 'KMC Reg. No. 149536',
+      kmc_reg_no: '149536',
     }
     const visitObj = {
       visit_id: bill.visit_id,
